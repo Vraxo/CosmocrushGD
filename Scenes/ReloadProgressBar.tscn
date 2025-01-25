@@ -1,0 +1,19 @@
+[gd_scene load_steps=4 format=3 uid="uid://brbap14n6iro3"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_lkpn4"]
+bg_color = Color(0.0627451, 0.0627451, 0.0627451, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_e5xvl"]
+bg_color = Color(1, 1, 1, 1)
+
+[sub_resource type="Theme" id="Theme_gwd4n"]
+ProgressBar/styles/background = SubResource("StyleBoxFlat_lkpn4")
+ProgressBar/styles/fill = SubResource("StyleBoxFlat_e5xvl")
+
+[node name="ReloadProgressBar" type="ProgressBar"]
+offset_left = -50.0
+offset_top = -2.0
+offset_right = 50.0
+offset_bottom = 3.0
+theme = SubResource("Theme_gwd4n")
+show_percentage = false

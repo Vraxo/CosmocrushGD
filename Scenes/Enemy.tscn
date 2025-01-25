@@ -1,0 +1,91 @@
+[gd_scene load_steps=11 format=3 uid="uid://cglik168uf50p"]
+
+[ext_resource type="Script" path="res://Scripts/Enemy.cs" id="1_l04a7"]
+[ext_resource type="Shader" path="res://Scenes/EnemyHitFlash.gdshader" id="2_2b341"]
+[ext_resource type="PackedScene" uid="uid://1jkhq6d44qfr" path="res://Scenes/DamageIndicator.tscn" id="2_r1px8"]
+[ext_resource type="Texture2D" uid="uid://bhw4l7v110fek" path="res://Sprites/Enemy.png" id="2_y6omx"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_85f4y"]
+size = Vector2(48, 48)
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_5b5ve"]
+resource_local_to_scene = true
+shader = ExtResource("2_2b341")
+shader_parameter/flash_color = Color(1, 0, 0, 1)
+shader_parameter/flash_value = 0.0
+
+[sub_resource type="Animation" id="Animation_pnc6v"]
+resource_name = "new_animation"
+length = 0.6
+tracks/0/type = "bezier"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath(".:material:shader_parameter/flash_value")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"handle_modes": PackedInt32Array(0, 0, 0),
+"points": PackedFloat32Array(0, -0.25, 0, 0.25, 0, 0.5, -0.25, 0, 0.25, 0, 0, -0.25, 0, 0.25, 0),
+"times": PackedFloat32Array(0, 0.3, 0.6)
+}
+
+[sub_resource type="Animation" id="Animation_ojtld"]
+length = 0.001
+tracks/0/type = "bezier"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath(".:material:shader_parameter/flash_value")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"handle_modes": PackedInt32Array(0),
+"points": PackedFloat32Array(0, -0.25, 0, 0.25, 0),
+"times": PackedFloat32Array(0)
+}
+
+[sub_resource type="AnimationLibrary" id="AnimationLibrary_vmuel"]
+_data = {
+"RESET": SubResource("Animation_ojtld"),
+"new_animation": SubResource("Animation_pnc6v")
+}
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_flosq"]
+size = Vector2(48, 96)
+
+[node name="Enemy" type="CharacterBody2D" node_paths=PackedStringArray("navigationAgent2D", "sprite", "hitBoxArea", "deathTimer")]
+collision_mask = 5
+input_pickable = true
+motion_mode = 1
+script = ExtResource("1_l04a7")
+navigationAgent2D = NodePath("Navigator")
+sprite = NodePath("Sprite")
+damageIndicatorScene = ExtResource("2_r1px8")
+hitBoxArea = NodePath("HitBoxArea")
+deathTimer = NodePath("DeathTimer")
+
+[node name="Navigator" type="NavigationAgent2D" parent="."]
+
+[node name="ActualCollider" type="CollisionShape2D" parent="."]
+position = Vector2(0, 24)
+shape = SubResource("RectangleShape2D_85f4y")
+
+[node name="Sprite" type="Sprite2D" parent="."]
+material = SubResource("ShaderMaterial_5b5ve")
+scale = Vector2(0.1, 0.1)
+texture = ExtResource("2_y6omx")
+
+[node name="AnimationPlayer" type="AnimationPlayer" parent="Sprite"]
+libraries = {
+"": SubResource("AnimationLibrary_vmuel")
+}
+
+[node name="HitBoxArea" type="Area2D" parent="."]
+visible = false
+collision_layer = 2
+collision_mask = 0
+
+[node name="HitBoxShape" type="CollisionShape2D" parent="HitBoxArea"]
+visible = false
+shape = SubResource("RectangleShape2D_flosq")
+
+[node name="DeathTimer" type="Timer" parent="."]

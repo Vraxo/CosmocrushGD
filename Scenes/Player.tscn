@@ -1,0 +1,90 @@
+[gd_scene load_steps=12 format=3 uid="uid://b3dwcw52g56vq"]
+
+[ext_resource type="Script" path="res://Scripts/Player.cs" id="2_8tp0t"]
+[ext_resource type="Texture2D" uid="uid://cxr1nj8vjb03m" path="res://Sprites/Player.png" id="2_lqq1w"]
+[ext_resource type="Texture2D" uid="uid://cd14rhlupx8ww" path="res://Sprites/Gun.png" id="3_b04yr"]
+[ext_resource type="AudioStream" uid="uid://yocd3vtwilsk" path="res://Audio/SFX/PlayerDamage.mp3" id="5_42wm7"]
+[ext_resource type="Script" path="res://Scripts/Gun.cs" id="5_uts2x"]
+[ext_resource type="AudioStream" uid="uid://sm84ex4ys2ub" path="res://Audio/SFX/Gunshot.mp3" id="6_55wy4"]
+[ext_resource type="AudioStream" uid="uid://caa1jvfcokiae" path="res://Audio/SFX/PlayerDeath.mp3" id="6_uqcfv"]
+[ext_resource type="PackedScene" uid="uid://brbap14n6iro3" path="res://Scenes/ReloadProgressBar.tscn" id="7_46n6h"]
+[ext_resource type="AudioStream" uid="uid://ccneuoh8xdv8g" path="res://Audio/SFX/Reload.mp3" id="7_kspow"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_oajf5"]
+size = Vector2(40, 43)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_n3qtv"]
+size = Vector2(40, 86)
+
+[node name="Player" type="CharacterBody2D" node_paths=PackedStringArray("sprite")]
+collision_mask = 5
+motion_mode = 1
+script = ExtResource("2_8tp0t")
+damageAudio = ExtResource("5_42wm7")
+sprite = NodePath("Sprite")
+
+[node name="ActualCollider" type="CollisionShape2D" parent="."]
+visible = false
+position = Vector2(3, 21.5)
+shape = SubResource("RectangleShape2D_oajf5")
+
+[node name="Sprite" type="Sprite2D" parent="."]
+scale = Vector2(0.1, 0.1)
+texture = ExtResource("2_lqq1w")
+
+[node name="Gun" type="Sprite2D" parent="." node_paths=PackedStringArray("rayCast", "bulletTrail", "reloadAudioPlayer")]
+scale = Vector2(-0.05, 0.05)
+texture = ExtResource("3_b04yr")
+offset = Vector2(-360, 0)
+script = ExtResource("5_uts2x")
+rayCast = NodePath("RayCast")
+bulletTrail = NodePath("BulletTrail")
+gunshotAudio = ExtResource("6_55wy4")
+reloadAudioPlayer = NodePath("ReloadAudioPlayer")
+reloadProgressBarScene = ExtResource("7_46n6h")
+
+[node name="RayCast" type="RayCast2D" parent="Gun"]
+position = Vector2(0, -40)
+rotation = 3.14159
+scale = Vector2(20, -20)
+exclude_parent = false
+target_position = Vector2(500, 0)
+collision_mask = 6
+collide_with_areas = true
+
+[node name="BulletTrail" type="Line2D" parent="Gun"]
+position = Vector2(-1000, -60)
+rotation = -0.00754278
+points = PackedVector2Array(-1039.52, -67.8427)
+width = 20.0
+default_color = Color(1, 1, 0, 1)
+antialiased = true
+
+[node name="ReloadAudioPlayer" type="AudioStreamPlayer" parent="Gun"]
+stream = ExtResource("7_kspow")
+bus = &"SFX"
+
+[node name="RayCast" type="RayCast2D" parent="."]
+position = Vector2(0, -2)
+exclude_parent = false
+target_position = Vector2(500, 0)
+collision_mask = 6
+collide_with_areas = true
+
+[node name="HitBoxBody" type="RigidBody2D" parent="."]
+visible = false
+collision_mask = 7
+
+[node name="HitBoxShape" type="CollisionShape2D" parent="HitBoxBody"]
+position = Vector2(3, 0)
+shape = SubResource("RectangleShape2D_n3qtv")
+
+[node name="AudioPlayers" type="Node" parent="."]
+
+[node name="DeathAudioPlayer" type="AudioStreamPlayer" parent="AudioPlayers"]
+stream = ExtResource("6_uqcfv")
+bus = &"SFX"
+
+[node name="DamageAudioPlayer" type="AudioStreamPlayer" parent="AudioPlayers"]
+stream = ExtResource("5_42wm7")
+bus = &"SFX"

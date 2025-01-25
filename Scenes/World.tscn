@@ -1,0 +1,141 @@
+[gd_scene load_steps=15 format=3 uid="uid://rflfyu4apk38"]
+
+[ext_resource type="AudioStream" uid="uid://blvqtb4sj0647" path="res://Audio/Songs/Going Ultimate!.mp3" id="1_4w1vw"]
+[ext_resource type="Script" path="res://Scripts/Menu/ThemePlayer.cs" id="2_bvcjy"]
+[ext_resource type="PackedScene" uid="uid://b3dwcw52g56vq" path="res://Scenes/Player.tscn" id="3_litg1"]
+[ext_resource type="Script" path="res://Scripts/Inventory/Inventory.cs" id="4_17g32"]
+[ext_resource type="Script" path="res://Scripts/EnemySpawner.cs" id="4_i286g"]
+[ext_resource type="Texture2D" uid="uid://50j2axbtoiwd" path="res://Sprites/Ammo/HeavyBullet.png" id="4_la5ke"]
+[ext_resource type="Texture2D" uid="uid://creoqtfoyfi8s" path="res://Sprites/Ammo/MediumBullet.png" id="5_lncba"]
+[ext_resource type="FontFile" uid="uid://cmmqufqnfjedk" path="res://Fonts/RaceSport.ttf" id="5_ncv0j"]
+[ext_resource type="PackedScene" uid="uid://cglik168uf50p" path="res://Scenes/Enemy.tscn" id="5_p3yak"]
+[ext_resource type="Texture2D" uid="uid://ca7hrlv1iat6q" path="res://Sprites/Ammo/Shell.png" id="6_e1v88"]
+[ext_resource type="PackedScene" uid="uid://ccgy7bcrdqq1t" path="res://Scenes/Rock.tscn" id="7_suwn8"]
+[ext_resource type="Script" path="res://Scripts/Inventory/HealthBar.cs" id="8_h5gnh"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_d0udc"]
+bg_color = Color(0.0361791, 0.727803, 0, 1)
+
+[sub_resource type="NavigationPolygon" id="NavigationPolygon_hiflp"]
+vertices = PackedVector2Array(1766, 942, -518, 942, -518, -278, 1766, -278)
+polygons = Array[PackedInt32Array]([PackedInt32Array(0, 1, 2, 3)])
+outlines = Array[PackedVector2Array]([PackedVector2Array(-528, -288, -528, 952, 1776, 952, 1776, -288)])
+
+[node name="World" type="Node2D"]
+
+[node name="Background" type="ColorRect" parent="."]
+offset_right = 2272.0
+offset_bottom = 1208.0
+color = Color(0.895539, 0.577237, 0.327166, 1)
+
+[node name="ThemePlayer" type="AudioStreamPlayer" parent="."]
+stream = ExtResource("1_4w1vw")
+volume_db = -0.1
+autoplay = true
+bus = &"Music"
+parameters/looping = false
+script = ExtResource("2_bvcjy")
+
+[node name="HUD" type="CanvasLayer" parent="."]
+
+[node name="Healthbar" type="ProgressBar" parent="HUD"]
+top_level = true
+custom_minimum_size = Vector2(100, 25)
+offset_left = 48.0
+offset_top = 656.0
+offset_right = 615.0
+offset_bottom = 683.0
+scale = Vector2(0.818158, 1.04279)
+theme_override_styles/fill = SubResource("StyleBoxFlat_d0udc")
+script = ExtResource("8_h5gnh")
+
+[node name="Inventory" type="Node2D" parent="HUD" node_paths=PackedStringArray("mediumBulletsLabel")]
+position = Vector2(-8, 88)
+script = ExtResource("4_17g32")
+mediumBulletsLabel = NodePath("MediumBullet/Count")
+
+[node name="HeavyBullet" type="Sprite2D" parent="HUD/Inventory"]
+position = Vector2(64, 520)
+scale = Vector2(0.1, 0.1)
+texture = ExtResource("4_la5ke")
+
+[node name="Count" type="Label" parent="HUD/Inventory/HeavyBullet"]
+offset_left = 160.0
+offset_right = 437.0
+offset_bottom = 295.0
+theme_override_fonts/font = ExtResource("5_ncv0j")
+theme_override_font_sizes/font_size = 256
+text = "16"
+
+[node name="MediumBullet" type="Sprite2D" parent="HUD/Inventory"]
+position = Vector2(136, 520)
+scale = Vector2(0.075, 0.075)
+texture = ExtResource("5_lncba")
+
+[node name="Count" type="Label" parent="HUD/Inventory/MediumBullet"]
+offset_left = 106.667
+offset_top = 106.667
+offset_right = 383.667
+offset_bottom = 401.667
+theme_override_fonts/font = ExtResource("5_ncv0j")
+theme_override_font_sizes/font_size = 256
+text = "16"
+
+[node name="Shell" type="Sprite2D" parent="HUD/Inventory"]
+position = Vector2(200, 528)
+scale = Vector2(0.125, 0.075)
+texture = ExtResource("6_e1v88")
+
+[node name="Count" type="Label" parent="HUD/Inventory/Shell"]
+offset_left = 128.0
+offset_right = 405.0
+offset_bottom = 295.0
+theme_override_fonts/font = ExtResource("5_ncv0j")
+theme_override_font_sizes/font_size = 256
+text = "16"
+
+[node name="Obstacles" type="Node2D" parent="."]
+
+[node name="Outerwalls" type="Node2D" parent="Obstacles"]
+position = Vector2(-527, -287)
+
+[node name="OuterWallRight" parent="Obstacles/Outerwalls" instance=ExtResource("7_suwn8")]
+z_as_relative = false
+position = Vector2(2815, 921)
+scale = Vector2(1, 37.875)
+
+[node name="OuterWallBottom" parent="Obstacles/Outerwalls" instance=ExtResource("7_suwn8")]
+z_as_relative = false
+position = Vector2(1679, 1511)
+scale = Vector2(70, 1)
+
+[node name="OuterWallLeft" parent="Obstacles/Outerwalls" instance=ExtResource("7_suwn8")]
+z_as_relative = false
+position = Vector2(543, 911)
+scale = Vector2(1, 38.75)
+
+[node name="OuterWallTop" parent="Obstacles/Outerwalls" instance=ExtResource("7_suwn8")]
+z_as_relative = false
+position = Vector2(1679, 303)
+scale = Vector2(72, 1)
+
+[node name="NavigationRegion2D" type="NavigationRegion2D" parent="."]
+position = Vector2(528, 288)
+navigation_polygon = SubResource("NavigationPolygon_hiflp")
+
+[node name="Rocks" type="Node2D" parent="NavigationRegion2D"]
+position = Vector2(88, -64)
+
+[node name="Player" parent="." instance=ExtResource("3_litg1")]
+position = Vector2(1216, 672)
+
+[node name="Camera2D" type="Camera2D" parent="Player"]
+
+[node name="EnemySpawner" type="Node2D" parent="."]
+script = ExtResource("4_i286g")
+
+[node name="Enemy" parent="EnemySpawner" instance=ExtResource("5_p3yak")]
+position = Vector2(664, 264)
+
+[node name="Enemy2" parent="EnemySpawner" instance=ExtResource("5_p3yak")]
+position = Vector2(992, 320)

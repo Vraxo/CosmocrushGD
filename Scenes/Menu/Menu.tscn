@@ -1,0 +1,36 @@
+[gd_scene load_steps=6 format=3 uid="uid://b0spqemrj3f0d"]
+
+[ext_resource type="Script" path="res://Scripts/Menu/Menu.cs" id="1_ulvtj"]
+[ext_resource type="AudioStream" uid="uid://038xv0pvogi2" path="res://Audio/Songs/Menu.mp3" id="3_442hq"]
+[ext_resource type="Texture2D" uid="uid://cgb4vh3nudjbp" path="res://Sprites/MenuBackground.png" id="4_c8ye7"]
+[ext_resource type="Script" path="res://Scripts/Menu/BackgroundImage.cs" id="5_gew1j"]
+[ext_resource type="PackedScene" uid="uid://dy1gp8qphutkl" path="res://Scenes/Menu/MainMenu.tscn" id="7_pmfh1"]
+
+[node name="Menu" type="Node2D" node_paths=PackedStringArray("particleGenerator")]
+script = ExtResource("1_ulvtj")
+particleGenerator = NodePath("ParticleGenerator")
+metadata/_edit_horizontal_guides_ = [1.0]
+
+[node name="ThemePlayer" type="AudioStreamPlayer" parent="."]
+stream = ExtResource("3_442hq")
+autoplay = true
+bus = &"Music"
+parameters/looping = true
+
+[node name="BackgroundImage" type="TextureRect" parent="."]
+offset_right = 1792.0
+offset_bottom = 1024.0
+pivot_offset = Vector2(896, 512)
+texture = ExtResource("4_c8ye7")
+script = ExtResource("5_gew1j")
+
+[node name="ParticleGenerator" type="CPUParticles2D" parent="."]
+position = Vector2(-64, 360)
+amount = 10000
+lifetime = 10.0
+speed_scale = 0.5
+emission_shape = 3
+emission_rect_extents = Vector2(1, 360)
+gravity = Vector2(980, 0)
+
+[node name="MainMenu" parent="." instance=ExtResource("7_pmfh1")]

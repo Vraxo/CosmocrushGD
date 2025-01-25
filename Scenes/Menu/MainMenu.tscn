@@ -1,0 +1,69 @@
+[gd_scene load_steps=6 format=3 uid="uid://dy1gp8qphutkl"]
+
+[ext_resource type="FontFile" uid="uid://cmmqufqnfjedk" path="res://Fonts/RaceSport.ttf" id="1_dv1ue"]
+[ext_resource type="Script" path="res://Scripts/Menu/MainMenu.cs" id="1_l2mra"]
+[ext_resource type="Theme" uid="uid://c5aqsufevhi44" path="res://Themes/ButtonTheme.tres" id="2_h6x38"]
+[ext_resource type="PackedScene" uid="uid://rflfyu4apk38" path="res://Scenes/World.tscn" id="2_q31kn"]
+[ext_resource type="PackedScene" uid="uid://bcw31k4rumk06" path="res://Scenes/Menu/SettingsMenu.tscn" id="2_sexnh"]
+
+[node name="MainMenu" type="Node2D"]
+script = ExtResource("1_l2mra")
+worldScene = ExtResource("2_q31kn")
+settingsMenuScene = ExtResource("2_sexnh")
+
+[node name="PlayButton" type="Button" parent="."]
+offset_left = 320.0
+offset_top = 360.0
+offset_right = 960.0
+offset_bottom = 391.0
+focus_neighbor_bottom = NodePath("../QuitButton")
+theme = ExtResource("2_h6x38")
+theme_override_fonts/font = ExtResource("1_dv1ue")
+text = "Play"
+
+[node name="SettingsButton" type="Button" parent="."]
+offset_left = 320.0
+offset_top = 408.0
+offset_right = 960.0
+offset_bottom = 439.0
+focus_neighbor_top = NodePath("../PlayButton")
+focus_neighbor_bottom = NodePath("../QuitButton")
+theme = ExtResource("2_h6x38")
+theme_override_fonts/font = ExtResource("1_dv1ue")
+text = "Settings
+"
+
+[node name="QuitButton" type="Button" parent="."]
+offset_left = 320.0
+offset_top = 456.0
+offset_right = 960.0
+offset_bottom = 487.0
+focus_neighbor_top = NodePath("../PlayButton")
+theme = ExtResource("2_h6x38")
+theme_override_fonts/font = ExtResource("1_dv1ue")
+text = "Quit
+"
+
+[node name="Title" type="Label" parent="."]
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = 16.0
+offset_top = 120.0
+offset_right = 1203.0
+offset_bottom = 268.0
+grow_horizontal = 2
+grow_vertical = 2
+pivot_offset = Vector2(999.58, 0)
+theme_override_colors/font_color = Color(0.0509804, 0.105882, 0.164706, 0.501961)
+theme_override_colors/font_outline_color = Color(0, 0.658824, 0.909804, 1)
+theme_override_constants/shadow_offset_x = 3
+theme_override_constants/shadow_offset_y = 3
+theme_override_constants/outline_size = 8
+theme_override_fonts/font = ExtResource("1_dv1ue")
+theme_override_font_sizes/font_size = 128
+text = "COSMOCRUSH"
+horizontal_alignment = 1
+vertical_alignment = 3

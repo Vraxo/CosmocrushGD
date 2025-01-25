@@ -1,0 +1,11 @@
+[gd_resource type="Theme" load_steps=3 format=3 uid="uid://dp55xopm44tex"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_klagp"]
+bg_color = Color(0.0509804, 0.105882, 0.164706, 0.501961)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_qr4v3"]
+bg_color = Color(0, 0.658824, 0.909804, 1)
+
+[resource]
+HSlider/styles/grabber_area = SubResource("StyleBoxFlat_klagp")
+HSlider/styles/grabber_area_highlight = SubResource("StyleBoxFlat_qr4v3")
