@@ -1,10 +1,11 @@
-[gd_scene load_steps=6 format=3 uid="uid://dy1gp8qphutkl"]
+[gd_scene load_steps=7 format=3 uid="uid://dy1gp8qphutkl"]
 
 [ext_resource type="FontFile" uid="uid://cmmqufqnfjedk" path="res://Fonts/RaceSport.ttf" id="1_dv1ue"]
 [ext_resource type="Script" path="res://Scripts/Menu/MainMenu.cs" id="1_l2mra"]
 [ext_resource type="Theme" uid="uid://c5aqsufevhi44" path="res://Themes/ButtonTheme.tres" id="2_h6x38"]
 [ext_resource type="PackedScene" uid="uid://rflfyu4apk38" path="res://Scenes/World.tscn" id="2_q31kn"]
 [ext_resource type="PackedScene" uid="uid://bcw31k4rumk06" path="res://Scenes/Menu/SettingsMenu.tscn" id="2_sexnh"]
+[ext_resource type="Script" path="res://Scripts/UI/DefaultButton.cs" id="6_xfabn"]
 
 [node name="MainMenu" type="Node2D"]
 script = ExtResource("1_l2mra")
@@ -20,6 +21,7 @@ focus_neighbor_bottom = NodePath("../QuitButton")
 theme = ExtResource("2_h6x38")
 theme_override_fonts/font = ExtResource("1_dv1ue")
 text = "Play"
+script = ExtResource("6_xfabn")
 
 [node name="SettingsButton" type="Button" parent="."]
 offset_left = 320.0
@@ -32,6 +34,7 @@ theme = ExtResource("2_h6x38")
 theme_override_fonts/font = ExtResource("1_dv1ue")
 text = "Settings
 "
+script = ExtResource("6_xfabn")
 
 [node name="QuitButton" type="Button" parent="."]
 offset_left = 320.0
@@ -43,6 +46,7 @@ theme = ExtResource("2_h6x38")
 theme_override_fonts/font = ExtResource("1_dv1ue")
 text = "Quit
 "
+script = ExtResource("6_xfabn")
 
 [node name="Title" type="Label" parent="."]
 anchors_preset = 8

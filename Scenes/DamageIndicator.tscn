@@ -86,6 +86,7 @@ _data = {
 offset_right = 36.0
 offset_bottom = 37.0
 pivot_offset = Vector2(18, 18)
+theme_override_constants/outline_size = 10
 theme_override_fonts/font = ExtResource("1_rkxfp")
 theme_override_font_sizes/font_size = 32
 text = "10"

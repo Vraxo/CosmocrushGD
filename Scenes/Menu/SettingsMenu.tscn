@@ -1,9 +1,11 @@
-[gd_scene load_steps=5 format=3 uid="uid://bcw31k4rumk06"]
+[gd_scene load_steps=7 format=3 uid="uid://bcw31k4rumk06"]
 
 [ext_resource type="Script" path="res://Scripts/Menu/SettingsMenu.cs" id="1_t30ri"]
 [ext_resource type="Theme" uid="uid://c5aqsufevhi44" path="res://Themes/ButtonTheme.tres" id="2_ort80"]
 [ext_resource type="Theme" uid="uid://dp55xopm44tex" path="res://Themes/SliderTheme.tres" id="2_q25ot"]
 [ext_resource type="FontFile" uid="uid://cmmqufqnfjedk" path="res://Fonts/RaceSport.ttf" id="2_yyo0k"]
+[ext_resource type="Script" path="res://Scripts/UI/DefaultHSlider.cs" id="4_5v8m5"]
+[ext_resource type="Script" path="res://Scripts/UI/DefaultButton.cs" id="6_ne7en"]
 
 [node name="SettingsMenu" type="Node2D" node_paths=PackedStringArray("masterSlider", "musicSlider", "sfxSlider", "masterLabel", "musicLabel", "sfxLabel", "applyButton", "returnButton")]
 script = ExtResource("1_t30ri")
@@ -31,8 +33,9 @@ focus_neighbor_top = NodePath("../../ApplyButton")
 focus_neighbor_bottom = NodePath("../../MusicLabel/Slider")
 theme = ExtResource("2_q25ot")
 max_value = 1.0
-step = 0.001
+step = 0.1
 value = 0.5
+script = ExtResource("4_5v8m5")
 
 [node name="MusicLabel" type="Label" parent="."]
 offset_top = 64.0
@@ -50,8 +53,9 @@ focus_neighbor_top = NodePath("../../MasterLabel/Slider")
 focus_neighbor_bottom = NodePath("../../SfxLabel/Slider")
 theme = ExtResource("2_q25ot")
 max_value = 1.0
-step = 0.001
+step = 0.1
 value = 0.5
+script = ExtResource("4_5v8m5")
 
 [node name="SfxLabel" type="Label" parent="."]
 offset_top = 136.0
@@ -69,8 +73,9 @@ focus_neighbor_top = NodePath("../../MusicLabel/Slider")
 focus_neighbor_bottom = NodePath("../../ApplyButton")
 theme = ExtResource("2_q25ot")
 max_value = 1.0
-step = 0.001
+step = 0.1
 value = 0.5
+script = ExtResource("4_5v8m5")
 
 [node name="ApplyButton" type="Button" parent="."]
 offset_left = 168.0
@@ -83,6 +88,7 @@ focus_neighbor_bottom = NodePath("../MasterLabel/Slider")
 theme = ExtResource("2_ort80")
 theme_override_fonts/font = ExtResource("2_yyo0k")
 text = "Apply"
+script = ExtResource("6_ne7en")
 
 [node name="ReturnButton" type="Button" parent="."]
 offset_left = 384.0
@@ -97,3 +103,16 @@ theme = ExtResource("2_ort80")
 theme_override_fonts/font = ExtResource("2_yyo0k")
 text = "Return
 "
+script = ExtResource("6_ne7en")
+
+[node name="ApplyButton2" type="Button" parent="."]
+offset_left = 168.0
+offset_top = 272.0
+offset_right = 376.0
+offset_bottom = 303.0
+focus_neighbor_top = NodePath("../SfxLabel/Slider")
+focus_neighbor_right = NodePath("../ReturnButton")
+focus_neighbor_bottom = NodePath("../MasterLabel/Slider")
+theme = ExtResource("2_ort80")
+theme_override_fonts/font = ExtResource("2_yyo0k")
+text = "Apply"

@@ -1,7 +1,7 @@
 [gd_scene load_steps=11 format=3 uid="uid://cglik168uf50p"]
 
 [ext_resource type="Script" path="res://Scripts/Enemy.cs" id="1_l04a7"]
-[ext_resource type="Shader" path="res://Scenes/EnemyHitFlash.gdshader" id="2_2b341"]
+[ext_resource type="Shader" path="res://Shaders/EnemyHitFlash.gdshader" id="2_2b341"]
 [ext_resource type="PackedScene" uid="uid://1jkhq6d44qfr" path="res://Scenes/DamageIndicator.tscn" id="2_r1px8"]
 [ext_resource type="Texture2D" uid="uid://bhw4l7v110fek" path="res://Sprites/Enemy.png" id="2_y6omx"]
 
@@ -80,12 +80,10 @@ libraries = {
 }
 
 [node name="HitBoxArea" type="Area2D" parent="."]
-visible = false
 collision_layer = 2
 collision_mask = 0
 
 [node name="HitBoxShape" type="CollisionShape2D" parent="HitBoxArea"]
-visible = false
 shape = SubResource("RectangleShape2D_flosq")
 
 [node name="DeathTimer" type="Timer" parent="."]

@@ -45,6 +45,8 @@ public partial class SettingsMenu : Node2D
 
 	private void OnReturnButtonPressed()
 	{
+		GlobalAudioPlayer.Instance.PlaySound(GlobalAudioPlayer.Instance.UiSound);
+
 		var mainMenu = mainMenuScene.Instantiate<Node2D>();
 		GetParent().AddChild(mainMenu);
 		QueueFree();

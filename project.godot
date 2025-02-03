@@ -15,6 +15,10 @@ run/main_scene="res://Scenes/Menu/Menu.tscn"
 config/features=PackedStringArray("4.3", "C#", "Forward Plus")
 boot_splash/image="res://Sprites/Splash.png"
 
+[autoload]
+
+GlobalAudioPlayer="*res://Scripts/GlobalAudioPlayer.cs"
+
 [display]
 
 window/size/viewport_width=1280
@@ -23,6 +27,18 @@ window/size/viewport_height=720
 [dotnet]
 
 project/assembly_name="CosmocrushGD"
+
+[file_customization]
+
+folder_colors={
+"res://Audio/": "teal",
+"res://Fonts/": "gray",
+"res://Scenes/": "green",
+"res://Scripts/": "purple",
+"res://Shaders/": "pink",
+"res://Sprites/": "yellow",
+"res://Themes/": "orange"
+}
 
 [input]
 
