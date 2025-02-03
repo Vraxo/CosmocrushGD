@@ -1,0 +1,125 @@
+{
+  "Version": 1,
+  "WorkspaceRootPath": "D:\\Parsa Stuff\\Godot\\Cosmocrush\\CosmocrushGD\\",
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{185FB366-3307-4681-A3F9-5C054FD9B08C}|Bluemboom.csproj|d:\\parsa stuff\\godot\\cosmocrush\\cosmocrushgd\\scripts\\settings.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{185FB366-3307-4681-A3F9-5C054FD9B08C}|Bluemboom.csproj|solutionrelative:scripts\\settings.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{185FB366-3307-4681-A3F9-5C054FD9B08C}|Bluemboom.csproj|d:\\parsa stuff\\godot\\cosmocrush\\cosmocrushgd\\scripts\\menu\\settingsmenu.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{185FB366-3307-4681-A3F9-5C054FD9B08C}|Bluemboom.csproj|solutionrelative:scripts\\menu\\settingsmenu.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{185FB366-3307-4681-A3F9-5C054FD9B08C}|Bluemboom.csproj|d:\\parsa stuff\\godot\\cosmocrush\\cosmocrushgd\\scripts\\menu\\settingsdata.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{185FB366-3307-4681-A3F9-5C054FD9B08C}|Bluemboom.csproj|solutionrelative:scripts\\menu\\settingsdata.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{185FB366-3307-4681-A3F9-5C054FD9B08C}|Bluemboom.csproj|d:\\parsa stuff\\godot\\cosmocrush\\cosmocrushgd\\scripts\\menu\\mainmenu.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{185FB366-3307-4681-A3F9-5C054FD9B08C}|Bluemboom.csproj|solutionrelative:scripts\\menu\\mainmenu.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{185FB366-3307-4681-A3F9-5C054FD9B08C}|Bluemboom.csproj|d:\\parsa stuff\\godot\\cosmocrush\\cosmocrushgd\\scripts\\menu\\menu.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{185FB366-3307-4681-A3F9-5C054FD9B08C}|Bluemboom.csproj|solutionrelative:scripts\\menu\\menu.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    }
+  ],
+  "DocumentGroupContainers": [
+    {
+      "Orientation": 0,
+      "VerticalTabListWidth": 256,
+      "DocumentGroups": [
+        {
+          "DockedWidth": 224,
+          "SelectedChildIndex": 5,
+          "Children": [
+            {
+              "$type": "Bookmark",
+              "Name": "ST:129:0:{1fc202d4-d401-403c-9834-5b218574bb67}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{3ae79031-e1bc-11d0-8f78-00a0c9110057}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{1c4feeaa-4718-4aa9-859d-94ce25d182ba}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{d3750d8a-574b-4fb3-b7e2-aa8af40e8231}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{aa2115a1-9712-457b-9047-dbb71ca2cdd2}"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "Settings.cs",
+              "DocumentMoniker": "D:\\Parsa Stuff\\Godot\\Cosmocrush\\CosmocrushGD\\Scripts\\Settings.cs",
+              "RelativeDocumentMoniker": "Scripts\\Settings.cs",
+              "ToolTip": "D:\\Parsa Stuff\\Godot\\Cosmocrush\\CosmocrushGD\\Scripts\\Settings.cs",
+              "RelativeToolTip": "Scripts\\Settings.cs",
+              "ViewState": "AgIAACcAAAAAAAAAAAAAAFAAAAAtAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-02-02T13:54:06.197Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "SettingsMenu.cs",
+              "DocumentMoniker": "D:\\Parsa Stuff\\Godot\\Cosmocrush\\CosmocrushGD\\Scripts\\Menu\\SettingsMenu.cs",
+              "RelativeDocumentMoniker": "Scripts\\Menu\\SettingsMenu.cs",
+              "ToolTip": "D:\\Parsa Stuff\\Godot\\Cosmocrush\\CosmocrushGD\\Scripts\\Menu\\SettingsMenu.cs",
+              "RelativeToolTip": "Scripts\\Menu\\SettingsMenu.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAEAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-01-27T11:51:05.335Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "SettingsData.cs",
+              "DocumentMoniker": "D:\\Parsa Stuff\\Godot\\Cosmocrush\\CosmocrushGD\\Scripts\\Menu\\SettingsData.cs",
+              "RelativeDocumentMoniker": "Scripts\\Menu\\SettingsData.cs",
+              "ToolTip": "D:\\Parsa Stuff\\Godot\\Cosmocrush\\CosmocrushGD\\Scripts\\Menu\\SettingsData.cs",
+              "RelativeToolTip": "Scripts\\Menu\\SettingsData.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-01-27T11:51:04.225Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 4,
+              "Title": "Menu.cs",
+              "DocumentMoniker": "D:\\Parsa Stuff\\Godot\\Cosmocrush\\CosmocrushGD\\Scripts\\Menu\\Menu.cs",
+              "RelativeDocumentMoniker": "Scripts\\Menu\\Menu.cs",
+              "ToolTip": "D:\\Parsa Stuff\\Godot\\Cosmocrush\\CosmocrushGD\\Scripts\\Menu\\Menu.cs",
+              "RelativeToolTip": "Scripts\\Menu\\Menu.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABQAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-01-26T13:56:09.193Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
+              "Title": "MainMenu.cs",
+              "DocumentMoniker": "D:\\Parsa Stuff\\Godot\\Cosmocrush\\CosmocrushGD\\Scripts\\Menu\\MainMenu.cs",
+              "RelativeDocumentMoniker": "Scripts\\Menu\\MainMenu.cs",
+              "ToolTip": "D:\\Parsa Stuff\\Godot\\Cosmocrush\\CosmocrushGD\\Scripts\\Menu\\MainMenu.cs",
+              "RelativeToolTip": "Scripts\\Menu\\MainMenu.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-01-26T13:56:06.72Z",
+              "EditorCaption": ""
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

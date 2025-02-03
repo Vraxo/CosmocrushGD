@@ -1,6 +1,8 @@
 using Godot;
 using System;
 
+namespace CosmocrushGD;
+
 public partial class Player : CharacterBody2D
 {
 	public int Health = 100;

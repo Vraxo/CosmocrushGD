@@ -1,6 +1,8 @@
 using Godot;
 using System;
 
+namespace CosmocrushGD;
+
 public partial class ThemePlayer : AudioStreamPlayer
 {
 	private Random random = new();

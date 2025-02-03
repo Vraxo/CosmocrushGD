@@ -1,4 +1,6 @@
-﻿public class SettingsData
+﻿namespace CosmocrushGD;
+
+public class SettingsData
 {
     public double MasterVolume { get; set; }
     public double MusicVolume { get; set; }

@@ -1,5 +1,7 @@
 ﻿using Godot;
 
+namespace CosmocrushGD;
+
 public partial class EnemySpawner : Node
 {
     private PackedScene enemyScene; // Drag and drop your enemy scene here in the editor

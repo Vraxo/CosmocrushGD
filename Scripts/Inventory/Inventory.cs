@@ -1,6 +1,7 @@
 ﻿using Godot;
 using System.Collections.Generic;
-using static Gun;
+
+namespace CosmocrushGD;
 
 public enum BulletType
 {

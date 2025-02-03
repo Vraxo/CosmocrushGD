@@ -1,5 +1,7 @@
 ﻿using Godot;
 
+namespace CosmocrushGD;
+
 public partial class DamageIndicator : Label
 {
     public int Health { get; set; } = 0;

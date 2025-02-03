@@ -1,5 +1,7 @@
 using Godot;
 
+namespace CosmocrushGD;
+
 public partial class MainMenu : Node2D
 {
 	[Export]

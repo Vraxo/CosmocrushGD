@@ -1,5 +1,7 @@
 using Godot;
 
+namespace CosmocrushGD;
+
 public partial class Menu : Node2D
 {
 	[Export] private CpuParticles2D particleGenerator;

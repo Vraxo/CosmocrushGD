@@ -1,6 +1,8 @@
 using Godot;
 using static Godot.TextServer;
 
+namespace CosmocrushGD;
+
 public partial class Gun : Sprite2D
 {
 	[Export] private RayCast2D rayCast;

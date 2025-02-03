@@ -1,12 +1,15 @@
-﻿Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 2012
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bluemboom", "Bluemboom.csproj", "{185FB366-3307-4681-A3F9-5C054FD9B08C}"
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.12.35527.113 d17.12
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CosmocrushGD", "CosmocrushGD.csproj", "{185FB366-3307-4681-A3F9-5C054FD9B08C}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
-	Debug|Any CPU = Debug|Any CPU
-	ExportDebug|Any CPU = ExportDebug|Any CPU
-	ExportRelease|Any CPU = ExportRelease|Any CPU
+		Debug|Any CPU = Debug|Any CPU
+		ExportDebug|Any CPU = ExportDebug|Any CPU
+		ExportRelease|Any CPU = ExportRelease|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
 		{185FB366-3307-4681-A3F9-5C054FD9B08C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
@@ -15,5 +18,8 @@ Global
 		{185FB366-3307-4681-A3F9-5C054FD9B08C}.ExportDebug|Any CPU.Build.0 = ExportDebug|Any CPU
 		{185FB366-3307-4681-A3F9-5C054FD9B08C}.ExportRelease|Any CPU.ActiveCfg = ExportRelease|Any CPU
 		{185FB366-3307-4681-A3F9-5C054FD9B08C}.ExportRelease|Any CPU.Build.0 = ExportRelease|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
 	EndGlobalSection
 EndGlobal

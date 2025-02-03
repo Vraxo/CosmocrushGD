@@ -1,5 +1,7 @@
 using Godot;
 
+namespace CosmocrushGD;
+
 public partial class Enemy : CharacterBody2D
 {
 	[Export] private NavigationAgent2D navigationAgent2D;

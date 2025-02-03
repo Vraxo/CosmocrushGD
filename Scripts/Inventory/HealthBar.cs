@@ -1,5 +1,7 @@
 using Godot;
 
+namespace CosmocrushGD;
+
 public partial class HealthBar : ProgressBar
 {
 	private Player player;
