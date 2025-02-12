@@ -23,8 +23,6 @@ shape = SubResource("RectangleShape2D_oajf5")
 texture = ExtResource("3_uj0h6")
 
 [node name="Gun" parent="." instance=ExtResource("3_yseaf")]
-position = Vector2(0, 0)
-offset = Vector2(16, 0)
 
 [node name="RayCast" type="RayCast2D" parent="."]
 visible = false

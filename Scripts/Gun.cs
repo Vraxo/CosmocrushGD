@@ -6,17 +6,20 @@ public partial class Gun : Sprite2D
 {
 	[Export] private RayCast2D rayCast;
 	[Export] private Line2D bulletTrail;
+	[Export] private Timer cooldownTimer;
+	[Export] private Timer reloadTimer;
 	[Export] private AudioStream gunshotAudio;
 	[Export] private AudioStreamPlayer reloadAudioPlayer;
 	[Export] private PackedScene reloadProgressBarScene;
-	[Export] private BulletType bulletType = BulletType.Medium;
 
 	private Node audioPlayerContainer;
 	private Inventory inventory;
 	private Vector2 direction = Vector2.Zero;
-	private float lastFiredTime = 0f;
 	private float currentBloom = 0f;
+	private BulletType bulletType = BulletType.Medium;
 
+	private const int Damage = 5;
+	private const int MagazineSize = 100;
 	private const float Cooldown = 0.182f;
 	private const float MaxBloom = 0.1f;
 	private const float BloomIncrease = 0.02f;
@@ -24,14 +27,10 @@ public partial class Gun : Sprite2D
 	private const float BulletRange = 10000f;
 	private const float KnockbackForce = 10f;
 	private const float PlayerKnockbackForce = 30f;
-	private const int Damage = 5;
-
-	private const int MagazineSize = 100;
 	private const float ReloadTime = 2.0f;
 
 	private int bulletsInMagazine = MagazineSize;
 	private bool reloading = false;
-	private float reloadStartTime = 0f;
 	private ProgressBar reloadProgressBar;
 
 	public override void _Ready()
@@ -43,7 +42,9 @@ public partial class Gun : Sprite2D
 		rayCast.Position = Vector2.Zero;
 		bulletTrail.Position = Vector2.Zero;
 
-		bulletsInMagazine = MagazineSize;
+		cooldownTimer.WaitTime = Cooldown;
+		reloadTimer.WaitTime = ReloadTime;
+		reloadTimer.Timeout += FinishReloading;
 	}
 
 	public override void _Process(double delta)
@@ -69,7 +70,7 @@ public partial class Gun : Sprite2D
 
 	private void FireIfPressed()
 	{
-		bool cooledDown = (Time.GetTicksMsec() / 1000f) - lastFiredTime >= Cooldown;
+		bool cooledDown = cooldownTimer.IsStopped();
 
 		if (Input.IsActionPressed("fire") && cooledDown && bulletsInMagazine > 0)
 		{
@@ -88,34 +89,27 @@ public partial class Gun : Sprite2D
 	private void Fire()
 	{
 		PlayGunshotSound();
-		SetLastFiredTime();
+		cooldownTimer.Start();
 		DamageEnemyIfHit();
 		ApplyKnockbackToPlayer();
 		UpdateBulletTrail();
 		IncreaseBloom();
 
 		bulletsInMagazine--;
-		GD.Print("Bullets left in magazine: " + bulletsInMagazine);
 	}
 
 	private void PlayGunshotSound()
 	{
 		AudioStreamPlayer2D newAudioPlayer = new();
+
 		audioPlayerContainer.AddChild(newAudioPlayer);
 		newAudioPlayer.Stream = gunshotAudio;
-		newAudioPlayer.Play();
-	}
 
-	private void SetLastFiredTime()
-	{
-		lastFiredTime = Time.GetTicksMsec() / 1000f;
+		newAudioPlayer.Play();
 	}
 
 	private Vector2 GetDirectionWithBloom()
 	{
-		if (currentBloom == 0f)
-			return Vector2.Right;
-
 		float angle = (float)GD.RandRange(-currentBloom, currentBloom);
 		return Vector2.Right.Rotated(angle);
 	}
@@ -169,13 +163,8 @@ public partial class Gun : Sprite2D
 
 		if (reloading)
 		{
-			float reloadProgress = (Time.GetTicksMsec() / 1000f - reloadStartTime) / ReloadTime;
-			UpdateReloadProgressBar(reloadProgress);
-
-			if (reloadProgress >= 1.0f)
-			{
-				FinishReloading();
-			}
+			var progress = (float)(1 - (reloadTimer.TimeLeft / ReloadTime));
+			UpdateReloadProgressBar(progress);
 		}
 	}
 
@@ -190,7 +179,7 @@ public partial class Gun : Sprite2D
 	private void StartReloading()
 	{
 		reloading = true;
-		reloadStartTime = Time.GetTicksMsec() / 1000f;
+		reloadTimer.Start();
 		reloadAudioPlayer.Play();
 		GD.Print("Reloading...");
 		CreateReloadProgressBar();

@@ -6,13 +6,15 @@
 [ext_resource type="PackedScene" uid="uid://brbap14n6iro3" path="res://Scenes/ReloadProgressBar.tscn" id="3_v6ffd"]
 [ext_resource type="AudioStream" uid="uid://ccneuoh8xdv8g" path="res://Audio/SFX/Reload.mp3" id="4_rjqaf"]
 
-[node name="Gun" type="Sprite2D" node_paths=PackedStringArray("rayCast", "bulletTrail", "reloadAudioPlayer")]
+[node name="Gun" type="Sprite2D" node_paths=PackedStringArray("rayCast", "bulletTrail", "cooldownTimer", "reloadTimer", "reloadAudioPlayer")]
 self_modulate = Color(2, 2, 2, 1)
 texture = ExtResource("1_lqgwl")
 offset = Vector2(16, 0)
 script = ExtResource("1_7eoiq")
 rayCast = NodePath("RayCast")
 bulletTrail = NodePath("BulletTrail")
+cooldownTimer = NodePath("CooldownTimer")
+reloadTimer = NodePath("ReloadTimer")
 gunshotAudio = ExtResource("2_ynnvr")
 reloadAudioPlayer = NodePath("ReloadAudioPlayer")
 reloadProgressBarScene = ExtResource("3_v6ffd")
@@ -30,3 +32,11 @@ antialiased = true
 [node name="ReloadAudioPlayer" type="AudioStreamPlayer" parent="."]
 stream = ExtResource("4_rjqaf")
 bus = &"SFX"
+
+[node name="CooldownTimer" type="Timer" parent="."]
+wait_time = 0.182
+one_shot = true
+
+[node name="ReloadTimer" type="Timer" parent="."]
+wait_time = 2.0
+one_shot = true
