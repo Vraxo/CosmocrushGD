@@ -82,19 +82,18 @@ _data = {
 "RESET": SubResource("Animation_bmyjk")
 }
 
-[node name="DamageIndicator" type="Label" node_paths=PackedStringArray("timer", "player")]
+[node name="DamageIndicator" type="Label" node_paths=PackedStringArray("destructionTimer", "player")]
 offset_right = 36.0
 offset_bottom = 37.0
 pivot_offset = Vector2(18, 18)
-theme_override_constants/outline_size = 10
 theme_override_fonts/font = ExtResource("1_rkxfp")
 theme_override_font_sizes/font_size = 32
 text = "10"
 script = ExtResource("2_otdb0")
-timer = NodePath("Timer")
+destructionTimer = NodePath("DestructionTimer")
 player = NodePath("AnimationPlayer")
 
-[node name="Timer" type="Timer" parent="."]
+[node name="DestructionTimer" type="Timer" parent="."]
 wait_time = 0.5
 one_shot = true
 autostart = true

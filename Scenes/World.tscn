@@ -1,4 +1,4 @@
-[gd_scene load_steps=15 format=3 uid="uid://rflfyu4apk38"]
+[gd_scene load_steps=16 format=3 uid="uid://rflfyu4apk38"]
 
 [ext_resource type="AudioStream" uid="uid://blvqtb4sj0647" path="res://Audio/Songs/Going Ultimate!.mp3" id="1_4w1vw"]
 [ext_resource type="Script" path="res://Scripts/Menu/ThemePlayer.cs" id="2_bvcjy"]
@@ -13,6 +13,13 @@
 [ext_resource type="PackedScene" uid="uid://ccgy7bcrdqq1t" path="res://Scenes/Rock.tscn" id="7_suwn8"]
 [ext_resource type="Script" path="res://Scripts/Inventory/HealthBar.cs" id="8_h5gnh"]
 
+[sub_resource type="Environment" id="Environment_fpnmc"]
+background_mode = 3
+glow_enabled = true
+glow_mix = 0.2
+glow_bloom = 1.0
+glow_blend_mode = 4
+
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_d0udc"]
 bg_color = Color(0.0361791, 0.727803, 0, 1)
 
@@ -21,12 +28,13 @@ vertices = PackedVector2Array(1766, 942, -518, 942, -518, -278, 1766, -278)
 polygons = Array[PackedInt32Array]([PackedInt32Array(0, 1, 2, 3)])
 outlines = Array[PackedVector2Array]([PackedVector2Array(-528, -288, -528, 952, 1776, 952, 1776, -288)])
 
-[node name="World" type="Node2D"]
+[node name="World" type="WorldEnvironment"]
+environment = SubResource("Environment_fpnmc")
 
 [node name="Background" type="ColorRect" parent="."]
 offset_right = 2272.0
 offset_bottom = 1208.0
-color = Color(0.895539, 0.577237, 0.327166, 1)
+color = Color(0, 0, 0, 1)
 
 [node name="ThemePlayer" type="AudioStreamPlayer" parent="."]
 stream = ExtResource("1_4w1vw")
@@ -120,6 +128,7 @@ position = Vector2(1679, 303)
 scale = Vector2(72, 1)
 
 [node name="NavigationRegion2D" type="NavigationRegion2D" parent="."]
+visible = false
 position = Vector2(528, 288)
 navigation_polygon = SubResource("NavigationPolygon_hiflp")
 
@@ -127,6 +136,7 @@ navigation_polygon = SubResource("NavigationPolygon_hiflp")
 position = Vector2(88, -64)
 
 [node name="Player" parent="." instance=ExtResource("3_litg1")]
+self_modulate = Color(22, 22, 22, 1)
 position = Vector2(1216, 672)
 
 [node name="Camera2D" type="Camera2D" parent="Player"]

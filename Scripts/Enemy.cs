@@ -7,7 +7,6 @@ public partial class Enemy : CharacterBody2D
 	[Export] private NavigationAgent2D navigationAgent2D;
 	[Export] private Sprite2D sprite;
 	[Export] private PackedScene damageIndicatorScene;
-	[Export] private Area2D hitBoxArea;
 	[Export] private Timer deathTimer;
 
 	private bool dead = false;
@@ -144,7 +143,6 @@ public partial class Enemy : CharacterBody2D
 		dead = true;
 		deathTimer.Start();
 		sprite.Visible = false;
-		hitBoxArea.QueueFree();
 	}
 
 	private void OnDeathTimerTimeOut()

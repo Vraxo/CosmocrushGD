@@ -10,16 +10,13 @@ public partial class Player : CharacterBody2D
 	public Inventory Inventory = new();
 
 	public const float Speed = 300.0f;
-	private Gun gun;
+	
+	[Export] private Gun gun;
+	[Export] private AudioStream damageAudio;
+	[Export] private Sprite2D sprite;
 
-	[Export]
-	private AudioStream damageAudio;
-
-	[Export]
-	private Sprite2D sprite;
-
-	private Vector2 knockbackVelocity = Vector2.Zero; // Knockback velocity
-	private const float knockbackRecoverySpeed = 0.1f; // How quickly knockback diminishes
+	private Vector2 knockbackVelocity = Vector2.Zero;
+	private const float knockbackRecoverySpeed = 0.1f;
 	private Node audioPlayerContainer;
 
 	public event Action AudioPlayerFinished;
@@ -29,30 +26,20 @@ public partial class Player : CharacterBody2D
 		gun = GetNode<Gun>("Gun");
 
 		audioPlayerContainer = new Node();
-		AddChild(audioPlayerContainer); // Add the container to the player
+		AddChild(audioPlayerContainer);
 
-		// Subscribe to the AudioPlayerFinished event
 		AudioPlayerFinished += OnAudioPlayerFinished;
-	}
-
-	public override void _Process(double delta)
-	{
-		LookAtMouse();
 	}
 
 	public override void _PhysicsProcess(double delta)
 	{
-		// Smoothly reduce the knockback velocity over time
 		knockbackVelocity = knockbackVelocity.Lerp(Vector2.Zero, knockbackRecoverySpeed);
-
-		// Regular movement input
 		Vector2 direction = Input.GetVector("left", "right", "up", "down");
 
-		// Combine knockback velocity and regular movement
 		Vector2 movement = direction * Speed + knockbackVelocity;
 
-		Velocity = movement; // Apply the combined velocity
-		MoveAndSlide(); // Move the player
+		Velocity = movement; 
+		MoveAndSlide();
 	}
 
 	public void TakeDamage(int damage)
@@ -86,11 +73,6 @@ public partial class Player : CharacterBody2D
 				audioPlayer.QueueFree();
 			}
 		}
-	}
-
-	private void LookAtMouse()
-	{
-		sprite.FlipH = GlobalPosition.X > GetGlobalMousePosition().X;
 	}
 
 	private void Die()

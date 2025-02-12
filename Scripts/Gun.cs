@@ -1,5 +1,4 @@
 using Godot;
-using static Godot.TextServer;
 
 namespace CosmocrushGD;
 
@@ -15,22 +14,23 @@ public partial class Gun : Sprite2D
 	private Node audioPlayerContainer;
 	private Inventory inventory;
 	private Vector2 direction = Vector2.Zero;
-	private float cooldown = 0.182f;
 	private float lastFiredTime = 0f;
 	private float currentBloom = 0f;
-	private const float maxBloom = 0.1f;
-	private const float bloomIncrease = 0.02f;
-	private const float bloomResetSpeed = 0.05f;
-	private const float bulletRange = 10000f;
-	private const float knockbackForce = 10f;
-	private const float playerKnockbackForce = 30f;
-	private const int damage = 5;
 
-	[Export] private int magazineSize = 10;
-	[Export] private float reloadTime = 2.0f;
+	private const float Cooldown = 0.182f;
+	private const float MaxBloom = 0.1f;
+	private const float BloomIncrease = 0.02f;
+	private const float BloomResetSpeed = 0.05f;
+	private const float BulletRange = 10000f;
+	private const float KnockbackForce = 10f;
+	private const float PlayerKnockbackForce = 30f;
+	private const int Damage = 5;
 
-	private int bulletsInMagazine;
-	private bool isReloading = false;
+	private const int MagazineSize = 100;
+	private const float ReloadTime = 2.0f;
+
+	private int bulletsInMagazine = MagazineSize;
+	private bool reloading = false;
 	private float reloadStartTime = 0f;
 	private ProgressBar reloadProgressBar;
 
@@ -43,20 +43,20 @@ public partial class Gun : Sprite2D
 		rayCast.Position = Vector2.Zero;
 		bulletTrail.Position = Vector2.Zero;
 
-		bulletsInMagazine = magazineSize;
+		bulletsInMagazine = MagazineSize;
 	}
 
 	public override void _Process(double delta)
 	{
 		LookAtMouse();
 
-		if (!isReloading)
+		if (!reloading)
 		{
 			FireIfPressed();
 		}
 
 		StopFiringIfReleased(delta);
-		HandleReloading(delta);
+		HandleReloading();
 		TryAutoReload();
 	}
 
@@ -65,12 +65,11 @@ public partial class Gun : Sprite2D
 		Vector2 mousePosition = GetGlobalMousePosition();
 		direction = (mousePosition - GlobalPosition).Normalized();
 		LookAt(mousePosition);
-		FlipV = mousePosition.X < GlobalPosition.X;
 	}
 
 	private void FireIfPressed()
 	{
-		bool cooledDown = (Time.GetTicksMsec() / 1000f) - lastFiredTime >= cooldown;
+		bool cooledDown = (Time.GetTicksMsec() / 1000f) - lastFiredTime >= Cooldown;
 
 		if (Input.IsActionPressed("fire") && cooledDown && bulletsInMagazine > 0)
 		{
@@ -82,7 +81,7 @@ public partial class Gun : Sprite2D
 	{
 		if (!Input.IsActionPressed("fire"))
 		{
-			currentBloom = Mathf.Max(0, currentBloom - bloomResetSpeed * (float)delta);
+			currentBloom = Mathf.Max(0, currentBloom - BloomResetSpeed * (float)delta);
 		}
 	}
 
@@ -121,57 +120,56 @@ public partial class Gun : Sprite2D
 		return Vector2.Right.Rotated(angle);
 	}
 
-	private void PerformRaycast()
+	private void PerformRayCast()
 	{
 		Vector2 finalDirection = GetDirectionWithBloom();
-		rayCast.TargetPosition = finalDirection * bulletRange;
+		rayCast.TargetPosition = finalDirection * BulletRange;
 		rayCast.ForceRaycastUpdate();
 	}
 
 	private void DamageEnemyIfHit()
 	{
-		PerformRaycast();
+		PerformRayCast();
 
-		if (rayCast.IsColliding() && rayCast.GetCollider() is Area2D hitbox)
+		if (rayCast.IsColliding() && rayCast.GetCollider() is Enemy enemy)
 		{
-			GD.Print("Hit!");
-			var enemy = hitbox.GetParent<Enemy>();
-			enemy.TakeDamage(damage);
-			enemy.ApplyKnockback(direction * knockbackForce);
+			enemy.TakeDamage(Damage);
+			enemy.ApplyKnockback(direction * KnockbackForce);
 		}
 	}
 
 	private void ApplyKnockbackToPlayer()
 	{
 		var player = GetParent<Player>();
-		player?.ApplyKnockback(-direction * playerKnockbackForce);
+		player?.ApplyKnockback(-direction * PlayerKnockbackForce);
 	}
 
 	private void UpdateBulletTrail()
 	{
-		PerformRaycast();
+		PerformRayCast();
 		bulletTrail.ClearPoints();
 		bulletTrail.AddPoint(Vector2.Zero);
 		bulletTrail.AddPoint(ToLocal(rayCast.GetCollisionPoint()));
 		bulletTrail.Visible = true;
+		bulletTrail.Width = 1;
 		GetTree().CreateTimer(0.1f).Timeout += () => bulletTrail.Visible = false;
 	}
 
 	private void IncreaseBloom()
 	{
-		currentBloom = Mathf.Min(maxBloom, currentBloom + bloomIncrease);
+		currentBloom = Mathf.Min(MaxBloom, currentBloom + BloomIncrease);
 	}
 
-	private void HandleReloading(double delta)
+	private void HandleReloading()
 	{
-		if (Input.IsActionJustPressed("reload") && !isReloading && bulletsInMagazine < magazineSize)
+		if (Input.IsActionJustPressed("reload") && !reloading && bulletsInMagazine < MagazineSize)
 		{
 			StartReloading();
 		}
 
-		if (isReloading)
+		if (reloading)
 		{
-			float reloadProgress = (Time.GetTicksMsec() / 1000f - reloadStartTime) / reloadTime;
+			float reloadProgress = (Time.GetTicksMsec() / 1000f - reloadStartTime) / ReloadTime;
 			UpdateReloadProgressBar(reloadProgress);
 
 			if (reloadProgress >= 1.0f)
@@ -183,7 +181,7 @@ public partial class Gun : Sprite2D
 
 	private void TryAutoReload()
 	{
-		if (bulletsInMagazine == 0 && !isReloading && inventory.GetAmmo(bulletType) > 0)
+		if (bulletsInMagazine == 0 && !reloading && inventory.GetAmmo(bulletType) > 0)
 		{
 			StartReloading();
 		}
@@ -191,7 +189,7 @@ public partial class Gun : Sprite2D
 
 	private void StartReloading()
 	{
-		isReloading = true;
+		reloading = true;
 		reloadStartTime = Time.GetTicksMsec() / 1000f;
 		reloadAudioPlayer.Play();
 		GD.Print("Reloading...");
@@ -201,11 +199,11 @@ public partial class Gun : Sprite2D
 	private void FinishReloading()
 	{
 		int availableAmmo = inventory.GetAmmo(bulletType);
-		int reloadAmount = Mathf.Min(magazineSize - bulletsInMagazine, availableAmmo);
+		int reloadAmount = Mathf.Min(MagazineSize - bulletsInMagazine, availableAmmo);
 
 		bulletsInMagazine += reloadAmount;
 		inventory.UseAmmo(bulletType, reloadAmount);
-		isReloading = false;
+		reloading = false;
 
 		GD.Print($"Reloaded {reloadAmount} bullets. Magazine: {bulletsInMagazine}");
 		RemoveReloadProgressBar();
