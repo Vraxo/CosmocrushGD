@@ -1,4 +1,5 @@
 using Godot;
+using System;
 
 namespace CosmocrushGD;
 
@@ -35,7 +36,7 @@ public partial class Gun : Sprite2D
 
 	public override void _Ready()
 	{
-		audioPlayerContainer = new();
+		audioPlayerContainer = new Node();
 		AddChild(audioPlayerContainer);
 		inventory = GetNode<Inventory>("/root/World/HUD/Inventory");
 
@@ -100,11 +101,9 @@ public partial class Gun : Sprite2D
 
 	private void PlayGunshotSound()
 	{
-		AudioStreamPlayer2D newAudioPlayer = new();
-
+		AudioStreamPlayer2D newAudioPlayer = new AudioStreamPlayer2D();
 		audioPlayerContainer.AddChild(newAudioPlayer);
 		newAudioPlayer.Stream = gunshotAudio;
-
 		newAudioPlayer.Play();
 	}
 
@@ -135,7 +134,12 @@ public partial class Gun : Sprite2D
 	private void ApplyKnockbackToPlayer()
 	{
 		var player = GetParent<Player>();
-		player?.ApplyKnockback(-direction * PlayerKnockbackForce);
+		if (player == null) return;
+
+		// Calculate direction from player's center to mouse
+		Vector2 mousePosition = GetGlobalMousePosition();
+		Vector2 knockbackDirection = (mousePosition - player.GlobalPosition).Normalized();
+		player.ApplyKnockback(-knockbackDirection * PlayerKnockbackForce);
 	}
 
 	private void UpdateBulletTrail()
@@ -143,9 +147,13 @@ public partial class Gun : Sprite2D
 		PerformRayCast();
 		bulletTrail.ClearPoints();
 		bulletTrail.AddPoint(Vector2.Zero);
-		bulletTrail.AddPoint(ToLocal(rayCast.GetCollisionPoint()));
+
+		Vector2 endPosition = rayCast.IsColliding()
+			? rayCast.GetCollisionPoint()
+			: rayCast.GlobalPosition + rayCast.TargetPosition.Rotated(GlobalRotation);
+
+		bulletTrail.AddPoint(ToLocal(endPosition));
 		bulletTrail.Visible = true;
-		bulletTrail.Width = 1;
 		GetTree().CreateTimer(0.1f).Timeout += () => bulletTrail.Visible = false;
 	}
 
@@ -163,7 +171,7 @@ public partial class Gun : Sprite2D
 
 		if (reloading)
 		{
-			var progress = (float)(1 - (reloadTimer.TimeLeft / ReloadTime));
+			float progress = 1 - (float)(reloadTimer.TimeLeft / ReloadTime);
 			UpdateReloadProgressBar(progress);
 		}
 	}
@@ -181,7 +189,6 @@ public partial class Gun : Sprite2D
 		reloading = true;
 		reloadTimer.Start();
 		reloadAudioPlayer.Play();
-		GD.Print("Reloading...");
 		CreateReloadProgressBar();
 	}
 
@@ -194,7 +201,6 @@ public partial class Gun : Sprite2D
 		inventory.UseAmmo(bulletType, reloadAmount);
 		reloading = false;
 
-		GD.Print($"Reloaded {reloadAmount} bullets. Magazine: {bulletsInMagazine}");
 		RemoveReloadProgressBar();
 	}
 
@@ -205,12 +211,12 @@ public partial class Gun : Sprite2D
 		reloadProgressBar = reloadProgressBarScene.Instantiate<ProgressBar>();
 		var player = GetParent<Player>();
 		player?.AddChild(reloadProgressBar);
-		reloadProgressBar.Position = new(-reloadProgressBar.Size.X / 2, -60);
+		reloadProgressBar.Position = new Vector2(-reloadProgressBar.Size.X / 2, -60);
 	}
 
 	private void UpdateReloadProgressBar(float progress)
 	{
-		reloadProgressBar?.SetValue(progress * 100);
+		reloadProgressBar.Value = progress * 100;
 	}
 
 	private void RemoveReloadProgressBar()

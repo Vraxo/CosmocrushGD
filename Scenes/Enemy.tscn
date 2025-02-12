@@ -54,20 +54,21 @@ _data = {
 "new_animation": SubResource("Animation_pnc6v")
 }
 
-[node name="Enemy" type="CharacterBody2D" node_paths=PackedStringArray("navigationAgent2D", "sprite", "deathTimer")]
+[node name="Enemy" type="CharacterBody2D" node_paths=PackedStringArray("navigator", "sprite", "deathTimer", "collider")]
 material = SubResource("ShaderMaterial_kqe6k")
 input_pickable = true
 motion_mode = 1
 script = ExtResource("1_l04a7")
-navigationAgent2D = NodePath("Navigator")
+navigator = NodePath("Navigator")
 sprite = NodePath("Sprite")
-damageIndicatorScene = ExtResource("2_r1px8")
 deathTimer = NodePath("DeathTimer")
+collider = NodePath("Collider")
+damageIndicatorScene = ExtResource("2_r1px8")
+
+[node name="Collider" type="CollisionShape2D" parent="."]
+shape = SubResource("RectangleShape2D_85f4y")
 
 [node name="Navigator" type="NavigationAgent2D" parent="."]
-
-[node name="ActualCollider" type="CollisionShape2D" parent="."]
-shape = SubResource("RectangleShape2D_85f4y")
 
 [node name="Sprite" type="Sprite2D" parent="."]
 material = SubResource("ShaderMaterial_5b5ve")

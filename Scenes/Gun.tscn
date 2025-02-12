@@ -21,8 +21,7 @@ reloadProgressBarScene = ExtResource("3_v6ffd")
 
 [node name="RayCast" type="RayCast2D" parent="."]
 exclude_parent = false
-target_position = Vector2(50, 0)
-collide_with_areas = true
+target_position = Vector2(5000, 0)
 
 [node name="BulletTrail" type="Line2D" parent="."]
 points = PackedVector2Array(-1039.52, -67.8427)
@@ -34,9 +33,7 @@ stream = ExtResource("4_rjqaf")
 bus = &"SFX"
 
 [node name="CooldownTimer" type="Timer" parent="."]
-wait_time = 0.182
 one_shot = true
 
 [node name="ReloadTimer" type="Timer" parent="."]
-wait_time = 2.0
 one_shot = true
