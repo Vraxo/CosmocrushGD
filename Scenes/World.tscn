@@ -1,4 +1,4 @@
-[gd_scene load_steps=16 format=3 uid="uid://rflfyu4apk38"]
+[gd_scene load_steps=17 format=3 uid="uid://rflfyu4apk38"]
 
 [ext_resource type="AudioStream" uid="uid://blvqtb4sj0647" path="res://Audio/Songs/Going Ultimate!.mp3" id="1_4w1vw"]
 [ext_resource type="Script" path="res://Scripts/Menu/ThemePlayer.cs" id="2_bvcjy"]
@@ -12,6 +12,7 @@
 [ext_resource type="Texture2D" uid="uid://ca7hrlv1iat6q" path="res://Sprites/Ammo/Shell.png" id="6_e1v88"]
 [ext_resource type="PackedScene" uid="uid://ccgy7bcrdqq1t" path="res://Scenes/Rock.tscn" id="7_suwn8"]
 [ext_resource type="Script" path="res://Scripts/Inventory/HealthBar.cs" id="8_h5gnh"]
+[ext_resource type="Script" path="res://Scripts/ShakeyCamera.cs" id="11_0a8f1"]
 
 [sub_resource type="Environment" id="Environment_fpnmc"]
 background_mode = 3
@@ -140,6 +141,7 @@ self_modulate = Color(22, 22, 22, 1)
 position = Vector2(1216, 672)
 
 [node name="Camera2D" type="Camera2D" parent="Player"]
+script = ExtResource("11_0a8f1")
 
 [node name="EnemySpawner" type="Node2D" parent="."]
 script = ExtResource("4_i286g")

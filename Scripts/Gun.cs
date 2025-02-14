@@ -13,6 +13,11 @@ public partial class Gun : Sprite2D
 	[Export] private AudioStreamPlayer reloadAudioPlayer;
 	[Export] private PackedScene reloadProgressBarScene;
 
+	// Camera shake exports
+	[Export] private float shakeStrength = 0.5f;
+	[Export] private float shakeDuration = 0.2f;
+
+	private ShakeyCamera camera;
 	private Node audioPlayerContainer;
 	private Inventory inventory;
 	private Vector2 direction = Vector2.Zero;
@@ -39,6 +44,9 @@ public partial class Gun : Sprite2D
 		audioPlayerContainer = new Node();
 		AddChild(audioPlayerContainer);
 		inventory = GetNode<Inventory>("/root/World/HUD/Inventory");
+
+		// Get reference to camera
+		camera = GetNode<ShakeyCamera>("/root/World/Player/Camera2D");
 
 		rayCast.Position = Vector2.Zero;
 		bulletTrail.Position = Vector2.Zero;
@@ -90,6 +98,13 @@ public partial class Gun : Sprite2D
 	private void Fire()
 	{
 		PlayGunshotSound();
+
+		// Trigger camera shake
+		if (camera != null)
+		{
+			camera.Shake(shakeStrength, shakeDuration);
+		}
+
 		cooldownTimer.Start();
 		DamageEnemyIfHit();
 		ApplyKnockbackToPlayer();
