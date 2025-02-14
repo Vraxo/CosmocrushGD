@@ -8,6 +8,8 @@ public partial class Enemy : CharacterBody2D
 	[Export] private Sprite2D sprite;
 	[Export] private Timer deathTimer;
 	[Export] private CollisionShape2D collider;
+	[Export] private CpuParticles2D damageParticles;
+	[Export] private CpuParticles2D deathParticles;
 	[Export] private PackedScene damageIndicatorScene;
 
 	private bool dead = false;
@@ -15,11 +17,11 @@ public partial class Enemy : CharacterBody2D
 	private double lastDamageTime = -DamageCooldown;
 	private Vector2 knockback = Vector2.Zero;           // Knockback velocity
 	private Player player;
-	
+
+	private const int MaxHealth = 20;
 	private const float DamageRadius = 50f;
 	private const float DamageCooldown = 0.5f;
 	private const float Speed = 100.0f;
-	private const int MaxHealth = 20;
 	private const float KnockbackRecoverySpeed = 0.1f; // How fast the knockback diminishes
 
 	// Main
@@ -72,6 +74,8 @@ public partial class Enemy : CharacterBody2D
 		{
 			Die();
 		}
+
+		damageParticles.Emitting = true;
 	}
 
 	public void ApplyKnockback(Vector2 force)
@@ -142,11 +146,11 @@ public partial class Enemy : CharacterBody2D
 
 	private void Die()
 	{
+		deathParticles.Emitting = true;
 		dead = true;
 		collider.Disabled = true;
 		deathTimer.Start();
 		sprite.Visible = false;
-		
 	}
 
 	private void OnDeathTimerTimeOut()
