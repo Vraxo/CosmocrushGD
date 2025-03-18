@@ -150,4 +150,4 @@ script = ExtResource("4_i286g")
 position = Vector2(664, 264)
 
 [node name="Enemy2" parent="EnemySpawner" instance=ExtResource("5_p3yak")]
-position = Vector2(992, 320)
+position = Vector2(973, 387)

@@ -1,7 +1,7 @@
 [gd_scene load_steps=12 format=3 uid="uid://cglik168uf50p"]
 
-[ext_resource type="Script" path="res://Scripts/Enemy.cs" id="1_l04a7"]
 [ext_resource type="Shader" path="res://Shaders/EnemyHitFlash.gdshader" id="2_2b341"]
+[ext_resource type="Script" path="res://Scripts/Enemy/MeleeEnemy.cs" id="2_p2ur1"]
 [ext_resource type="PackedScene" uid="uid://1jkhq6d44qfr" path="res://Scenes/DamageIndicator.tscn" id="2_r1px8"]
 [ext_resource type="Texture2D" uid="uid://bhw4l7v110fek" path="res://Sprites/Enemy.png" id="2_y6omx"]
 
@@ -50,26 +50,28 @@ tracks/0/keys = {
 
 [sub_resource type="AnimationLibrary" id="AnimationLibrary_vmuel"]
 _data = {
-"RESET": SubResource("Animation_ojtld"),
-"new_animation": SubResource("Animation_pnc6v")
+"HitFlash": SubResource("Animation_pnc6v"),
+"RESET": SubResource("Animation_ojtld")
 }
 
 [sub_resource type="Curve" id="Curve_2qoxu"]
 _data = [Vector2(0.00433911, 0.993671), 0.0, 0.0, 0, 0, Vector2(0.998999, 0.00219095), 0.0, 0.0, 0, 0]
 point_count = 2
 
-[node name="Enemy" type="CharacterBody2D" node_paths=PackedStringArray("navigator", "sprite", "deathTimer", "collider", "damageParticles", "deathParticles")]
+[node name="MeleeEnemy" type="CharacterBody2D" node_paths=PackedStringArray("Navigator", "Sprite", "DeathTimer", "DamageCooldownTimer", "Collider", "DamageParticles", "DeathParticles", "HitAnimationPlayer")]
 material = SubResource("ShaderMaterial_kqe6k")
 input_pickable = true
 motion_mode = 1
-script = ExtResource("1_l04a7")
-navigator = NodePath("Navigator")
-sprite = NodePath("Sprite")
-deathTimer = NodePath("DeathTimer")
-collider = NodePath("Collider")
-damageParticles = NodePath("DamageParticles")
-deathParticles = NodePath("DeathParticles")
-damageIndicatorScene = ExtResource("2_r1px8")
+script = ExtResource("2_p2ur1")
+Navigator = NodePath("Navigator")
+Sprite = NodePath("Sprite")
+DeathTimer = NodePath("DeathTimer")
+DamageCooldownTimer = NodePath("DamageTimer")
+Collider = NodePath("Collider")
+DamageParticles = NodePath("DamageParticles")
+DeathParticles = NodePath("DeathParticles")
+DamageIndicatorScene = ExtResource("2_r1px8")
+HitAnimationPlayer = NodePath("Sprite/AnimationPlayer")
 
 [node name="Collider" type="CollisionShape2D" parent="."]
 shape = SubResource("RectangleShape2D_85f4y")
@@ -119,3 +121,6 @@ scale_amount_min = 8.0
 scale_amount_max = 8.0
 scale_amount_curve = SubResource("Curve_2qoxu")
 color = Color(1, 0, 0.0431373, 1)
+
+[node name="DamageTimer" type="Timer" parent="."]
+wait_time = 0.5
