@@ -1,4 +1,5 @@
-﻿using Godot;
+﻿using System.Runtime.InteropServices;
+using Godot;
 
 namespace CosmocrushGD;
 
@@ -14,9 +15,9 @@ public abstract partial class BaseEnemy : CharacterBody2D
     [Export] protected PackedScene DamageIndicatorScene;
     [Export] protected AnimationPlayer HitAnimationPlayer;
 
+    protected int Health;
     protected bool Dead = false;
     protected bool CanShoot = true;
-    protected int Health;
     protected Vector2 Knockback = Vector2.Zero;
     protected Player TargetPlayer;
 
@@ -143,6 +144,8 @@ public abstract partial class BaseEnemy : CharacterBody2D
     {
         var indicator = DamageIndicatorScene.Instantiate<DamageIndicator>();
         indicator.Text = damage.ToString();
+        indicator.Health = Health;
+        indicator.MaxHealth = MaxHealth;
         indicator.Position = new Vector2(0, -Sprite.Texture.GetHeight() / 2);
         AddChild(indicator);
     }
