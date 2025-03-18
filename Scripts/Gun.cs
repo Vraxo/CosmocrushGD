@@ -21,7 +21,7 @@ public partial class Gun : Sprite2D
 	private const int Damage = 5;
 	private const float Cooldown = 0.182f;
 	private const float BulletRange = 10000f;
-	private const float KnockbackForce = 10f;
+	private const float KnockbackForce = 500f;
 	
 	public override void _Ready()
 	{

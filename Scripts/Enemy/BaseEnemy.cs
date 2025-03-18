@@ -49,25 +49,16 @@ public abstract partial class BaseEnemy : CharacterBody2D
         AttemptAttack();
     }
 
-    public void ApplyKnockback(Vector2 force)
-    {
-        // Simplified knockback accumulation
-        Knockback += force;
-    }
-
-    // Modified physics process
     public override void _PhysicsProcess(double delta)
     {
-        if (Dead) return;
+        if (Dead)
+        {
+            return;
+        }
 
-        // Apply proper delta-scaled knockback
-        Velocity = CalculateMovement() * (float)delta + Knockback;
-        Knockback = Knockback.Lerp(Vector2.Zero, KnockbackRecovery * (float)delta * 60);
-
+        Knockback = Knockback.Lerp(Vector2.Zero, KnockbackRecovery);
+        Velocity = CalculateMovement() + Knockback;
         MoveAndSlide();
-
-        // Reset velocity after use
-        Velocity = Vector2.Zero;
     }
 
     protected virtual Vector2 CalculateMovement()
@@ -75,6 +66,25 @@ public abstract partial class BaseEnemy : CharacterBody2D
         if (TargetPlayer == null) return Vector2.Zero;
 
         Navigator.TargetPosition = TargetPlayer.GlobalPosition;
+
+        // Get the navigation map RID through the NavigationServer
+        Rid mapRid = NavigationServer2D.AgentGetMap(Navigator.GetRid());
+
+        if (!mapRid.IsValid)
+        {
+            // No valid navigation map associated with the agent
+            return Vector2.Zero;
+        }
+
+        // Check if the map has completed synchronization
+        long iterationId = NavigationServer2D.MapGetIterationId(mapRid);
+        if (iterationId <= 0)
+        {
+            // Map hasn't synchronized yet
+            return Vector2.Zero;
+        }
+
+        // Safe to get path position now
         Vector2 direction = (Navigator.GetNextPathPosition() - GlobalPosition).Normalized();
         return direction * Speed;
     }
@@ -87,6 +97,18 @@ public abstract partial class BaseEnemy : CharacterBody2D
         DamageParticles.Emitting = true;
 
         if (Health <= 0) Die();
+    }
+
+    public void ApplyKnockback(Vector2 force)
+    {
+        if (Knockback.Length() < force.Length())
+        {
+            Knockback = force;
+        }
+        else
+        {
+            Knockback += force;
+        }
     }
 
     protected virtual void UpdateSpriteDirection()
