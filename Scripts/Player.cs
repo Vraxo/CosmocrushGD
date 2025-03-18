@@ -14,6 +14,7 @@ public partial class Player : CharacterBody2D
 	[Export] private Gun gun;
 	[Export] private AudioStream damageAudio;
 	[Export] private Sprite2D sprite;
+	[Export] private CpuParticles2D damageParticles;
 
 	private Vector2 knockbackVelocity = Vector2.Zero;
 	private const float knockbackRecoverySpeed = 0.1f;
@@ -45,6 +46,8 @@ public partial class Player : CharacterBody2D
 	public void TakeDamage(int damage)
 	{
 		Health -= damage;
+
+		damageParticles.Emitting = true;
 		PlayDamageSound();
 
 		if (Health <= 0)

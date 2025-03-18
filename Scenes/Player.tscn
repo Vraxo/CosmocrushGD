@@ -1,4 +1,4 @@
-[gd_scene load_steps=7 format=3 uid="uid://b3dwcw52g56vq"]
+[gd_scene load_steps=8 format=3 uid="uid://b3dwcw52g56vq"]
 
 [ext_resource type="Script" path="res://Scripts/Player.cs" id="2_8tp0t"]
 [ext_resource type="Texture2D" uid="uid://cxr1nj8vjb03m" path="res://Sprites/Player.png" id="3_uj0h6"]
@@ -9,11 +9,16 @@
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_oajf5"]
 size = Vector2(32, 31.5)
 
-[node name="Player" type="CharacterBody2D"]
+[sub_resource type="Curve" id="Curve_qvt8o"]
+_data = [Vector2(0.00433911, 0.993671), 0.0, 0.0, 0, 0, Vector2(0.998999, 0.00219095), 0.0, 0.0, 0, 0]
+point_count = 2
+
+[node name="Player" type="CharacterBody2D" node_paths=PackedStringArray("damageParticles")]
 collision_mask = 5
 motion_mode = 1
 script = ExtResource("2_8tp0t")
 damageAudio = ExtResource("5_42wm7")
+damageParticles = NodePath("DamageParticles")
 
 [node name="ActualCollider" type="CollisionShape2D" parent="."]
 position = Vector2(0, 0.25)
@@ -41,3 +46,19 @@ bus = &"SFX"
 [node name="DamageAudioPlayer" type="AudioStreamPlayer" parent="AudioPlayers"]
 stream = ExtResource("5_42wm7")
 bus = &"SFX"
+
+[node name="DamageParticles" type="CPUParticles2D" parent="."]
+position = Vector2(0, -1)
+emitting = false
+amount = 25
+lifetime = 0.5
+one_shot = true
+explosiveness = 1.0
+spread = 180.0
+gravity = Vector2(0, 0)
+initial_velocity_min = 50.0
+initial_velocity_max = 100.0
+scale_amount_min = 4.0
+scale_amount_max = 4.0
+scale_amount_curve = SubResource("Curve_qvt8o")
+color = Color(0.447059, 1, 0.105882, 1)
