@@ -65,6 +65,13 @@ public abstract partial class BaseEnemy : CharacterBody2D
     {
         if (TargetPlayer == null) return Vector2.Zero;
 
+        // Check if within proximity threshold to stop moving closer
+        float distanceToPlayer = GlobalPosition.DistanceTo(TargetPlayer.GlobalPosition);
+        if (distanceToPlayer <= ProximityThreshold)
+        {
+            return Vector2.Zero;
+        }
+
         Navigator.TargetPosition = TargetPlayer.GlobalPosition;
 
         // Get the navigation map RID through the NavigationServer

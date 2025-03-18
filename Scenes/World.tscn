@@ -1,4 +1,4 @@
-[gd_scene load_steps=17 format=3 uid="uid://rflfyu4apk38"]
+[gd_scene load_steps=21 format=3 uid="uid://rflfyu4apk38"]
 
 [ext_resource type="AudioStream" uid="uid://blvqtb4sj0647" path="res://Audio/Songs/Going Ultimate!.mp3" id="1_4w1vw"]
 [ext_resource type="Script" path="res://Scripts/Menu/ThemePlayer.cs" id="2_bvcjy"]
@@ -8,11 +8,12 @@
 [ext_resource type="Texture2D" uid="uid://50j2axbtoiwd" path="res://Sprites/Ammo/HeavyBullet.png" id="4_la5ke"]
 [ext_resource type="Texture2D" uid="uid://creoqtfoyfi8s" path="res://Sprites/Ammo/MediumBullet.png" id="5_lncba"]
 [ext_resource type="FontFile" uid="uid://cmmqufqnfjedk" path="res://Fonts/RaceSport.ttf" id="5_ncv0j"]
-[ext_resource type="PackedScene" uid="uid://cglik168uf50p" path="res://Scenes/Enemy.tscn" id="5_p3yak"]
+[ext_resource type="PackedScene" uid="uid://cglik168uf50p" path="res://Scenes/Enemies/Enemy.tscn" id="5_p3yak"]
 [ext_resource type="Texture2D" uid="uid://ca7hrlv1iat6q" path="res://Sprites/Ammo/Shell.png" id="6_e1v88"]
 [ext_resource type="PackedScene" uid="uid://ccgy7bcrdqq1t" path="res://Scenes/Rock.tscn" id="7_suwn8"]
 [ext_resource type="Script" path="res://Scripts/Inventory/HealthBar.cs" id="8_h5gnh"]
 [ext_resource type="Script" path="res://Scripts/ShakeyCamera.cs" id="11_0a8f1"]
+[ext_resource type="PackedScene" uid="uid://baoyd4vyuac" path="res://Scenes/Enemies/RangedEnemy.tscn" id="14_qfgrb"]
 
 [sub_resource type="Environment" id="Environment_fpnmc"]
 background_mode = 3
@@ -29,12 +30,49 @@ vertices = PackedVector2Array(1766, 942, -518, 942, -518, -278, 1766, -278)
 polygons = Array[PackedInt32Array]([PackedInt32Array(0, 1, 2, 3)])
 outlines = Array[PackedVector2Array]([PackedVector2Array(-528, -288, -528, 952, 1776, 952, 1776, -288)])
 
+[sub_resource type="Animation" id="Animation_pnc6v"]
+resource_name = "new_animation"
+length = 0.6
+tracks/0/type = "bezier"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath(".:material:shader_parameter/flash_value")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"handle_modes": PackedInt32Array(0, 0, 0),
+"points": PackedFloat32Array(0, -0.25, 0, 0.25, 0, 0.5, -0.25, 0, 0.25, 0, 0, -0.25, 0, 0.25, 0),
+"times": PackedFloat32Array(0, 0.3, 0.6)
+}
+
+[sub_resource type="Animation" id="Animation_ojtld"]
+length = 0.001
+tracks/0/type = "bezier"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath(".:material:shader_parameter/flash_value")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"handle_modes": PackedInt32Array(0),
+"points": PackedFloat32Array(0, -0.25, 0, 0.25, 0),
+"times": PackedFloat32Array(0)
+}
+
+[sub_resource type="AnimationLibrary" id="AnimationLibrary_vmuel"]
+_data = {
+"HitFlash": SubResource("Animation_pnc6v"),
+"RESET": SubResource("Animation_ojtld")
+}
+
 [node name="World" type="WorldEnvironment"]
 environment = SubResource("Environment_fpnmc")
 
 [node name="Background" type="ColorRect" parent="."]
-offset_right = 2272.0
-offset_bottom = 1208.0
+offset_left = 120.0
+offset_top = 88.0
+offset_right = 2392.0
+offset_bottom = 1296.0
 color = Color(0, 0, 0, 1)
 
 [node name="ThemePlayer" type="AudioStreamPlayer" parent="."]
@@ -151,3 +189,22 @@ position = Vector2(664, 264)
 
 [node name="Enemy2" parent="EnemySpawner" instance=ExtResource("5_p3yak")]
 position = Vector2(973, 387)
+
+[node name="AnimationPlayer" type="AnimationPlayer" parent="."]
+libraries = {
+"": SubResource("AnimationLibrary_vmuel")
+}
+
+[node name="AnimationPlayer" type="AnimationPlayer" parent="AnimationPlayer"]
+libraries = {
+"": SubResource("AnimationLibrary_vmuel")
+}
+
+[node name="MeleeEnemy" parent="." instance=ExtResource("14_qfgrb")]
+position = Vector2(1085, 806)
+
+[node name="MeleeEnemy2" parent="." instance=ExtResource("14_qfgrb")]
+position = Vector2(838, 636)
+
+[node name="MeleeEnemy3" parent="." instance=ExtResource("14_qfgrb")]
+position = Vector2(1408, 507)

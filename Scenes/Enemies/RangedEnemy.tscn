@@ -1,12 +1,13 @@
-[gd_scene load_steps=12 format=3 uid="uid://cglik168uf50p"]
+[gd_scene load_steps=13 format=3 uid="uid://baoyd4vyuac"]
 
-[ext_resource type="Shader" path="res://Shaders/EnemyHitFlash.gdshader" id="2_2b341"]
-[ext_resource type="Script" path="res://Scripts/Enemy/MeleeEnemy.cs" id="2_p2ur1"]
-[ext_resource type="PackedScene" uid="uid://1jkhq6d44qfr" path="res://Scenes/DamageIndicator.tscn" id="2_r1px8"]
-[ext_resource type="Texture2D" uid="uid://bhw4l7v110fek" path="res://Sprites/Enemy.png" id="2_y6omx"]
+[ext_resource type="Script" path="res://Scripts/Enemy/RangedEnemy.cs" id="1_3crpb"]
+[ext_resource type="Texture2D" uid="uid://bg1u4fcmqhu6p" path="res://Sprites/RangedEnemy.png" id="1_aevvj"]
+[ext_resource type="Shader" path="res://Shaders/EnemyHitFlash.gdshader" id="1_q2njb"]
+[ext_resource type="PackedScene" uid="uid://dmqcrw4acmcn4" path="res://Scenes/Enemies/Projectile.tscn" id="3_12pu3"]
+[ext_resource type="PackedScene" uid="uid://1jkhq6d44qfr" path="res://Scenes/DamageIndicator.tscn" id="3_c7ipe"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_kqe6k"]
-shader = ExtResource("2_2b341")
+shader = ExtResource("1_q2njb")
 shader_parameter/flash_color = Color(1, 1, 1, 1)
 shader_parameter/flash_value = null
 
@@ -15,23 +16,9 @@ size = Vector2(32, 32)
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_5b5ve"]
 resource_local_to_scene = true
-shader = ExtResource("2_2b341")
+shader = ExtResource("1_q2njb")
 shader_parameter/flash_color = Color(1, 1, 1, 1)
 shader_parameter/flash_value = 0.0
-
-[sub_resource type="Animation" id="Animation_ojtld"]
-length = 0.001
-tracks/0/type = "bezier"
-tracks/0/imported = false
-tracks/0/enabled = true
-tracks/0/path = NodePath(".:material:shader_parameter/flash_value")
-tracks/0/interp = 1
-tracks/0/loop_wrap = true
-tracks/0/keys = {
-"handle_modes": PackedInt32Array(0),
-"points": PackedFloat32Array(0, -0.25, 0, 0.25, 0),
-"times": PackedFloat32Array(0)
-}
 
 [sub_resource type="Animation" id="Animation_pnc6v"]
 resource_name = "new_animation"
@@ -48,6 +35,20 @@ tracks/0/keys = {
 "times": PackedFloat32Array(0, 0.3, 0.6)
 }
 
+[sub_resource type="Animation" id="Animation_ojtld"]
+length = 0.001
+tracks/0/type = "bezier"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath(".:material:shader_parameter/flash_value")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"handle_modes": PackedInt32Array(0),
+"points": PackedFloat32Array(0, -0.25, 0, 0.25, 0),
+"times": PackedFloat32Array(0)
+}
+
 [sub_resource type="AnimationLibrary" id="AnimationLibrary_vmuel"]
 _data = {
 "HitFlash": SubResource("Animation_pnc6v"),
@@ -62,7 +63,8 @@ point_count = 2
 material = SubResource("ShaderMaterial_kqe6k")
 input_pickable = true
 motion_mode = 1
-script = ExtResource("2_p2ur1")
+script = ExtResource("1_3crpb")
+_projectileScene = ExtResource("3_12pu3")
 Navigator = NodePath("Navigator")
 Sprite = NodePath("Sprite")
 DeathTimer = NodePath("DeathTimer")
@@ -70,7 +72,7 @@ DamageCooldownTimer = NodePath("DamageTimer")
 Collider = NodePath("Collider")
 DamageParticles = NodePath("DamageParticles")
 DeathParticles = NodePath("DeathParticles")
-DamageIndicatorScene = ExtResource("2_r1px8")
+DamageIndicatorScene = ExtResource("3_c7ipe")
 HitAnimationPlayer = NodePath("Sprite/AnimationPlayer")
 
 [node name="Collider" type="CollisionShape2D" parent="."]
@@ -80,7 +82,7 @@ shape = SubResource("RectangleShape2D_85f4y")
 
 [node name="Sprite" type="Sprite2D" parent="."]
 material = SubResource("ShaderMaterial_5b5ve")
-texture = ExtResource("2_y6omx")
+texture = ExtResource("1_aevvj")
 
 [node name="AnimationPlayer" type="AnimationPlayer" parent="Sprite"]
 libraries = {
@@ -103,7 +105,7 @@ initial_velocity_max = 100.0
 scale_amount_min = 4.0
 scale_amount_max = 4.0
 scale_amount_curve = SubResource("Curve_2qoxu")
-color = Color(1, 0, 0.0431373, 1)
+color = Color(0.639216, 0.286275, 0.643137, 1)
 
 [node name="DeathParticles" type="CPUParticles2D" parent="."]
 position = Vector2(0, -1)

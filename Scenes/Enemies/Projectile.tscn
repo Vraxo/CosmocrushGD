@@ -1,0 +1,17 @@
+[gd_scene load_steps=4 format=3 uid="uid://dmqcrw4acmcn4"]
+
+[ext_resource type="Texture2D" uid="uid://bg1u4fcmqhu6p" path="res://Sprites/RangedEnemy.png" id="1_aevvj"]
+[ext_resource type="Script" path="res://Scripts/Projectile.cs" id="1_jqlnh"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_0iyyh"]
+size = Vector2(32, 32)
+
+[node name="Projectile" type="Area2D"]
+scale = Vector2(0.25, 0.25)
+script = ExtResource("1_jqlnh")
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+texture = ExtResource("1_aevvj")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("RectangleShape2D_0iyyh")
