@@ -1,15 +1,10 @@
-[gd_scene load_steps=21 format=3 uid="uid://rflfyu4apk38"]
+[gd_scene load_steps=16 format=3 uid="uid://rflfyu4apk38"]
 
 [ext_resource type="AudioStream" uid="uid://blvqtb4sj0647" path="res://Audio/Songs/Going Ultimate!.mp3" id="1_4w1vw"]
 [ext_resource type="Script" path="res://Scripts/Menu/ThemePlayer.cs" id="2_bvcjy"]
 [ext_resource type="PackedScene" uid="uid://b3dwcw52g56vq" path="res://Scenes/Player.tscn" id="3_litg1"]
-[ext_resource type="Script" path="res://Scripts/Inventory/Inventory.cs" id="4_17g32"]
 [ext_resource type="Script" path="res://Scripts/EnemySpawner.cs" id="4_i286g"]
-[ext_resource type="Texture2D" uid="uid://50j2axbtoiwd" path="res://Sprites/Ammo/HeavyBullet.png" id="4_la5ke"]
-[ext_resource type="Texture2D" uid="uid://creoqtfoyfi8s" path="res://Sprites/Ammo/MediumBullet.png" id="5_lncba"]
-[ext_resource type="FontFile" uid="uid://cmmqufqnfjedk" path="res://Fonts/RaceSport.ttf" id="5_ncv0j"]
 [ext_resource type="PackedScene" uid="uid://cglik168uf50p" path="res://Scenes/Enemies/Enemy.tscn" id="5_p3yak"]
-[ext_resource type="Texture2D" uid="uid://ca7hrlv1iat6q" path="res://Sprites/Ammo/Shell.png" id="6_e1v88"]
 [ext_resource type="PackedScene" uid="uid://ccgy7bcrdqq1t" path="res://Scenes/Rock.tscn" id="7_suwn8"]
 [ext_resource type="Script" path="res://Scripts/Inventory/HealthBar.cs" id="8_h5gnh"]
 [ext_resource type="Script" path="res://Scripts/ShakeyCamera.cs" id="11_0a8f1"]
@@ -69,10 +64,10 @@ _data = {
 environment = SubResource("Environment_fpnmc")
 
 [node name="Background" type="ColorRect" parent="."]
-offset_left = 120.0
-offset_top = 88.0
-offset_right = 2392.0
-offset_bottom = 1296.0
+offset_left = 32.0
+offset_top = 32.0
+offset_right = 2304.0
+offset_bottom = 1240.0
 color = Color(0, 0, 0, 1)
 
 [node name="ThemePlayer" type="AudioStreamPlayer" parent="."]
@@ -95,51 +90,6 @@ offset_bottom = 683.0
 scale = Vector2(0.818158, 1.04279)
 theme_override_styles/fill = SubResource("StyleBoxFlat_d0udc")
 script = ExtResource("8_h5gnh")
-
-[node name="Inventory" type="Node2D" parent="HUD" node_paths=PackedStringArray("mediumBulletsLabel")]
-position = Vector2(-8, 88)
-script = ExtResource("4_17g32")
-mediumBulletsLabel = NodePath("MediumBullet/Count")
-
-[node name="HeavyBullet" type="Sprite2D" parent="HUD/Inventory"]
-position = Vector2(64, 520)
-scale = Vector2(0.1, 0.1)
-texture = ExtResource("4_la5ke")
-
-[node name="Count" type="Label" parent="HUD/Inventory/HeavyBullet"]
-offset_left = 160.0
-offset_right = 437.0
-offset_bottom = 295.0
-theme_override_fonts/font = ExtResource("5_ncv0j")
-theme_override_font_sizes/font_size = 256
-text = "16"
-
-[node name="MediumBullet" type="Sprite2D" parent="HUD/Inventory"]
-position = Vector2(136, 520)
-scale = Vector2(0.075, 0.075)
-texture = ExtResource("5_lncba")
-
-[node name="Count" type="Label" parent="HUD/Inventory/MediumBullet"]
-offset_left = 106.667
-offset_top = 106.667
-offset_right = 383.667
-offset_bottom = 401.667
-theme_override_fonts/font = ExtResource("5_ncv0j")
-theme_override_font_sizes/font_size = 256
-text = "16"
-
-[node name="Shell" type="Sprite2D" parent="HUD/Inventory"]
-position = Vector2(200, 528)
-scale = Vector2(0.125, 0.075)
-texture = ExtResource("6_e1v88")
-
-[node name="Count" type="Label" parent="HUD/Inventory/Shell"]
-offset_left = 128.0
-offset_right = 405.0
-offset_bottom = 295.0
-theme_override_fonts/font = ExtResource("5_ncv0j")
-theme_override_font_sizes/font_size = 256
-text = "16"
 
 [node name="Obstacles" type="Node2D" parent="."]
 

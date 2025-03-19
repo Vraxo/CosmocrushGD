@@ -122,7 +122,7 @@ initial_velocity_max = 150.0
 scale_amount_min = 8.0
 scale_amount_max = 8.0
 scale_amount_curve = SubResource("Curve_2qoxu")
-color = Color(1, 0, 0.0431373, 1)
+color = Color(0.639216, 0.286275, 0.643137, 1)
 
 [node name="DamageTimer" type="Timer" parent="."]
 wait_time = 0.5
