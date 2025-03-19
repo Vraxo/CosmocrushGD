@@ -22,13 +22,13 @@ public partial class EnemySpawner : Node
 		spawnTimer = new Timer
 		{
 			WaitTime = spawnRate,
-			Autostart = true,
+			//Autostart = true,
 			OneShot = false
 		};
 
 		spawnTimer.Timeout += SpawnEnemy;
 		AddChild(spawnTimer);
-		spawnTimer.Start();
+		//spawnTimer.Start();
 	}
 
 	private void SpawnEnemy()
