@@ -17,65 +17,59 @@ public partial class Projectile : Area2D
     public override void _Ready()
     {
         BodyEntered += OnBodyEntered;
-
-        // Set up automatic destruction after 1 second if not already destroyed
         GetTree().CreateTimer(10.0).Timeout += () =>
         {
-            if (active)
-            {
-                StartDestructionSequence();
-            }
+            if (active) StartDestructionSequence();
         };
     }
 
     public override void _PhysicsProcess(double delta)
     {
-        if (!active)
-        {
+        if (!active || Direction == Vector2.Zero)
             return;
-        }
 
-        if (Direction != Vector2.Zero)
-        {
-            GlobalPosition += Direction * Speed * (float)delta;
-        }
+        GlobalPosition += Direction * Speed * (float)delta;
     }
 
     private void OnBodyEntered(Node2D body)
     {
-        if (!active)
-        {
+        if (!active || body is not Player player)
             return;
-        }
 
-        if (body is Player player)
-        {
-            player.TakeDamage(1);
-            player.ApplyKnockback(Direction * KnockbackForce);
-            StartDestructionSequence();
-        }
+        player.TakeDamage(1);
+        player.ApplyKnockback(Direction * KnockbackForce);
+        StartDestructionSequence();
     }
 
     private void StartDestructionSequence()
     {
-        if (!active)
-        {
-            return;
-        }
-
+        if (!active) return;
         active = false;
 
-        sprite.Visible = false;
+        // Use deferred calls for physics properties
+        this.SetDeferred(Area2D.PropertyName.Monitoring, false);
+        this.SetDeferred(Area2D.PropertyName.Monitorable, false);
 
+        // Hide visual components
+        if (sprite != null)
+            sprite.Visible = false;
+
+        // Stop movement
         Direction = Vector2.Zero;
-        Monitoring = false;
-        Monitorable = false;
 
-        if (destructionParticles is not null)
+        // Start particles
+        if (destructionParticles != null)
         {
             destructionParticles.Emitting = true;
+            // Ensure particles complete before freeing
+            destructionParticles.OneShot = true;
         }
 
-        GetTree().CreateTimer(1.0).Timeout += QueueFree;
+        // Queue free after delay using SceneTreeTimer
+        GetTree().CreateTimer(1.0).Timeout += () =>
+        {
+            if (IsInstanceValid(this))
+                QueueFree();
+        };
     }
 }
