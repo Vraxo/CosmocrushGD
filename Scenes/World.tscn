@@ -1,4 +1,4 @@
-[gd_scene load_steps=16 format=3 uid="uid://rflfyu4apk38"]
+[gd_scene load_steps=13 format=3 uid="uid://rflfyu4apk38"]
 
 [ext_resource type="AudioStream" uid="uid://blvqtb4sj0647" path="res://Audio/Songs/Going Ultimate!.mp3" id="1_4w1vw"]
 [ext_resource type="Script" path="res://Scripts/Menu/ThemePlayer.cs" id="2_bvcjy"]
@@ -24,41 +24,6 @@ bg_color = Color(0.0361791, 0.727803, 0, 1)
 vertices = PackedVector2Array(1766, 942, -518, 942, -518, -278, 1766, -278)
 polygons = Array[PackedInt32Array]([PackedInt32Array(0, 1, 2, 3)])
 outlines = Array[PackedVector2Array]([PackedVector2Array(-528, -288, -528, 952, 1776, 952, 1776, -288)])
-
-[sub_resource type="Animation" id="Animation_pnc6v"]
-resource_name = "new_animation"
-length = 0.6
-tracks/0/type = "bezier"
-tracks/0/imported = false
-tracks/0/enabled = true
-tracks/0/path = NodePath(".:material:shader_parameter/flash_value")
-tracks/0/interp = 1
-tracks/0/loop_wrap = true
-tracks/0/keys = {
-"handle_modes": PackedInt32Array(0, 0, 0),
-"points": PackedFloat32Array(0, -0.25, 0, 0.25, 0, 0.5, -0.25, 0, 0.25, 0, 0, -0.25, 0, 0.25, 0),
-"times": PackedFloat32Array(0, 0.3, 0.6)
-}
-
-[sub_resource type="Animation" id="Animation_ojtld"]
-length = 0.001
-tracks/0/type = "bezier"
-tracks/0/imported = false
-tracks/0/enabled = true
-tracks/0/path = NodePath(".:material:shader_parameter/flash_value")
-tracks/0/interp = 1
-tracks/0/loop_wrap = true
-tracks/0/keys = {
-"handle_modes": PackedInt32Array(0),
-"points": PackedFloat32Array(0, -0.25, 0, 0.25, 0),
-"times": PackedFloat32Array(0)
-}
-
-[sub_resource type="AnimationLibrary" id="AnimationLibrary_vmuel"]
-_data = {
-"HitFlash": SubResource("Animation_pnc6v"),
-"RESET": SubResource("Animation_ojtld")
-}
 
 [node name="World" type="WorldEnvironment"]
 environment = SubResource("Environment_fpnmc")
@@ -139,16 +104,6 @@ position = Vector2(664, 264)
 
 [node name="Enemy2" parent="EnemySpawner" instance=ExtResource("5_p3yak")]
 position = Vector2(973, 387)
-
-[node name="AnimationPlayer" type="AnimationPlayer" parent="."]
-libraries = {
-"": SubResource("AnimationLibrary_vmuel")
-}
-
-[node name="AnimationPlayer" type="AnimationPlayer" parent="AnimationPlayer"]
-libraries = {
-"": SubResource("AnimationLibrary_vmuel")
-}
 
 [node name="MeleeEnemy" parent="." instance=ExtResource("14_qfgrb")]
 position = Vector2(1085, 806)
