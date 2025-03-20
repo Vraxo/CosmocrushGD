@@ -6,6 +6,8 @@ public partial class EnemySpawner : Node
 {
 	private enum SpawnEdge { Top, Right, Bottom, Left }
 
+	[Export] private Timer spawnTimer;
+	[Export] private Timer rateIncreaseTimer;
 	[Export] private PackedScene meleeEnemyScene;
 	[Export] private PackedScene rangedEnemyScene;
 	[Export] private Vector2 spawnMargin = new(100, 100);
@@ -16,8 +18,6 @@ public partial class EnemySpawner : Node
 	[Export] private float timeMultiplier = 0.1f;
 	[Export] private float minPlayerDistance = 500.0f;
 	[Export] private Vector2 worldSize = new(2272, 1208);
-	[Export] private Timer spawnTimer;
-	[Export] private Timer rateIncreaseTimer;
 
 	private Player player;
 	private bool spawnMeleeNext = true;

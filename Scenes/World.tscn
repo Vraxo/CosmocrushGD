@@ -5,10 +5,10 @@
 [ext_resource type="Script" path="res://Scripts/Menu/ThemePlayer.cs" id="2_bvcjy"]
 [ext_resource type="PackedScene" uid="uid://druxgxf4hraot" path="res://Scenes/PauseMenu.tscn" id="2_oslhl"]
 [ext_resource type="PackedScene" uid="uid://b3dwcw52g56vq" path="res://Scenes/Player.tscn" id="3_litg1"]
-[ext_resource type="Script" path="res://Scripts/EnemySpawner.cs" id="4_i286g"]
 [ext_resource type="PackedScene" uid="uid://cglik168uf50p" path="res://Scenes/Enemies/MeleeEnemy.tscn" id="5_p3yak"]
 [ext_resource type="PackedScene" uid="uid://ccgy7bcrdqq1t" path="res://Scenes/Rock.tscn" id="7_suwn8"]
 [ext_resource type="Script" path="res://Scripts/Inventory/HealthBar.cs" id="8_h5gnh"]
+[ext_resource type="PackedScene" uid="uid://bqu24huyyxf2h" path="res://EnemySpawner.tscn" id="9_ukot3"]
 [ext_resource type="Script" path="res://Scripts/ShakeyCamera.cs" id="11_0a8f1"]
 [ext_resource type="PackedScene" uid="uid://baoyd4vyuac" path="res://Scenes/Enemies/RangedEnemy.tscn" id="14_qfgrb"]
 
@@ -108,20 +108,13 @@ script = ExtResource("11_0a8f1")
 [node name="PauseMenu" parent="Player/Camera2D" instance=ExtResource("2_oslhl")]
 visible = false
 
-[node name="EnemySpawner" type="Node2D" parent="." node_paths=PackedStringArray("spawnTimer", "rateIncreaseTimer")]
-script = ExtResource("4_i286g")
-meleeEnemyScene = ExtResource("5_p3yak")
-rangedEnemyScene = ExtResource("14_qfgrb")
-playerPath = NodePath("../Player")
-spawnTimer = NodePath("SpawnTimer")
-rateIncreaseTimer = NodePath("RateIncreaseTimer")
+[node name="EnemySpawner" parent="." instance=ExtResource("9_ukot3")]
 
-[node name="SpawnTimer" type="Timer" parent="EnemySpawner"]
-wait_time = 2.0
-autostart = true
+[node name="MeleeEnemy2" parent="EnemySpawner" instance=ExtResource("14_qfgrb")]
+position = Vector2(838, 636)
 
-[node name="RateIncreaseTimer" type="Timer" parent="EnemySpawner"]
-autostart = true
+[node name="MeleeEnemy3" parent="EnemySpawner" instance=ExtResource("14_qfgrb")]
+position = Vector2(1408, 507)
 
 [node name="Enemy" parent="EnemySpawner" instance=ExtResource("5_p3yak")]
 position = Vector2(664, 264)
@@ -131,9 +124,3 @@ position = Vector2(973, 387)
 
 [node name="MeleeEnemy" parent="EnemySpawner" instance=ExtResource("14_qfgrb")]
 position = Vector2(1085, 806)
-
-[node name="MeleeEnemy2" parent="." instance=ExtResource("14_qfgrb")]
-position = Vector2(838, 636)
-
-[node name="MeleeEnemy3" parent="." instance=ExtResource("14_qfgrb")]
-position = Vector2(1408, 507)
