@@ -4,120 +4,142 @@ namespace CosmocrushGD;
 
 public partial class EnemySpawner : Node
 {
-    [Export] private PackedScene meleeEnemyScene;
-    [Export] private PackedScene rangedEnemyScene;
-    [Export] private float baseSpawnRate = 2.0f;
-    [Export] private Vector2 spawnMargin = new(100, 100);
-    [Export] private NodePath playerPath;
-    [Export] private float timeMultiplier = 0.1f;
-    [Export] private float minSpawnInterval = 0.5f;
+	private enum SpawnEdge { Top, Right, Bottom, Left }
 
-    private readonly Vector2 _worldSize = new(2272, 1208);
-    private Timer spawnTimer;
-    private Timer rateIncreaseTimer;
-    private Player player;
-    private bool spawnMeleeNext = true;
-    private float timeElapsed;
+	[Export] private PackedScene meleeEnemyScene;
+	[Export] private PackedScene rangedEnemyScene;
+	[Export] private Vector2 spawnMargin = new(100, 100);
+	[Export] private NodePath playerPath;
+	[Export] private NodePath enemyContainerPath;
+	[Export] private float baseSpawnRate = 2.0f;
+	[Export] private float minSpawnInterval = 0.5f;
+	[Export] private float timeMultiplier = 0.1f;
+	[Export] private float minPlayerDistance = 500.0f;
+	[Export] private Vector2 worldSize = new(2272, 1208);
+	[Export] private Timer spawnTimer;
+	[Export] private Timer rateIncreaseTimer;
 
-    public override void _Ready()
-    {
-        player = GetNode<Player>(playerPath);
-        if (player == null) GD.PrintErr("Player node not found!");
-        SetupTimers();
-    }
+	private Player player;
+	private bool spawnMeleeNext = true;
+	private float timeElapsed;
+	private const int MaxSpawnAttempts = 10;
 
-    private void SetupTimers()
-    {
-        spawnTimer = new Timer
-        {
-            WaitTime = baseSpawnRate,
-            Autostart = true,
-            OneShot = false
-        };
-        spawnTimer.Timeout += SpawnEnemy;
-        AddChild(spawnTimer);
+	public override void _Ready()
+	{
+		player = GetNode<Player>(playerPath);
 
-        rateIncreaseTimer = new Timer
-        {
-            WaitTime = 1.0f,
-            Autostart = true,
-            OneShot = false
-        };
-        rateIncreaseTimer.Timeout += RateIncrease;
-        AddChild(rateIncreaseTimer);
-    }
+		if (player is null)
+		{
+			GD.PrintErr("Player node not found!");
+		}
 
-    private void RateIncrease()
-    {
-        timeElapsed += 1.0f;
-        float newInterval = baseSpawnRate / Mathf.Sqrt(1 + timeElapsed * timeMultiplier);
-        newInterval = Mathf.Clamp(newInterval, minSpawnInterval, baseSpawnRate);
-        spawnTimer.WaitTime = newInterval;
-        GD.Print("Current spawn interval: ", newInterval.ToString("0.00"));
-    }
+		SetupTimers();
+	}
 
-    private void SpawnEnemy()
-    {
-        if (meleeEnemyScene == null || rangedEnemyScene == null || player == null)
-        {
-            GD.PrintErr("Missing required references!");
-            return;
-        }
+	private void SetupTimers()
+	{
+		if (spawnTimer is null || rateIncreaseTimer is null)
+		{
+			GD.PrintErr("Timer references not set!");
+			return;
+		}
 
-        var selectedScene = spawnMeleeNext ? meleeEnemyScene : rangedEnemyScene;
-        spawnMeleeNext = !spawnMeleeNext;
+		spawnTimer.Timeout += SpawnEnemy;
+		rateIncreaseTimer.Timeout += RateIncrease;
+	}
 
-        Vector2 spawnPosition;
-        bool validPosition = false;
-        int attempts = 0;
-        const int maxAttempts = 10;
+	private void RateIncrease()
+	{
+		timeElapsed += 1.0f;
+		spawnTimer.WaitTime = CalculateSpawnInterval();
+		GD.Print($"Current spawn interval: {spawnTimer.WaitTime:0.00}");
+	}
 
-        while (!validPosition && attempts < maxAttempts)
-        {
-            spawnPosition = GetRandomEdgePosition();
-            if (spawnPosition.DistanceTo(player.GlobalPosition) >= 500)
-            {
-                validPosition = true;
-                CreateEnemy(selectedScene, spawnPosition);
-            }
-            attempts++;
-        }
+	private float CalculateSpawnInterval()
+	{
+		float calculatedInterval = baseSpawnRate / Mathf.Sqrt(1 + timeElapsed * timeMultiplier);
+		return Mathf.Clamp(calculatedInterval, minSpawnInterval, baseSpawnRate);
+	}
 
-        if (!validPosition) GD.Print("Failed to find valid spawn position");
-    }
+	private void SpawnEnemy()
+	{
+		if (meleeEnemyScene is null || rangedEnemyScene is null || player is null)
+		{
+			GD.PrintErr("Missing required references!");
+			return;
+		}
 
-    private Vector2 GetRandomEdgePosition()
-    {
-        var edge = (int)(GD.Randi() % 4);
-        float x = 0, y = 0;
+		var selectedScene = spawnMeleeNext ? meleeEnemyScene : rangedEnemyScene;
+		spawnMeleeNext = !spawnMeleeNext;
 
-        switch (edge)
-        {
-            case 0:
-                x = (float)GD.RandRange(spawnMargin.X, _worldSize.X - spawnMargin.X);
-                y = (float)GD.RandRange(0, spawnMargin.Y);
-                break;
-            case 1:
-                x = (float)GD.RandRange(_worldSize.X - spawnMargin.X, _worldSize.X);
-                y = (float)GD.RandRange(spawnMargin.Y, _worldSize.Y - spawnMargin.Y);
-                break;
-            case 2:
-                x = (float)GD.RandRange(spawnMargin.X, _worldSize.X - spawnMargin.X);
-                y = (float)GD.RandRange(_worldSize.Y - spawnMargin.Y, _worldSize.Y);
-                break;
-            case 3:
-                x = (float)GD.RandRange(0, spawnMargin.X);
-                y = (float)GD.RandRange(spawnMargin.Y, _worldSize.Y - spawnMargin.Y);
-                break;
-        }
+		TrySpawnEnemy(selectedScene);
+	}
 
-        return new Vector2(x, y);
-    }
+	private void TrySpawnEnemy(PackedScene enemyScene)
+	{
+		bool foundValidPosition = false;
+		int attempts = 0;
 
-    private void CreateEnemy(PackedScene scene, Vector2 position)
-    {
-        var enemy = scene.Instantiate<Node2D>();
-        enemy.Position = position;
-        GetParent().AddChild(enemy);
-    }
+		while (!foundValidPosition && attempts < MaxSpawnAttempts)
+		{
+			Vector2 spawnPosition = GetRandomEdgePosition();
+
+			if (IsPositionValid(spawnPosition))
+			{
+				CreateEnemy(enemyScene, spawnPosition);
+				foundValidPosition = true;
+			}
+
+			attempts++;
+		}
+
+		if (!foundValidPosition)
+		{
+			GD.Print("Failed to find valid spawn position");
+		}
+	}
+
+	private bool IsPositionValid(Vector2 position)
+	{
+		return position.DistanceTo(player.GlobalPosition) >= minPlayerDistance;
+	}
+
+	private Vector2 GetRandomEdgePosition()
+	{
+		SpawnEdge edge = (SpawnEdge)(GD.Randi() % 4);
+		float x = 0f;
+		float y = 0f;
+
+		switch (edge)
+		{
+			case SpawnEdge.Top:
+				x = (float)GD.RandRange(spawnMargin.X, worldSize.X - spawnMargin.X);
+				y = (float)GD.RandRange(0, spawnMargin.Y);
+				break;
+
+			case SpawnEdge.Right:
+				x = (float)GD.RandRange(worldSize.X - spawnMargin.X, worldSize.X);
+				y = (float)GD.RandRange(spawnMargin.Y, worldSize.Y - spawnMargin.Y);
+				break;
+
+			case SpawnEdge.Bottom:
+				x = (float)GD.RandRange(spawnMargin.X, worldSize.X - spawnMargin.X);
+				y = (float)GD.RandRange(worldSize.Y - spawnMargin.Y, worldSize.Y);
+				break;
+
+			case SpawnEdge.Left:
+				x = (float)GD.RandRange(0, spawnMargin.X);
+				y = (float)GD.RandRange(spawnMargin.Y, worldSize.Y - spawnMargin.Y);
+				break;
+		}
+
+		return new Vector2(x, y);
+	}
+
+	private void CreateEnemy(PackedScene scene, Vector2 position)
+	{
+		var enemy = scene.Instantiate<Node2D>();
+		enemy.Position = position;
+		AddChild(enemy);
+	}
 }

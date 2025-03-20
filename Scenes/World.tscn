@@ -108,11 +108,20 @@ script = ExtResource("11_0a8f1")
 [node name="PauseMenu" parent="Player/Camera2D" instance=ExtResource("2_oslhl")]
 visible = false
 
-[node name="EnemySpawner" type="Node2D" parent="."]
+[node name="EnemySpawner" type="Node2D" parent="." node_paths=PackedStringArray("spawnTimer", "rateIncreaseTimer")]
 script = ExtResource("4_i286g")
 meleeEnemyScene = ExtResource("5_p3yak")
 rangedEnemyScene = ExtResource("14_qfgrb")
 playerPath = NodePath("../Player")
+spawnTimer = NodePath("SpawnTimer")
+rateIncreaseTimer = NodePath("RateIncreaseTimer")
+
+[node name="SpawnTimer" type="Timer" parent="EnemySpawner"]
+wait_time = 2.0
+autostart = true
+
+[node name="RateIncreaseTimer" type="Timer" parent="EnemySpawner"]
+autostart = true
 
 [node name="Enemy" parent="EnemySpawner" instance=ExtResource("5_p3yak")]
 position = Vector2(664, 264)
@@ -120,7 +129,7 @@ position = Vector2(664, 264)
 [node name="Enemy2" parent="EnemySpawner" instance=ExtResource("5_p3yak")]
 position = Vector2(973, 387)
 
-[node name="MeleeEnemy" parent="." instance=ExtResource("14_qfgrb")]
+[node name="MeleeEnemy" parent="EnemySpawner" instance=ExtResource("14_qfgrb")]
 position = Vector2(1085, 806)
 
 [node name="MeleeEnemy2" parent="." instance=ExtResource("14_qfgrb")]
