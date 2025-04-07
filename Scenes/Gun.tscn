@@ -5,7 +5,7 @@
 [ext_resource type="AudioStream" uid="uid://sm84ex4ys2ub" path="res://Audio/SFX/Gunshot.mp3" id="2_ynnvr"]
 [ext_resource type="AudioStream" uid="uid://ccneuoh8xdv8g" path="res://Audio/SFX/Reload.mp3" id="4_rjqaf"]
 
-[node name="Gun" type="Sprite2D" node_paths=PackedStringArray("rayCast", "bulletTrail", "cooldownTimer")]
+[node name="Gun" type="Sprite2D" node_paths=PackedStringArray("rayCast", "bulletTrail", "cooldownTimer", "audioPlayerContainer")]
 self_modulate = Color(2, 2, 2, 1)
 texture = ExtResource("1_lqgwl")
 offset = Vector2(16, 0)
@@ -14,6 +14,7 @@ rayCast = NodePath("RayCast")
 bulletTrail = NodePath("BulletTrail")
 cooldownTimer = NodePath("CooldownTimer")
 gunshotAudio = ExtResource("2_ynnvr")
+audioPlayerContainer = NodePath("AudioPlayerContainer")
 
 [node name="RayCast" type="RayCast2D" parent="."]
 exclude_parent = false
@@ -34,3 +35,5 @@ one_shot = true
 
 [node name="ReloadTimer" type="Timer" parent="."]
 one_shot = true
+
+[node name="AudioPlayerContainer" type="Node" parent="."]

@@ -9,12 +9,13 @@ public partial class UIButton : Button
 
     public override void _Ready()
     {
+        originalScale = Scale;
+
         MouseEntered += OnMouseEntered;
         MouseExited += OnMouseExited;
-        Resized += OnResized; // Update pivot when size changes
+        Resized += OnResized;
 
         UpdatePivot();
-        originalScale = Scale;
     }
 
     private void OnResized()
@@ -24,7 +25,6 @@ public partial class UIButton : Button
 
     private void UpdatePivot()
     {
-        // Use RectSize instead of Size for accurate dimensions
         PivotOffset = Size / 2;
     }
 
@@ -46,6 +46,10 @@ public partial class UIButton : Button
             .SetTrans(Tween.TransitionType.Back)
             .SetEase(Tween.EaseType.Out);
 
-        activeTween.TweenProperty(this, "scale", originalScale * targetScale, 0.2f);
+        activeTween.TweenProperty(
+            this,
+            "scale",
+            originalScale * targetScale,
+            0.2f);
     }
 }

@@ -1,0 +1,128 @@
+[gd_scene load_steps=13 format=3 uid="uid://dplq8x7y6w5f1"]
+
+[ext_resource type="Shader" path="res://Shaders/EnemyHitFlash.gdshader" id="2_2b341"]
+[ext_resource type="Script" path="res://Scripts/Enemy/ExplodingEnemy.cs" id="2_p2ur1"]
+[ext_resource type="PackedScene" uid="uid://1jkhq6d44qfr" path="res://Scenes/DamageIndicator.tscn" id="2_r1px8"]
+[ext_resource type="PackedScene" uid="uid://dmqcrw4acmcn4" path="res://Scenes/Enemies/Projectile.tscn" id="3_proj"]
+[ext_resource type="Texture2D" uid="uid://dbgfgox7t13k8" path="res://Sprites/Enemies/ExplodingEnemy.png" id="5_15nkj"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_kqe6k"]
+shader = ExtResource("2_2b341")
+shader_parameter/flash_color = Color(1, 1, 1, 1)
+shader_parameter/flash_value = null
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_85f4y"]
+size = Vector2(32, 32)
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_5b5ve"]
+resource_local_to_scene = true
+shader = ExtResource("2_2b341")
+shader_parameter/flash_color = Color(1, 1, 1, 1)
+shader_parameter/flash_value = 0.0
+
+[sub_resource type="Animation" id="Animation_pnc6v"]
+resource_name = "new_animation"
+length = 0.6
+tracks/0/type = "bezier"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath(".:material:shader_parameter/flash_value")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"handle_modes": PackedInt32Array(0, 0, 0),
+"points": PackedFloat32Array(0, -0.25, 0, 0.25, 0, 0.5, -0.25, 0, 0.25, 0, 0, -0.25, 0, 0.25, 0),
+"times": PackedFloat32Array(0, 0.3, 0.6)
+}
+
+[sub_resource type="Animation" id="Animation_ojtld"]
+length = 0.001
+tracks/0/type = "bezier"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath(".:material:shader_parameter/flash_value")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"handle_modes": PackedInt32Array(0),
+"points": PackedFloat32Array(0, -0.25, 0, 0.25, 0),
+"times": PackedFloat32Array(0)
+}
+
+[sub_resource type="AnimationLibrary" id="AnimationLibrary_vmuel"]
+_data = {
+"HitFlash": SubResource("Animation_pnc6v"),
+"RESET": SubResource("Animation_ojtld")
+}
+
+[sub_resource type="Curve" id="Curve_2qoxu"]
+_data = [Vector2(0.00433911, 0.993671), 0.0, 0.0, 0, 0, Vector2(0.998999, 0.00219095), 0.0, 0.0, 0, 0]
+point_count = 2
+
+[node name="ExplodingEnemy" type="CharacterBody2D" node_paths=PackedStringArray("Navigator", "Sprite", "DeathTimer", "DamageCooldownTimer", "Collider", "DamageParticles", "DeathParticles", "HitAnimationPlayer")]
+material = SubResource("ShaderMaterial_kqe6k")
+input_pickable = true
+motion_mode = 1
+script = ExtResource("2_p2ur1")
+projectileScene = ExtResource("3_proj")
+Navigator = NodePath("Navigator")
+Sprite = NodePath("Sprite")
+DeathTimer = NodePath("DeathTimer")
+DamageCooldownTimer = NodePath("DamageTimer")
+Collider = NodePath("Collider")
+DamageParticles = NodePath("DamageParticles")
+DeathParticles = NodePath("DeathParticles")
+DamageIndicatorScene = ExtResource("2_r1px8")
+HitAnimationPlayer = NodePath("Sprite/AnimationPlayer")
+
+[node name="Collider" type="CollisionShape2D" parent="."]
+shape = SubResource("RectangleShape2D_85f4y")
+
+[node name="Navigator" type="NavigationAgent2D" parent="."]
+
+[node name="Sprite" type="Sprite2D" parent="."]
+material = SubResource("ShaderMaterial_5b5ve")
+texture = ExtResource("5_15nkj")
+
+[node name="AnimationPlayer" type="AnimationPlayer" parent="Sprite"]
+libraries = {
+"": SubResource("AnimationLibrary_vmuel")
+}
+
+[node name="DeathTimer" type="Timer" parent="."]
+
+[node name="DamageParticles" type="CPUParticles2D" parent="."]
+position = Vector2(0, -1)
+emitting = false
+amount = 25
+lifetime = 0.5
+one_shot = true
+explosiveness = 1.0
+spread = 180.0
+gravity = Vector2(0, 0)
+initial_velocity_min = 50.0
+initial_velocity_max = 100.0
+scale_amount_min = 4.0
+scale_amount_max = 4.0
+scale_amount_curve = SubResource("Curve_2qoxu")
+color = Color(1, 0, 0.0431373, 1)
+
+[node name="DeathParticles" type="CPUParticles2D" parent="."]
+position = Vector2(0, -1)
+emitting = false
+amount = 25
+one_shot = true
+explosiveness = 1.0
+emission_shape = 3
+emission_rect_extents = Vector2(1, 1)
+spread = 180.0
+gravity = Vector2(0, 0)
+initial_velocity_min = 100.0
+initial_velocity_max = 150.0
+scale_amount_min = 8.0
+scale_amount_max = 8.0
+scale_amount_curve = SubResource("Curve_2qoxu")
+color = Color(1, 0, 0.0431373, 1)
+
+[node name="DamageTimer" type="Timer" parent="."]
+wait_time = 0.5

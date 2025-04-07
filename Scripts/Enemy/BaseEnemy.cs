@@ -1,154 +1,240 @@
-﻿using System.Runtime.InteropServices;
+using System.Runtime.InteropServices;
 using Godot;
 
 namespace CosmocrushGD;
 
 public abstract partial class BaseEnemy : CharacterBody2D
 {
-    [Export] protected NavigationAgent2D Navigator;
-    [Export] protected Sprite2D Sprite;
-    [Export] protected Timer DeathTimer;
-    [Export] protected Timer DamageCooldownTimer;
-    [Export] protected CollisionShape2D Collider;
-    [Export] protected CpuParticles2D DamageParticles;
-    [Export] protected CpuParticles2D DeathParticles;
-    [Export] protected PackedScene DamageIndicatorScene;
-    [Export] protected AnimationPlayer HitAnimationPlayer;
+	[Export] protected NavigationAgent2D Navigator;
+	[Export] protected Sprite2D Sprite;
+	[Export] protected Timer DeathTimer;
+	[Export] protected Timer DamageCooldownTimer;
+	[Export] public CollisionShape2D Collider;
+	[Export] public CpuParticles2D DamageParticles;
+	[Export] public CpuParticles2D DeathParticles;
+	[Export] protected PackedScene DamageIndicatorScene;
+	[Export] protected AnimationPlayer HitAnimationPlayer;
 
-    protected int Health;
-    protected bool Dead = false;
-    protected bool CanShoot = true;
-    protected Vector2 Knockback = Vector2.Zero;
-    protected Player TargetPlayer;
+	protected int Health;
+	protected bool Dead = false;
+	protected bool CanShoot = true;
+	protected Vector2 Knockback = Vector2.Zero;
+	protected Player TargetPlayer;
 
-    protected virtual int MaxHealth => 20;
-    protected virtual int Damage => 1;
-    protected virtual float Speed => 100f;
-    protected virtual float DamageRadius => 50f;
-    protected virtual float ProximityThreshold => 32f;
-    protected virtual float KnockbackRecovery => 0.1f;
-    protected virtual float AttackCooldown => 0.5f;
+	// New properties for pooling
+	public EnemyPoolManager PoolManager { get; set; }
+	public PackedScene SourceScene { get; set; }
 
-    public override void _Ready()
-    {
-        TargetPlayer = GetNode<Player>("/root/World/Player");
-        Health = MaxHealth;
 
-        DeathTimer.Timeout += OnDeathTimeout;
-        DamageCooldownTimer.WaitTime = AttackCooldown;
-        DamageCooldownTimer.Timeout += () => CanShoot = true;
-    }
+	protected virtual int MaxHealth => 20;
+	protected virtual int Damage => 1;
+	protected virtual float Speed => 100f;
+	protected virtual float DamageRadius => 50f;
+	protected virtual float ProximityThreshold => 32f;
+	protected virtual float KnockbackRecovery => 0.1f;
+	protected virtual float AttackCooldown => 0.5f;
 
-    public override void _Process(double delta)
-    {
-        if (Dead)
-        {
-            return;
-        }
+	public override void _Ready()
+	{
+		TargetPlayer = GetNode<Player>("/root/World/Player");
+		// Health is reset in ResetState
+		// Connect signals once
+		DeathTimer.Timeout += ReturnToPool; // Changed from OnDeathTimeout
+		DamageCooldownTimer.WaitTime = AttackCooldown;
+		DamageCooldownTimer.Timeout += () => CanShoot = true;
+	}
 
-        UpdateSpriteDirection();
-        AttemptAttack();
-    }
+	// New method to reset the enemy state when reused
+	public virtual void ResetState(Vector2 spawnPosition)
+	{
+		GlobalPosition = spawnPosition;
+		Health = MaxHealth;
+		Dead = false;
+		Velocity = Vector2.Zero;
+		Knockback = Vector2.Zero;
+		CanShoot = true; // Reset attack capability
 
-    public override void _PhysicsProcess(double delta)
-    {
-        if (Dead)
-        {
-            return;
-        }
+		// Re-enable components
+		Visible = true; // Make sure the root node is visible
+		Sprite.Visible = true;
+		Collider.Disabled = false;
 
-        Knockback = Knockback.Lerp(Vector2.Zero, KnockbackRecovery);
-        Velocity = CalculateMovement() + Knockback;
-        MoveAndSlide();
-    }
+		// Reset particles
+		DamageParticles.Emitting = false;
+		DamageParticles.Restart();
+		DeathParticles.Emitting = false;
+		DeathParticles.Restart();
 
-    protected virtual Vector2 CalculateMovement()
-    {
-        if (TargetPlayer == null) return Vector2.Zero;
+		// Reset timers if needed (stop them if they might be running)
+		DeathTimer.Stop();
+		DamageCooldownTimer.Stop();
 
-        // Check if within proximity threshold to stop moving closer
-        float distanceToPlayer = GlobalPosition.DistanceTo(TargetPlayer.GlobalPosition);
-        if (distanceToPlayer <= ProximityThreshold)
-        {
-            return Vector2.Zero;
-        }
+		// Ensure animations are stopped or reset if applicable
+		if (HitAnimationPlayer.IsPlaying())
+		{
+			HitAnimationPlayer.Stop(true); // Reset animation
+		}
 
-        Navigator.TargetPosition = TargetPlayer.GlobalPosition;
+		// Re-enable processing
+		ProcessMode = ProcessModeEnum.Inherit;
+	}
 
-        // Get the navigation map RID through the NavigationServer
-        Rid mapRid = NavigationServer2D.AgentGetMap(Navigator.GetRid());
+	public override void _Process(double delta)
+	{
+		if (Dead)
+		{
+			return;
+		}
 
-        if (!mapRid.IsValid)
-        {
-            // No valid navigation map associated with the agent
-            return Vector2.Zero;
-        }
+		UpdateSpriteDirection();
+		AttemptAttack();
+	}
 
-        // Check if the map has completed synchronization
-        long iterationId = NavigationServer2D.MapGetIterationId(mapRid);
-        if (iterationId <= 0)
-        {
-            // Map hasn't synchronized yet
-            return Vector2.Zero;
-        }
+	public override void _PhysicsProcess(double delta)
+	{
+		if (Dead)
+		{
+			return;
+		}
 
-        // Safe to get path position now
-        Vector2 direction = (Navigator.GetNextPathPosition() - GlobalPosition).Normalized();
-        return direction * Speed;
-    }
+		Knockback = Knockback.Lerp(Vector2.Zero, KnockbackRecovery);
+		Velocity = CalculateMovement() + Knockback;
+		MoveAndSlide();
+	}
 
-    public void TakeDamage(int damage)
-    {
-        Health -= damage;
-        HitAnimationPlayer.Play("HitFlash");
-        ShowDamageIndicator(damage);
-        DamageParticles.Emitting = true;
+	protected virtual Vector2 CalculateMovement()
+	{
+		if (TargetPlayer is null || !IsInstanceValid(TargetPlayer))
+		{
+			TargetPlayer = null; // Clear invalid reference
+			return Vector2.Zero;
+		}
 
-        if (Health <= 0) Die();
-    }
+		float distanceToPlayer = GlobalPosition.DistanceTo(TargetPlayer.GlobalPosition);
 
-    public void ApplyKnockback(Vector2 force)
-    {
-        if (Knockback.Length() < force.Length())
-        {
-            Knockback = force;
-        }
-        else
-        {
-            Knockback += force;
-        }
-    }
+		if (distanceToPlayer <= ProximityThreshold)
+		{
+			return Vector2.Zero;
+		}
 
-    protected virtual void UpdateSpriteDirection()
-    {
-        if (TargetPlayer is null)
-        {
-            return;
-        }
+		if (Navigator is null)
+		{
+			return Vector2.Zero;
+		}
 
-        Sprite.FlipH = GlobalPosition.X > TargetPlayer.GlobalPosition.X;
-    }
+		Navigator.TargetPosition = TargetPlayer.GlobalPosition;
 
-    protected abstract void AttemptAttack();
+		// Optimization: Avoid frequent NavigationServer calls if possible or not needed every frame
+		// However, standard use requires checking the map
+		Rid mapRid = NavigationServer2D.AgentGetMap(Navigator.GetRid());
+		if (!mapRid.IsValid)
+		{
+			return Vector2.Zero;
+		}
+		// Consider if you need iteration ID check every frame
 
-    protected virtual void Die()
-    {
-        Dead = true;
-        Collider.Disabled = true;
-        Sprite.Visible = false;
-        DeathParticles.Emitting = true;
-        DeathTimer.Start();
-    }
+		if (Navigator.IsNavigationFinished())
+		{
+			return Vector2.Zero; // Or maybe direct movement if close enough but not finished?
+		}
 
-    private void ShowDamageIndicator(int damage)
-    {
-        var indicator = DamageIndicatorScene.Instantiate<DamageIndicator>();
-        indicator.Text = damage.ToString();
-        indicator.Health = Health;
-        indicator.MaxHealth = MaxHealth;
-        indicator.Position = new Vector2(0, -Sprite.Texture.GetHeight() / 2);
-        AddChild(indicator);
-    }
+		Vector2 direction = (Navigator.GetNextPathPosition() - GlobalPosition).Normalized();
+		return direction * Speed;
+	}
 
-    private void OnDeathTimeout() => QueueFree();
+	public void TakeDamage(int damage)
+	{
+		if (Dead)
+		{
+			return;
+		}
+
+		Health -= damage;
+		HitAnimationPlayer?.Play("HitFlash");
+		ShowDamageIndicator(damage);
+
+		DamageParticles.Emitting = true;
+
+		if (Health <= 0)
+		{
+			Die();
+		}
+	}
+
+	public void ApplyKnockback(Vector2 force)
+	{
+		if (Dead)
+		{
+			return;
+		}
+
+		Knockback += force;
+	}
+
+	protected virtual void UpdateSpriteDirection()
+	{
+		if (TargetPlayer is null || !IsInstanceValid(TargetPlayer) || Sprite == null)
+		{
+			return;
+		}
+
+		Sprite.FlipH = GlobalPosition.X > TargetPlayer.GlobalPosition.X;
+	}
+
+	protected abstract void AttemptAttack();
+
+	protected virtual void Die()
+	{
+		if (Dead)
+		{
+			return;
+		}
+
+		Dead = true;
+		Velocity = Vector2.Zero;
+		Knockback = Vector2.Zero;
+
+		Collider.Disabled = true;
+		Sprite.Visible = false;
+		DeathParticles.Emitting = true;
+
+		DeathTimer.Start();
+	}
+
+	private void ShowDamageIndicator(int damage)
+	{
+		if (DamageIndicatorScene is null)
+		{
+			return;
+		}
+
+		var indicator = DamageIndicatorScene.Instantiate<DamageIndicator>();
+		indicator.Text = damage.ToString();
+		// Optional: Check if Health/MaxHealth properties exist before setting
+		indicator.Health = Health;
+		indicator.MaxHealth = MaxHealth;
+		if (Sprite is not null && Sprite.Texture is not null)
+		{
+			indicator.Position = new(0, -Sprite.Texture.GetHeight() / 2f);
+		}
+		else
+		{
+			indicator.Position = new(0, -20);
+		}
+
+		AddChild(indicator);
+	}
+
+	private void ReturnToPool()
+	{
+		if (PoolManager is null)
+		{
+			GD.PushError("Enemy cannot return to pool: PoolManager reference missing!");
+			QueueFree();
+			return;
+		}
+		
+		PoolManager.ReturnEnemy(this);
+		return;
+	}
 }

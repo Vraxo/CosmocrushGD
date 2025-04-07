@@ -1,6 +1,6 @@
 [gd_scene load_steps=5 format=3 uid="uid://dmqcrw4acmcn4"]
 
-[ext_resource type="Texture2D" uid="uid://bg1u4fcmqhu6p" path="res://Sprites/RangedEnemy.png" id="1_aevvj"]
+[ext_resource type="Texture2D" uid="uid://bg1u4fcmqhu6p" path="res://Sprites/Enemies/RangedEnemy.png" id="1_aevvj"]
 [ext_resource type="Script" path="res://Scripts/Projectile.cs" id="1_jqlnh"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_0iyyh"]

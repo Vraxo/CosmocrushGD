@@ -3,7 +3,8 @@
 [ext_resource type="Shader" path="res://Shaders/EnemyHitFlash.gdshader" id="2_2b341"]
 [ext_resource type="Script" path="res://Scripts/Enemy/MeleeEnemy.cs" id="2_p2ur1"]
 [ext_resource type="PackedScene" uid="uid://1jkhq6d44qfr" path="res://Scenes/DamageIndicator.tscn" id="2_r1px8"]
-[ext_resource type="Texture2D" uid="uid://bhw4l7v110fek" path="res://Sprites/Enemy.png" id="2_y6omx"]
+[ext_resource type="Texture2D" uid="uid://bhw4l7v110fek" path="res://Sprites/Enemies/Enemy.png" id="2_y6omx"]
+
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_kqe6k"]
 shader = ExtResource("2_2b341")

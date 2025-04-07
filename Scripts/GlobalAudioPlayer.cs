@@ -16,13 +16,14 @@ public partial class GlobalAudioPlayer : Node
 			QueueFree();
 			return;
 		}
+
 		_instance = this;
 	}
 
 	public void PlaySound2D(AudioStream stream, Vector2 position = default, float volumeDb = 0f)
 	{
-		var audioPlayer = new AudioStreamPlayer2D
-		{
+        AudioStreamPlayer2D audioPlayer = new()
+        {
 			Stream = stream,
 			Position = position,
 			VolumeDb = volumeDb
@@ -35,8 +36,8 @@ public partial class GlobalAudioPlayer : Node
 
 	public void PlaySound(AudioStream stream, float volumeDb = 0f)
 	{
-		var audioPlayer = new AudioStreamPlayer
-		{
+        AudioStreamPlayer audioPlayer = new()
+        {
 			Stream = stream,
 			VolumeDb = volumeDb
 		};
@@ -46,7 +47,7 @@ public partial class GlobalAudioPlayer : Node
 		audioPlayer.Finished += () => CleanupAudioPlayer(audioPlayer);
 	}
 
-	private void CleanupAudioPlayer(Node audioPlayer)
+	private static void CleanupAudioPlayer(Node audioPlayer)
 	{
 		audioPlayer.QueueFree();
 	}

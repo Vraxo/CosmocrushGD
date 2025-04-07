@@ -28,6 +28,10 @@ window/size/viewport_height=720
 
 project/assembly_name="CosmocrushGD"
 
+[editor_plugins]
+
+enabled=PackedStringArray()
+
 [file_customization]
 
 folder_colors={
@@ -81,4 +85,5 @@ reload={
 
 [rendering]
 
+textures/vram_compression/import_etc2_astc=true
 viewport/hdr_2d=true

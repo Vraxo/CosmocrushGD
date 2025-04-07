@@ -15,10 +15,10 @@ public partial class Player : CharacterBody2D
 	[Export] private AudioStream damageAudio;
 	[Export] private Sprite2D sprite;
 	[Export] private CpuParticles2D damageParticles;
+	[Export] private Node audioPlayerContainer;
 
 	private Vector2 knockbackVelocity = Vector2.Zero;
 	private const float knockbackRecoverySpeed = 0.1f;
-	private Node audioPlayerContainer;
 
 	public event Action AudioPlayerFinished;
 
@@ -26,20 +26,18 @@ public partial class Player : CharacterBody2D
 	{
 		gun = GetNode<Gun>("Gun");
 
-		audioPlayerContainer = new Node();
-		AddChild(audioPlayerContainer);
-
 		AudioPlayerFinished += OnAudioPlayerFinished;
 	}
 
+	// Player.cs
 	public override void _PhysicsProcess(double delta)
 	{
 		knockbackVelocity = knockbackVelocity.Lerp(Vector2.Zero, knockbackRecoverySpeed);
+
+		// Get combined input from keyboard and simulated joystick
 		Vector2 direction = Input.GetVector("left", "right", "up", "down");
-
 		Vector2 movement = direction * Speed + knockbackVelocity;
-
-		Velocity = movement; 
+		Velocity = movement;
 		MoveAndSlide();
 	}
 
@@ -58,12 +56,11 @@ public partial class Player : CharacterBody2D
 
 	private void PlayDamageSound()
 	{
-		AudioStreamPlayer2D newAudioPlayer = new AudioStreamPlayer2D();
+		AudioStreamPlayer2D newAudioPlayer = new();
 		audioPlayerContainer.AddChild(newAudioPlayer);
+		
 		newAudioPlayer.Stream = damageAudio;
-
 		newAudioPlayer.Finished += () => AudioPlayerFinished?.Invoke();
-
 		newAudioPlayer.Play();
 	}
 
@@ -71,10 +68,12 @@ public partial class Player : CharacterBody2D
 	{
 		foreach (Node child in audioPlayerContainer.GetChildren())
 		{
-			if (child is AudioStreamPlayer2D audioPlayer && !audioPlayer.Playing)
+			if (child is not AudioStreamPlayer2D audioPlayer || audioPlayer.Playing)
 			{
-				audioPlayer.QueueFree();
+				continue;
 			}
+
+			audioPlayer.QueueFree();
 		}
 	}
 
@@ -85,14 +84,8 @@ public partial class Player : CharacterBody2D
 
 	public void ApplyKnockback(Vector2 knockback)
 	{
-		// Apply the greater of the existing knockback or the new knockback
-		if (knockbackVelocity.Length() < knockback.Length())
-		{
-			knockbackVelocity = knockback;
-		}
-		else
-		{
-			knockbackVelocity += knockback;
-		}
+		knockbackVelocity = (knockbackVelocity.Length() < knockback.Length())
+			? knockback
+			: knockbackVelocity + knockback;
 	}
 }

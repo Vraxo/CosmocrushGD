@@ -10,8 +10,6 @@ public partial class World : WorldEnvironment
 
     public override void _Ready()
     {
-        base._Ready();
-
         pauseMenu = GetNode<PauseMenu>("/root/World/Player/Camera2D/PauseMenu");
     }
 

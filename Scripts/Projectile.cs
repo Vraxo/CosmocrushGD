@@ -17,16 +17,24 @@ public partial class Projectile : Area2D
     public override void _Ready()
     {
         BodyEntered += OnBodyEntered;
+        
         GetTree().CreateTimer(10.0).Timeout += () =>
         {
-            if (active) StartDestructionSequence();
+            if (!active)
+            {
+                return;
+            }
+
+            StartDestructionSequence();
         };
     }
 
     public override void _PhysicsProcess(double delta)
     {
         if (!active || Direction == Vector2.Zero)
+        {
             return;
+        }
 
         GlobalPosition += Direction * Speed * (float)delta;
     }
@@ -34,7 +42,9 @@ public partial class Projectile : Area2D
     private void OnBodyEntered(Node2D body)
     {
         if (!active || body is not Player player)
+        {
             return;
+        }
 
         player.TakeDamage(1);
         player.ApplyKnockback(Direction * KnockbackForce);
@@ -43,33 +53,37 @@ public partial class Projectile : Area2D
 
     private void StartDestructionSequence()
     {
-        if (!active) return;
+        if (!active)
+        {
+            return;
+        }
+
         active = false;
 
-        // Use deferred calls for physics properties
-        this.SetDeferred(Area2D.PropertyName.Monitoring, false);
-        this.SetDeferred(Area2D.PropertyName.Monitorable, false);
+        SetDeferred(Area2D.PropertyName.Monitoring, false);
+        SetDeferred(Area2D.PropertyName.Monitorable, false);
 
-        // Hide visual components
         if (sprite != null)
+        {
             sprite.Visible = false;
+        }
 
-        // Stop movement
         Direction = Vector2.Zero;
 
-        // Start particles
-        if (destructionParticles != null)
+        if (destructionParticles is not null)
         {
             destructionParticles.Emitting = true;
-            // Ensure particles complete before freeing
             destructionParticles.OneShot = true;
         }
 
-        // Queue free after delay using SceneTreeTimer
         GetTree().CreateTimer(1.0).Timeout += () =>
         {
-            if (IsInstanceValid(this))
-                QueueFree();
+            if (!IsInstanceValid(this))
+            {
+                return;
+            }
+
+            QueueFree();
         };
     }
 }

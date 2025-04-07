@@ -1,5 +1,4 @@
 using Godot;
-using System;
 
 namespace CosmocrushGD;
 
@@ -9,27 +8,29 @@ public partial class Gun : Sprite2D
 	[Export] private Line2D bulletTrail;
 	[Export] private Timer cooldownTimer;
 	[Export] private AudioStream gunshotAudio;
+	[Export] private Node audioPlayerContainer;
 
-	// Camera shake exports
 	[Export] private float shakeStrength = 0.5f;
 	[Export] private float shakeDuration = 0.2f;
 
 	private ShakeyCamera camera;
-	private Node audioPlayerContainer;
+	private Joystick firingJoystick;
 	private Vector2 direction = Vector2.Zero;
 
 	private const int Damage = 5;
 	private const float Cooldown = 0.182f;
 	private const float BulletRange = 10000f;
 	private const float KnockbackForce = 500f;
-	
+
 	public override void _Ready()
 	{
-		audioPlayerContainer = new Node();
-		AddChild(audioPlayerContainer);
-
-		// Get reference to camera
 		camera = GetNode<ShakeyCamera>("/root/World/Player/Camera2D");
+
+		// Initialize joystick reference for mobile
+		if (OS.HasFeature("mobile"))
+		{
+			firingJoystick = GetNode<Joystick>("/root/World/HUD/FiringJoystick");
+		}
 
 		rayCast.Position = Vector2.Zero;
 		bulletTrail.Position = Vector2.Zero;
@@ -39,22 +40,54 @@ public partial class Gun : Sprite2D
 
 	public override void _Process(double delta)
 	{
-		LookAtMouse();
+		Aim();
 		FireIfPressed();
 	}
 
-	private void LookAtMouse()
+	private void Aim()
 	{
-		Vector2 mousePosition = GetGlobalMousePosition();
-		direction = (mousePosition - GlobalPosition).Normalized();
-		LookAt(mousePosition);
+		if (OS.HasFeature("mobile"))
+		{
+			MobileAim();
+		}
+		else
+		{
+			DesktopAim();
+		}
+	}
+
+	private void MobileAim()
+	{
+		if (firingJoystick == null || firingJoystick.PosVector == Vector2.Zero) return;
+
+		LookAt(GlobalPosition + firingJoystick.PosVector);
+		direction = firingJoystick.PosVector.Normalized();
+	}
+
+	private void DesktopAim()
+	{
+		Vector2 mousePos = GetGlobalMousePosition();
+		LookAt(mousePos);
+		direction = (mousePos - GlobalPosition).Normalized();
 	}
 
 	private void FireIfPressed()
 	{
 		bool cooledDown = cooldownTimer.IsStopped();
+		bool shouldFire = false;
 
-		if (Input.IsActionPressed("fire") && cooledDown)
+		if (OS.HasFeature("mobile"))
+		{
+			// Fire automatically when joystick is moved
+			shouldFire = firingJoystick != null && firingJoystick.PosVector != Vector2.Zero;
+		}
+		else
+		{
+			// Fire on mouse click
+			shouldFire = Input.IsActionPressed("fire");
+		}
+
+		if (shouldFire && cooledDown)
 		{
 			Fire();
 		}
@@ -63,13 +96,7 @@ public partial class Gun : Sprite2D
 	private void Fire()
 	{
 		PlayGunshotSound();
-
-		// Trigger camera shake
-		if (camera != null)
-		{
-			camera.Shake(shakeStrength, shakeDuration);
-		}
-
+		camera?.Shake(shakeStrength, shakeDuration);
 		cooldownTimer.Start();
 		DamageEnemyIfHit();
 		UpdateBulletTrail();
@@ -81,6 +108,7 @@ public partial class Gun : Sprite2D
 		audioPlayerContainer.AddChild(newAudioPlayer);
 		newAudioPlayer.Stream = gunshotAudio;
 		newAudioPlayer.Play();
+		newAudioPlayer.Finished += () => newAudioPlayer.QueueFree();
 	}
 
 	private void PerformRayCast()

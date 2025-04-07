@@ -1,4 +1,4 @@
-[gd_scene load_steps=15 format=3 uid="uid://rflfyu4apk38"]
+[gd_scene load_steps=18 format=3 uid="uid://rflfyu4apk38"]
 
 [ext_resource type="AudioStream" uid="uid://blvqtb4sj0647" path="res://Audio/Songs/Going Ultimate!.mp3" id="1_4w1vw"]
 [ext_resource type="Script" path="res://Scripts/World.cs" id="1_k2m3n"]
@@ -10,6 +10,9 @@
 [ext_resource type="Script" path="res://Scripts/Inventory/HealthBar.cs" id="8_h5gnh"]
 [ext_resource type="PackedScene" uid="uid://bqu24huyyxf2h" path="res://EnemySpawner.tscn" id="9_ukot3"]
 [ext_resource type="Script" path="res://Scripts/ShakeyCamera.cs" id="11_0a8f1"]
+[ext_resource type="PackedScene" uid="uid://dplq8x7y6w5f1" path="res://Scenes/Enemies/ExplodingEnemy.tscn" id="11_dqhek"]
+[ext_resource type="PackedScene" uid="uid://kl8icgw5t1ag" path="res://Scenes/Joystick.tscn" id="12_vbg6t"]
+[ext_resource type="Script" path="res://Scripts/Enemy/EnemyPoolManager.cs" id="13_mra1g"]
 [ext_resource type="PackedScene" uid="uid://baoyd4vyuac" path="res://Scenes/Enemies/RangedEnemy.tscn" id="14_qfgrb"]
 
 [sub_resource type="Environment" id="Environment_fpnmc"]
@@ -31,12 +34,13 @@ outlines = Array[PackedVector2Array]([PackedVector2Array(-528, -288, -528, 952, 
 environment = SubResource("Environment_fpnmc")
 script = ExtResource("1_k2m3n")
 pauseMenuScene = ExtResource("2_oslhl")
+metadata/_edit_horizontal_guides_ = [-408.0]
 
 [node name="Background" type="ColorRect" parent="."]
-offset_left = -1136.0
-offset_top = -604.0
-offset_right = 3408.0
-offset_bottom = 1812.0
+offset_left = -1128.0
+offset_top = -640.0
+offset_right = 3416.0
+offset_bottom = 1776.0
 color = Color(0, 0, 0, 1)
 
 [node name="ThemePlayer" type="AudioStreamPlayer" parent="."]
@@ -49,17 +53,43 @@ script = ExtResource("2_bvcjy")
 
 [node name="HUD" type="CanvasLayer" parent="."]
 
-[node name="Healthbar" type="ProgressBar" parent="HUD"]
-top_level = true
-custom_minimum_size = Vector2(100, 25)
+[node name="Joystick" parent="HUD" instance=ExtResource("12_vbg6t")]
 anchors_preset = 2
 anchor_top = 1.0
 anchor_bottom = 1.0
-offset_left = 60.0
-offset_top = -63.9999
-offset_right = 564.0
-offset_bottom = -36.9999
+offset_left = 272.0
+offset_top = -240.0
+offset_right = 272.0
+offset_bottom = -240.0
 grow_vertical = 0
+scale = Vector2(0.25, 0.25)
+
+[node name="FiringJoystick" parent="HUD" instance=ExtResource("12_vbg6t")]
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -240.0
+offset_top = -240.0
+offset_right = -240.0
+offset_bottom = -240.0
+grow_horizontal = 0
+grow_vertical = 0
+scale = Vector2(0.25, 0.25)
+SimulateInput = false
+
+[node name="Healthbar" type="ProgressBar" parent="HUD"]
+top_level = true
+custom_minimum_size = Vector2(100, 25)
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -248.0
+offset_top = 48.0
+offset_right = 256.0
+offset_bottom = 75.0
+grow_horizontal = 2
 scale = Vector2(0.818158, 1.04279)
 theme_override_styles/fill = SubResource("StyleBoxFlat_d0udc")
 script = ExtResource("8_h5gnh")
@@ -81,7 +111,7 @@ scale = Vector2(70, 1)
 
 [node name="OuterWallLeft" parent="Obstacles/Outerwalls" instance=ExtResource("7_suwn8")]
 z_as_relative = false
-position = Vector2(543, 911)
+position = Vector2(543, 907)
 scale = Vector2(1, 38.75)
 
 [node name="OuterWallTop" parent="Obstacles/Outerwalls" instance=ExtResource("7_suwn8")]
@@ -99,7 +129,7 @@ position = Vector2(88, -64)
 
 [node name="Player" parent="." instance=ExtResource("3_litg1")]
 self_modulate = Color(22, 22, 22, 1)
-position = Vector2(1216, 672)
+position = Vector2(584, 888)
 
 [node name="Camera2D" type="Camera2D" parent="Player"]
 process_mode = 3
@@ -108,19 +138,13 @@ script = ExtResource("11_0a8f1")
 [node name="PauseMenu" parent="Player/Camera2D" instance=ExtResource("2_oslhl")]
 visible = false
 
-[node name="EnemySpawner" parent="." instance=ExtResource("9_ukot3")]
+[node name="EnemySpawner" parent="." node_paths=PackedStringArray("enemyPoolManager") instance=ExtResource("9_ukot3")]
+explodingEnemyScene = ExtResource("11_dqhek")
+enemyPoolManager = NodePath("../EnemyPoolManager")
 
-[node name="MeleeEnemy2" parent="EnemySpawner" instance=ExtResource("14_qfgrb")]
-position = Vector2(838, 636)
-
-[node name="MeleeEnemy3" parent="EnemySpawner" instance=ExtResource("14_qfgrb")]
-position = Vector2(1408, 507)
-
-[node name="Enemy" parent="EnemySpawner" instance=ExtResource("5_p3yak")]
-position = Vector2(664, 264)
-
-[node name="Enemy2" parent="EnemySpawner" instance=ExtResource("5_p3yak")]
-position = Vector2(973, 387)
-
-[node name="MeleeEnemy" parent="EnemySpawner" instance=ExtResource("14_qfgrb")]
-position = Vector2(1085, 806)
+[node name="EnemyPoolManager" type="Node2D" parent="."]
+script = ExtResource("13_mra1g")
+meleeEnemyScene = ExtResource("5_p3yak")
+rangedEnemyScene = ExtResource("14_qfgrb")
+explodingEnemyScene = ExtResource("11_dqhek")
+enemyContainerPath = NodePath("../EnemySpawner")

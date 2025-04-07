@@ -4,7 +4,7 @@ namespace CosmocrushGD;
 
 public partial class MeleeEnemy : BaseEnemy
 {
-    [Export] private float MeleeKnockbackForce = 500f; // Adjust as needed
+    [Export] private float meleeKnockbackForce = 500f;
 
     protected override void AttemptAttack()
     {
@@ -21,9 +21,9 @@ public partial class MeleeEnemy : BaseEnemy
         }
 
         TargetPlayer.TakeDamage(Damage);
-        // Apply knockback away from the enemy
+
         Vector2 knockbackDir = (TargetPlayer.GlobalPosition - GlobalPosition).Normalized();
-        TargetPlayer.ApplyKnockback(knockbackDir * MeleeKnockbackForce);
+        TargetPlayer.ApplyKnockback(knockbackDir * meleeKnockbackForce);
 
         CanShoot = false;
         DamageCooldownTimer.Start();

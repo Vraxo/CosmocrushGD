@@ -7,7 +7,7 @@ namespace CosmocrushGD;
 
 public sealed class Settings
 {
-    private static Settings? _instance;
+    private static Settings _instance;
     public static Settings Instance => _instance ??= new();
 
     public SettingsData SettingsData;
@@ -19,12 +19,13 @@ public sealed class Settings
 
         if (FileAccess.GetOpenError() == Error.FileNotFound)
         {
-            SettingsData = new SettingsData
+            SettingsData = new()
             {
                 MasterVolume = 1.0,
                 MusicVolume = 1.0,
                 SfxVolume = 1.0
             };
+
             return;
         }
 
@@ -76,16 +77,15 @@ public sealed class Settings
 
     private void UpdateAudioLevels()
     {
-        AudioServer.SetBusVolumeDb(
-            AudioServer.GetBusIndex("Master"),
-            (float)Mathf.LinearToDb(SettingsData.MasterVolume));
+        UpdateAudioLevel("Master", SettingsData.MasterVolume);
+        UpdateAudioLevel("Music", SettingsData.MusicVolume);
+        UpdateAudioLevel("SFX", SettingsData.SfxVolume);
+    }
 
+    private static void UpdateAudioLevel(string busName, double volume)
+    {
         AudioServer.SetBusVolumeDb(
-            AudioServer.GetBusIndex("Music"),
-            (float)Mathf.LinearToDb(SettingsData.MusicVolume));
-
-        AudioServer.SetBusVolumeDb(
-            AudioServer.GetBusIndex("SFX"),
-            (float)Mathf.LinearToDb(SettingsData.SfxVolume));
+            AudioServer.GetBusIndex(busName),
+            (float)Mathf.LinearToDb(volume));
     }
 }

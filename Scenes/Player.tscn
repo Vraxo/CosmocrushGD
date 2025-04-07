@@ -13,12 +13,13 @@ size = Vector2(32, 31.5)
 _data = [Vector2(0.00433911, 0.993671), 0.0, 0.0, 0, 0, Vector2(0.998999, 0.00219095), 0.0, 0.0, 0, 0]
 point_count = 2
 
-[node name="Player" type="CharacterBody2D" node_paths=PackedStringArray("damageParticles")]
+[node name="Player" type="CharacterBody2D" node_paths=PackedStringArray("damageParticles", "audioPlayerContainer")]
 collision_mask = 5
 motion_mode = 1
 script = ExtResource("2_8tp0t")
 damageAudio = ExtResource("5_42wm7")
 damageParticles = NodePath("DamageParticles")
+audioPlayerContainer = NodePath("AudioPlayerContainer")
 
 [node name="ActualCollider" type="CollisionShape2D" parent="."]
 position = Vector2(0, 0.25)
@@ -62,3 +63,5 @@ scale_amount_min = 4.0
 scale_amount_max = 4.0
 scale_amount_curve = SubResource("Curve_qvt8o")
 color = Color(0.447059, 1, 0.105882, 1)
+
+[node name="AudioPlayerContainer" type="Node" parent="."]

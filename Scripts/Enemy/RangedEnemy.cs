@@ -4,7 +4,7 @@ namespace CosmocrushGD;
 
 public partial class RangedEnemy : BaseEnemy
 {
-	[Export] private PackedScene _projectileScene;
+	[Export] private PackedScene projectileScene;
 
 	protected override float ProximityThreshold => 320f;
 	protected override float DamageRadius => 320f;
@@ -12,9 +12,13 @@ public partial class RangedEnemy : BaseEnemy
 
 	protected override void AttemptAttack()
 	{
-		if (TargetPlayer == null || !CanShoot) return;
+		if (TargetPlayer is null || !CanShoot)
+		{
+			return;
+		}
 
 		float distance = GlobalPosition.DistanceTo(TargetPlayer.GlobalPosition);
+
 		if (distance <= DamageRadius)
 		{
 			ShootProjectile();
@@ -25,14 +29,12 @@ public partial class RangedEnemy : BaseEnemy
 
 	private void ShootProjectile()
 	{
-		var projectile = _projectileScene.Instantiate<Projectile>();
+		var projectile = projectileScene.Instantiate<Projectile>();
 
-		// Set projectile properties
 		projectile.GlobalPosition = GlobalPosition;
 		Vector2 direction = (TargetPlayer.GlobalPosition - GlobalPosition).Normalized();
 		projectile.Direction = direction;
 
-		// Add to scene tree
 		GetTree().Root.AddChild(projectile);
 	}
 }
