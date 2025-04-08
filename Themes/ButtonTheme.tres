@@ -1,36 +1,56 @@
-[gd_resource type="Theme" load_steps=5 format=3 uid="uid://c5aqsufevhi44"]
+[gd_resource type="Theme" load_steps=5 format=3 uid="uid://c5aqsufevhi44"] ; Keep the same UID
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_flv5n"]
-bg_color = Color(0, 0.658824, 0.909804, 1)
-border_color = Color(0, 0.54902, 0.752941, 1)
+; Style for Normal state: Transparent background
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_normal_dark"]
+bg_color = Color(0, 0, 0, 0) ; Transparent
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_f5wtx"]
-bg_color = Color(0.105882, 0.14902, 0.231373, 1)
+; Style for Hover state: Transparent background, thin white border
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_hover_dark"]
+bg_color = Color(0, 0, 0, 0) ; Transparent
 border_width_left = 1
 border_width_top = 1
 border_width_right = 1
 border_width_bottom = 1
-border_color = Color(0, 0.8, 1, 1)
+border_color = Color(1, 1, 1, 0.5) ; Semi-transparent white border
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_rsai3"]
-bg_color = Color(0.0509804, 0.105882, 0.164706, 0.501961)
+; Style for Pressed state: Slightly darker transparent background
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_pressed_dark"]
+bg_color = Color(1, 1, 1, 0.1) ; Very subtle white overlay
 border_width_left = 1
 border_width_top = 1
 border_width_right = 1
 border_width_bottom = 1
-border_color = Color(0.658824, 0.909804, 1, 1)
-corner_detail = 1
+border_color = Color(1, 1, 1, 0.5) ; Keep border
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_pxvta"]
-bg_color = Color(0.6, 0.658824, 0.909804, 1)
-border_width_left = 1
-border_width_top = 1
-border_width_right = 1
-border_width_bottom = 1
-border_color = Color(0, 0.556863, 0.752941, 1)
+; Style for Focus state: Similar to hover, maybe slightly brighter border
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_focus_dark"]
+bg_color = Color(0, 0, 0, 0) ; Transparent
+border_width_left = 2 ; Slightly thicker border for focus
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(1, 1, 1, 0.7) ; Brighter white border
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
 
 [resource]
-Button/styles/focus = SubResource("StyleBoxFlat_flv5n")
-Button/styles/hover = SubResource("StyleBoxFlat_f5wtx")
-Button/styles/normal = SubResource("StyleBoxFlat_rsai3")
-Button/styles/pressed = SubResource("StyleBoxFlat_pxvta")
+Button/colors/font_color = Color(1, 1, 1, 1) ; Set default font color to white
+Button/colors/font_pressed_color = Color(0.8, 0.8, 0.8, 1) ; Slightly dimmer when pressed
+Button/colors/font_hover_color = Color(1, 1, 1, 1)
+Button/colors/font_focus_color = Color(1, 1, 1, 1)
+Button/colors/font_disabled_color = Color(0.5, 0.5, 0.5, 1)
+Button/styles/focus = SubResource("StyleBoxFlat_focus_dark")
+Button/styles/hover = SubResource("StyleBoxFlat_hover_dark")
+Button/styles/normal = SubResource("StyleBoxFlat_normal_dark")
+Button/styles/pressed = SubResource("StyleBoxFlat_pressed_dark")
+Button/styles/disabled = SubResource("StyleBoxFlat_normal_dark") ; Use normal style for disabled too

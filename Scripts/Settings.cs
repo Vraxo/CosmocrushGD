@@ -1,4 +1,4 @@
-﻿using Godot;
+﻿﻿using Godot;
 using YamlDotNet.Core;
 using YamlDotNet.Serialization;
 using YamlDotNet.Serialization.NamingConventions;
@@ -13,6 +13,11 @@ public sealed class Settings
     public SettingsData SettingsData;
     private const string SettingsFilePath = "user://Settings.yaml";
 
+    private Settings()
+    {
+        Load();
+    }
+
     public void Load()
     {
         FileAccess file = FileAccess.Open(SettingsFilePath, FileAccess.ModeFlags.Read);
@@ -21,7 +26,6 @@ public sealed class Settings
         {
             SettingsData = new()
             {
-                MasterVolume = 1.0,
                 MusicVolume = 1.0,
                 SfxVolume = 1.0
             };
@@ -40,7 +44,6 @@ public sealed class Settings
 
             SettingsData = deserializer.Deserialize<SettingsData>(yamlString);
 
-            SettingsData.MasterVolume = Mathf.Clamp(SettingsData.MasterVolume, 0.0, 1.0);
             SettingsData.MusicVolume = Mathf.Clamp(SettingsData.MusicVolume, 0.0, 1.0);
             SettingsData.SfxVolume = Mathf.Clamp(SettingsData.SfxVolume, 0.0, 1.0);
         }
@@ -50,7 +53,6 @@ public sealed class Settings
 
             SettingsData = new()
             {
-                MasterVolume = 1.0,
                 MusicVolume = 1.0,
                 SfxVolume = 1.0
             };
@@ -77,7 +79,6 @@ public sealed class Settings
 
     private void UpdateAudioLevels()
     {
-        UpdateAudioLevel("Master", SettingsData.MasterVolume);
         UpdateAudioLevel("Music", SettingsData.MusicVolume);
         UpdateAudioLevel("SFX", SettingsData.SfxVolume);
     }

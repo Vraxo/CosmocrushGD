@@ -1,11 +1,32 @@
 [gd_resource type="Theme" load_steps=3 format=3 uid="uid://dp55xopm44tex"]
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_klagp"]
-bg_color = Color(0.0509804, 0.105882, 0.164706, 0.501961)
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_track_dark"]
+bg_color = Color(0.2, 0.2, 0.2, 1)
+border_width_top = 2
+border_width_bottom = 2
+border_color = Color(0.2, 0.2, 0.2, 1)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+expand_margin_top = 6.0
+expand_margin_bottom = 6.0
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_qr4v3"]
-bg_color = Color(0, 0.658824, 0.909804, 1)
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_track_highlight_dark"]
+bg_color = Color(0.8, 0.8, 0.8, 1)
+border_width_top = 2
+border_width_bottom = 2
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+expand_margin_top = 6.0
+expand_margin_bottom = 6.0
 
 [resource]
-HSlider/styles/grabber_area = SubResource("StyleBoxFlat_klagp")
-HSlider/styles/grabber_area_highlight = SubResource("StyleBoxFlat_qr4v3")
+HSlider/icons/grabber = null
+HSlider/icons/grabber_disabled = null
+HSlider/icons/grabber_highlight = null
+HSlider/styles/grabber_area = SubResource("StyleBoxFlat_track_dark")
+HSlider/styles/grabber_area_highlight = SubResource("StyleBoxFlat_track_highlight_dark")
+HSlider/styles/slider = SubResource("StyleBoxFlat_track_dark")

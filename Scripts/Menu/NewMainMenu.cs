@@ -1,6 +1,6 @@
 using Godot;
 
-namespace Cosmocrush; // Assuming the same namespace as PauseMenu.cs
+namespace CosmocrushGD;
 
 public partial class NewMainMenu : ColorRect
 {
@@ -14,6 +14,9 @@ public partial class NewMainMenu : ColorRect
 
 	public override void _Ready()
 	{
+		// Access Settings.Instance to ensure it's initialized
+		var _ = CosmocrushGD.Settings.Instance;
+
 		// Ensure buttons are assigned in the inspector or find them if not
 		if (startButton == null || settingsButton == null || quitButton == null)
 		{
