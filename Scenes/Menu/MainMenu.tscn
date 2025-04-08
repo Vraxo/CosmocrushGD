@@ -19,7 +19,7 @@ offset_right = 960.0
 offset_bottom = 391.0
 focus_neighbor_bottom = NodePath("../QuitButton")
 theme = ExtResource("2_h6x38")
-theme_override_fonts/font = ExtResource("1_dv1ue")
+theme_override_fonts/font = ExtResource("3_jyk7q")
 text = "Play"
 script = ExtResource("6_xfabn")
 
@@ -31,7 +31,6 @@ offset_bottom = 439.0
 focus_neighbor_top = NodePath("../PlayButton")
 focus_neighbor_bottom = NodePath("../QuitButton")
 theme = ExtResource("2_h6x38")
-theme_override_fonts/font = ExtResource("1_dv1ue")
 text = "Settings
 "
 script = ExtResource("6_xfabn")
@@ -43,7 +42,6 @@ offset_right = 960.0
 offset_bottom = 487.0
 focus_neighbor_top = NodePath("../PlayButton")
 theme = ExtResource("2_h6x38")
-theme_override_fonts/font = ExtResource("1_dv1ue")
 text = "Quit
 "
 script = ExtResource("6_xfabn")
@@ -66,7 +64,7 @@ theme_override_colors/font_outline_color = Color(0, 0.658824, 0.909804, 1)
 theme_override_constants/shadow_offset_x = 3
 theme_override_constants/shadow_offset_y = 3
 theme_override_constants/outline_size = 8
-theme_override_fonts/font = ExtResource("1_dv1ue")
+theme_override_fonts/font = FontFile("uid://0q2lkim75hwr")
 theme_override_font_sizes/font_size = 128
 text = "COSMOCRUSH"
 horizontal_alignment = 1

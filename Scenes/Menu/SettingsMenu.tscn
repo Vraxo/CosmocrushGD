@@ -1,9 +1,10 @@
-[gd_scene load_steps=12 format=3 uid="uid://bcw31k4rumk06"]
+[gd_scene load_steps=13 format=3 uid="uid://bcw31k4rumk06"]
 
 [ext_resource type="Script" path="res://Scripts/Menu/SettingsMenu.cs" id="1_t30ri"]
 [ext_resource type="Script" path="res://Scripts/UIButton.cs" id="2_button_script"]
 [ext_resource type="Theme" uid="uid://dp55xopm44tex" path="res://Themes/SliderTheme.tres" id="2_q25ot"]
 [ext_resource type="FontFile" uid="uid://cmmqufqnfjedk" path="res://Fonts/RaceSport.ttf" id="2_yyo0k"]
+[ext_resource type="FontFile" uid="uid://b6tgj8yqv5h99" path="res://Fonts/VeniteAdoremus-rgRBA.ttf" id="3_jyk7q"]
 [ext_resource type="Script" path="res://Scripts/UI/DefaultHSlider.cs" id="4_5v8m5"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_1mlyd"]
@@ -51,7 +52,7 @@ offset_top = 64.0
 offset_right = 55.0
 offset_bottom = 87.0
 theme_override_colors/font_color = Color(1, 1, 1, 1)
-theme_override_fonts/font = ExtResource("2_yyo0k")
+theme_override_fonts/font = ExtResource("3_jyk7q")
 text = "Music"
 
 [node name="Slider" type="HSlider" parent="Background/MusicLabel"]
@@ -72,7 +73,7 @@ offset_top = 136.0
 offset_right = 55.0
 offset_bottom = 159.0
 theme_override_colors/font_color = Color(1, 1, 1, 1)
-theme_override_fonts/font = ExtResource("2_yyo0k")
+theme_override_fonts/font = ExtResource("3_jyk7q")
 text = "SFX"
 
 [node name="Slider" type="HSlider" parent="Background/SfxLabel"]
@@ -97,7 +98,7 @@ focus_neighbor_top = NodePath("../SfxLabel/Slider")
 focus_neighbor_right = NodePath("../ReturnButton")
 focus_neighbor_bottom = NodePath("../MasterLabel/Slider")
 theme = SubResource("Theme_ilgyb")
-theme_override_fonts/font = ExtResource("2_yyo0k")
+theme_override_fonts/font = ExtResource("3_jyk7q")
 text = "Apply"
 script = ExtResource("2_button_script")
 
@@ -111,6 +112,6 @@ focus_neighbor_top = NodePath("../SfxLabel/Slider")
 focus_neighbor_right = NodePath("../ApplyButton")
 focus_neighbor_bottom = NodePath("../MasterLabel/Slider")
 theme = SubResource("Theme_ilgyb")
-theme_override_fonts/font = ExtResource("2_yyo0k")
+theme_override_fonts/font = ExtResource("3_jyk7q")
 text = "Return"
 script = ExtResource("2_button_script")

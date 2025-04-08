@@ -30,3 +30,4 @@ HSlider/icons/grabber_highlight = null
 HSlider/styles/grabber_area = SubResource("StyleBoxFlat_track_dark")
 HSlider/styles/grabber_area_highlight = SubResource("StyleBoxFlat_track_highlight_dark")
 HSlider/styles/slider = SubResource("StyleBoxFlat_track_dark")
+Label/fonts/font = ExtResource("1_r8b3b")
