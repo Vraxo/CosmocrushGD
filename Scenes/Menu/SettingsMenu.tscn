@@ -29,6 +29,7 @@ Button/styles/hover = SubResource("StyleBoxFlat_n8g20")
 Button/styles/hover_pressed = SubResource("StyleBoxFlat_wrfhg")
 Button/styles/normal = SubResource("StyleBoxFlat_73cej")
 Button/styles/pressed = SubResource("StyleBoxFlat_75km2")
+Button/styles/disabled = SubResource("StyleBoxFlat_1mlyd")
 
 [node name="SettingsMenu" type="ColorRect" node_paths=PackedStringArray("musicSlider", "sfxSlider", "musicLabel", "sfxLabel", "applyButton", "returnButton")]
 anchors_preset = 15
