@@ -7,6 +7,7 @@ public partial class NewMainMenu : ColorRect
 	[Export] private Button startButton;
 	[Export] private Button settingsButton;
 	[Export] private Button quitButton;
+	[Export] private CPUParticles2D spaceStarsEffect;
 
 	// Scene paths - adjust if necessary
 	private const string GameScenePath = "res://Scenes/World.tscn";
@@ -16,6 +17,9 @@ public partial class NewMainMenu : ColorRect
 	{
 		// Access Settings.Instance to ensure it's initialized
 		var _ = CosmocrushGD.Settings.Instance;
+
+		if (spaceStarsEffect != null)
+			SetupSpaceStarsEffect();
 
 		// Ensure buttons are assigned in the inspector or find them if not
 		if (startButton == null || settingsButton == null || quitButton == null)
@@ -36,6 +40,23 @@ public partial class NewMainMenu : ColorRect
 
 		// Connect to the root window's close request signal
 		GetTree().Root.CloseRequested += OnWindowCloseRequested;
+	}
+
+	private void SetupSpaceStarsEffect()
+	{
+		if (spaceStarsEffect == null)
+		{
+			GD.PrintErr("SpaceStarsEffect is not assigned in the inspector!");
+			return;
+		}
+
+		// Make sure emitting is true
+		spaceStarsEffect.Emitting = true;
+
+		// Set emission rectangle height dynamically based on screen height
+		var viewportRect = GetViewportRect();
+		spaceStarsEffect.EmissionRectExtents = new Vector2(1, viewportRect.Size.Y);
+		spaceStarsEffect.OneShot = false; // Make it continuous
 	}
 
 	private void OnStartButtonPressed()
