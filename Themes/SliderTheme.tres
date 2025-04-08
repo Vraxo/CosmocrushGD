@@ -1,7 +1,4 @@
-[gd_resource type="Theme" load_steps=2 format=3 uid="uid://dp55xopm44tex"]
-
-[sub_resource type="FontFile" id="FontFile_racesport"]
-path = "res://Fonts/RaceSport.ttf"
+[gd_resource type="Theme" load_steps=4 format=3 uid="uid://dp55xopm44tex"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_track_dark"]
 bg_color = Color(0.2, 0.2, 0.2, 1)
@@ -25,6 +22,13 @@ corner_radius_bottom_right = 3
 corner_radius_bottom_left = 3
 expand_margin_top = 6.0
 expand_margin_bottom = 6.0
+
+[sub_resource type="FontFile" id="FontFile_racesport"]
+cache/0/16/0/ascent = 0.0
+cache/0/16/0/descent = 0.0
+cache/0/16/0/underline_position = 0.0
+cache/0/16/0/underline_thickness = 0.0
+cache/0/16/0/scale = 1.0
 
 [resource]
 HSlider/icons/grabber = null

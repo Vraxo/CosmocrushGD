@@ -1,9 +1,8 @@
-[gd_scene load_steps=12 format=3 uid="uid://bcw31k4rumk06"]
+[gd_scene load_steps=11 format=3 uid="uid://bcw31k4rumk06"]
 
 [ext_resource type="Script" path="res://Scripts/Menu/SettingsMenu.cs" id="1_t30ri"]
 [ext_resource type="Script" path="res://Scripts/UIButton.cs" id="2_button_script"]
 [ext_resource type="Theme" uid="uid://dp55xopm44tex" path="res://Themes/SliderTheme.tres" id="2_q25ot"]
-[ext_resource type="FontFile" uid="uid://cmmqufqnfjedk" path="res://Fonts/RaceSport.ttf" id="2_yyo0k"]
 [ext_resource type="Script" path="res://Scripts/UI/DefaultHSlider.cs" id="4_5v8m5"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_1mlyd"]
@@ -23,12 +22,12 @@ bg_color = Color(0.6, 0.6, 0.6, 0)
 border_color = Color(0.8, 0.8, 0.8, 0)
 
 [sub_resource type="Theme" id="Theme_ilgyb"]
+Button/styles/disabled = SubResource("StyleBoxFlat_1mlyd")
 Button/styles/focus = SubResource("StyleBoxFlat_1mlyd")
 Button/styles/hover = SubResource("StyleBoxFlat_n8g20")
 Button/styles/hover_pressed = SubResource("StyleBoxFlat_wrfhg")
 Button/styles/normal = SubResource("StyleBoxFlat_73cej")
 Button/styles/pressed = SubResource("StyleBoxFlat_75km2")
-Button/styles/disabled = SubResource("StyleBoxFlat_1mlyd")
 
 [node name="SettingsMenu" type="ColorRect" node_paths=PackedStringArray("musicSlider", "sfxSlider", "musicLabel", "sfxLabel", "applyButton", "returnButton")]
 anchors_preset = 15
