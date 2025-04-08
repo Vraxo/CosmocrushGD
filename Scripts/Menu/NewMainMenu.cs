@@ -17,20 +17,22 @@ public partial class NewMainMenu : ColorRect
 		// Access Settings.Instance to ensure it's initialized
 		var _ = CosmocrushGD.Settings.Instance;
 
-		// Ensure buttons are assigned in the inspector or find them if not, using GetNodeOrNull
-		startButton ??= GetNodeOrNull<Button>("CenterContainer/VBoxContainer/StartButton");
-		settingsButton ??= GetNodeOrNull<Button>("CenterContainer/VBoxContainer/SettingsButton");
-		quitButton ??= GetNodeOrNull<Button>("CenterContainer/VBoxContainer/QuitButton");
-
+		// Ensure buttons are assigned in the inspector or find them if not
 		if (startButton == null || settingsButton == null || quitButton == null)
 		{
-			GD.PrintErr("NewMainMenu: One or more buttons not found in the scene!");
-			return; // Exit early if buttons are missing
+			GD.PrintErr("NewMainMenu: One or more buttons not assigned in the inspector!");
+			// Optionally try to find them by name/path if not assigned
+			startButton ??= GetNode<Button>("CenterContainer/VBoxContainer/StartButton");
+			settingsButton ??= GetNode<Button>("CenterContainer/VBoxContainer/SettingsButton");
+			quitButton ??= GetNode<Button>("CenterContainer/VBoxContainer/QuitButton");
 		}
 
-		startButton.Pressed += OnStartButtonPressed;
-		settingsButton.Pressed += OnSettingsButtonPressed;
-		quitButton.Pressed += OnQuitButtonPressed;
+		if (startButton != null)
+			startButton.Pressed += OnStartButtonPressed;
+		if (settingsButton != null)
+			settingsButton.Pressed += OnSettingsButtonPressed;
+		if (quitButton != null)
+			quitButton.Pressed += OnQuitButtonPressed;
 
 		// Connect to the root window's close request signal
 		GetTree().Root.CloseRequested += OnWindowCloseRequested;

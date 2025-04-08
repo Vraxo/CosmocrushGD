@@ -3,7 +3,6 @@
 [ext_resource type="Script" path="res://Scripts/Menu/NewMainMenu.cs" id="1_newmenu_script"]
 [ext_resource type="Script" path="res://Scripts/UIButton.cs" id="2_button_script"]
 [ext_resource type="FontFile" uid="uid://0q2lkim75hwr" path="res://Fonts/VeniteAdoremus-rgRBA.ttf" id="4_venite_font"]
-[ext_resource type="Theme" uid="uid://c5aqsufevhi44" path="res://Themes/ButtonTheme.tres" id="5_button_theme"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_1mlyd"]
 bg_color = Color(0.6, 0.6, 0.6, 0)
@@ -42,59 +41,41 @@ settingsButton = NodePath("CenterContainer/VBoxContainer/SettingsButton")
 quitButton = NodePath("CenterContainer/VBoxContainer/QuitButton")
 
 [node name="CenterContainer" type="CenterContainer" parent="."]
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
 grow_horizontal = 2
 grow_vertical = 2
 
 [node name="VBoxContainer" type="VBoxContainer" parent="CenterContainer"]
 layout_mode = 2
-size_flags_horizontal = 4
-size_flags_vertical = 4
 
 [node name="StartButton" type="Button" parent="CenterContainer/VBoxContainer"]
+custom_minimum_size = Vector2(250, 100)
 layout_mode = 2
-theme = ExtResource("5_button_theme")
+theme = SubResource("Theme_ilgyb")
 theme_override_fonts/font = ExtResource("4_venite_font")
+theme_override_font_sizes/font_size = 25
 text = "Start"
 script = ExtResource("2_button_script")
 
 [node name="SettingsButton" type="Button" parent="CenterContainer/VBoxContainer"]
+custom_minimum_size = Vector2(250, 100)
 layout_mode = 2
-theme = ExtResource("5_button_theme")
+theme = SubResource("Theme_ilgyb")
 theme_override_fonts/font = ExtResource("4_venite_font")
+theme_override_font_sizes/font_size = 25
 text = "Settings"
 script = ExtResource("2_button_script")
 
 [node name="QuitButton" type="Button" parent="CenterContainer/VBoxContainer"]
+custom_minimum_size = Vector2(250, 100)
 layout_mode = 2
-theme = ExtResource("5_button_theme")
+theme = SubResource("Theme_ilgyb")
 theme_override_fonts/font = ExtResource("4_venite_font")
+theme_override_font_sizes/font_size = 25
 text = "Quit"
 script = ExtResource("2_button_script")
-
-[node name="StarParticles" type="CPUParticles2D" parent="."]
-process_mode = 3
-position = Vector2(-10, 0)
-emitting = true
-amount = 50
-lifetime = 1.0
-জীবনকাল_randomness = 0.0
-initial_velocity_min = 5.0
-initial_velocity_max = 15.0
-angular_velocity_min = 0.0
-angular_velocity_max = 0.0
-linear_accel_min = 5.0
-linear_accel_max = 20.0
-জীবনকাল_আয়ু_min = 0.5
-জীবনকাল_আয়ু_max = 1.5
-direction = Vector2(1, 0)
-spread = 0.0
-gravity = Vector2(0, 0)
-initial_velocity = 10.0
-linear_accel = 10.0
-color = Color(1, 1, 1, 1)
-blend_mode = 1
-emission_shape = 1
-emission_box_extents = Vector2(1, 720)
