@@ -81,26 +81,15 @@ public partial class Gun : Sprite2D
 			// Fire automatically when joystick is moved
 			shouldFire = firingJoystick != null && firingJoystick.PosVector != Vector2.Zero;
 		}
-		// Desktop firing is now handled by _on_ShootingArea_input_event
+		else
+		{
+			// Fire on mouse click
+			shouldFire = Input.IsActionPressed("fire");
+		}
 
 		if (shouldFire && cooledDown)
 		{
 			Fire();
-		}
-	}
-
-	private void _on_ShootingArea_input_event(Node viewport, InputEvent @event, int shapeIdx)
-	{
-		// Only handle desktop input here
-		if (OS.HasFeature("mobile")) return;
-
-		if (@event is InputEventMouseButton mouseButtonEvent && mouseButtonEvent.Pressed && mouseButtonEvent.ButtonIndex == MouseButton.Left)
-		{
-			bool cooledDown = cooldownTimer.IsStopped();
-			if (cooledDown)
-			{
-				Fire();
-			}
 		}
 	}
 

@@ -16,7 +16,7 @@ linear_accel_min = 15.0
 linear_accel_max = 30.0
 scale_max = 2.0
 
-[sub_resource type="Image" id="Image_c1qg7"]
+[sub_resource type="Image" id="Image_7ucyl"]
 data = {
 "data": PackedByteArray(255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255),
 "format": "RGBA8",
@@ -26,7 +26,7 @@ data = {
 }
 
 [sub_resource type="ImageTexture" id="ImageTexture_particle_tex"]
-image = SubResource("Image_c1qg7")
+image = SubResource("Image_7ucyl")
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_1mlyd"]
 bg_color = Color(0.6, 0.6, 0.6, 0)
@@ -51,7 +51,7 @@ Button/styles/hover_pressed = SubResource("StyleBoxFlat_wrfhg")
 Button/styles/normal = SubResource("StyleBoxFlat_73cej")
 Button/styles/pressed = SubResource("StyleBoxFlat_75km2")
 
-[node name="NewMainMenu" type="ColorRect"]
+[node name="NewMainMenu" type="ColorRect" node_paths=PackedStringArray("startButton", "settingsButton", "quitButton", "starParticlesNode")]
 process_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -60,6 +60,10 @@ grow_horizontal = 2
 grow_vertical = 2
 color = Color(0, 0, 0, 1)
 script = ExtResource("1_newmenu_script")
+startButton = NodePath("CenterContainer/VBoxContainer/StartButton")
+settingsButton = NodePath("CenterContainer/VBoxContainer/SettingsButton")
+quitButton = NodePath("CenterContainer/VBoxContainer/QuitButton")
+starParticlesNode = NodePath("StarParticles")
 
 [node name="StarParticles" type="CPUParticles2D" parent="."]
 z_index = 1
