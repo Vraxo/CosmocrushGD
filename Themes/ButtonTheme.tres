@@ -54,4 +54,4 @@ Button/styles/hover = SubResource("StyleBoxFlat_hover_dark")
 Button/styles/normal = SubResource("StyleBoxFlat_normal_dark")
 Button/styles/pressed = SubResource("StyleBoxFlat_pressed_dark")
 Button/styles/disabled = SubResource("StyleBoxFlat_normal_dark") ; Disabled buttons also have no background
-Button/fonts/font = Font("uid://0q2lkim75hwr")
+Button/fonts/font = FontFile("uid://0q2lkim75hwr")
