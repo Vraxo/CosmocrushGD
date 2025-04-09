@@ -26,11 +26,4 @@ public partial class World : WorldEnvironment
         GetTree().Paused = true;
         pauseMenu.Show();
     }
-
-    private void _on_pause_button_pressed()
-    {
-        Pause();
-        GetViewport().SetInputAsHandled();
-        Input.MouseMode = Input.MouseModeEnum.Confined; // Confine mouse to UI to prevent game input
-    }
 }
