@@ -53,6 +53,17 @@ script = ExtResource("2_bvcjy")
 
 [node name="HUD" type="CanvasLayer" parent="."]
 
+[node name="PauseButton" type="Button" parent="HUD"]
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -60.0
+offset_top = 20.0
+offset_right = -20.0
+offset_bottom = 60.0
+grow_horizontal = 0
+text = "||"
+
 [node name="Joystick" parent="HUD" instance=ExtResource("12_vbg6t")]
 anchors_preset = 2
 anchor_top = 1.0
@@ -148,3 +159,5 @@ meleeEnemyScene = ExtResource("5_p3yak")
 rangedEnemyScene = ExtResource("14_qfgrb")
 explodingEnemyScene = ExtResource("11_dqhek")
 enemyContainerPath = NodePath("../EnemySpawner")
+
+[connection signal="pressed" from="HUD/PauseButton" to="." method="_on_pause_button_pressed"]
