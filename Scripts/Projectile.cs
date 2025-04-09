@@ -6,10 +6,10 @@ public partial class Projectile : Area2D
 {
     public Vector2 Direction = Vector2.Zero;
 
-    private bool active = true;
+    [Export] public Sprite2D Sprite;
+    [Export] public CpuParticles2D DestructionParticles;
 
-    [Export] private Sprite2D sprite;
-    [Export] private CpuParticles2D destructionParticles;
+    private bool active = true;
 
     private const float Speed = 300f;
     private const float KnockbackForce = 300f;
@@ -63,17 +63,17 @@ public partial class Projectile : Area2D
         SetDeferred(Area2D.PropertyName.Monitoring, false);
         SetDeferred(Area2D.PropertyName.Monitorable, false);
 
-        if (sprite != null)
+        if (Sprite != null)
         {
-            sprite.Visible = false;
+            Sprite.Visible = false;
         }
 
         Direction = Vector2.Zero;
 
-        if (destructionParticles is not null)
+        if (DestructionParticles is not null)
         {
-            destructionParticles.Emitting = true;
-            destructionParticles.OneShot = true;
+            DestructionParticles.Emitting = true;
+            DestructionParticles.OneShot = true;
         }
 
         GetTree().CreateTimer(1.0).Timeout += () =>
