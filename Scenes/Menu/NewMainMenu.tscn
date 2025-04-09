@@ -16,7 +16,7 @@ linear_accel_min = 15.0
 linear_accel_max = 30.0
 scale_max = 2.0
 
-[sub_resource type="Image" id="Image_7ucyl"]
+[sub_resource type="Image" id="Image_xtxdn"]
 data = {
 "data": PackedByteArray(255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255),
 "format": "RGBA8",
@@ -26,7 +26,7 @@ data = {
 }
 
 [sub_resource type="ImageTexture" id="ImageTexture_particle_tex"]
-image = SubResource("Image_7ucyl")
+image = SubResource("Image_xtxdn")
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_1mlyd"]
 bg_color = Color(0.6, 0.6, 0.6, 0)

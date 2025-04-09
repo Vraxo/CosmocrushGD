@@ -30,10 +30,11 @@ vertices = PackedVector2Array(1766, 942, -518, 942, -518, -278, 1766, -278)
 polygons = Array[PackedInt32Array]([PackedInt32Array(0, 1, 2, 3)])
 outlines = Array[PackedVector2Array]([PackedVector2Array(-528, -288, -528, 952, 1776, 952, 1776, -288)])
 
-[node name="World" type="WorldEnvironment"]
+[node name="World" type="WorldEnvironment" node_paths=PackedStringArray("pauseButton")]
 environment = SubResource("Environment_fpnmc")
 script = ExtResource("1_k2m3n")
 pauseMenuScene = ExtResource("2_oslhl")
+pauseButton = NodePath("HUD/PauseButton")
 metadata/_edit_horizontal_guides_ = [-408.0]
 
 [node name="Background" type="ColorRect" parent="."]
@@ -93,6 +94,13 @@ grow_horizontal = 2
 scale = Vector2(0.818158, 1.04279)
 theme_override_styles/fill = SubResource("StyleBoxFlat_d0udc")
 script = ExtResource("8_h5gnh")
+
+[node name="PauseButton" type="Button" parent="HUD"]
+offset_left = 1160.0
+offset_top = 32.0
+offset_right = 1215.0
+offset_bottom = 63.0
+text = "||"
 
 [node name="Obstacles" type="Node2D" parent="."]
 

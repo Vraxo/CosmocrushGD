@@ -105,7 +105,7 @@ initial_velocity_max = 100.0
 scale_amount_min = 4.0
 scale_amount_max = 4.0
 scale_amount_curve = SubResource("Curve_2qoxu")
-color = Color(1, 0, 0.0431373, 1)
+color = Color(1, 0.498039, 0.152941, 1)
 
 [node name="DeathParticles" type="CPUParticles2D" parent="."]
 position = Vector2(0, -1)
@@ -122,7 +122,7 @@ initial_velocity_max = 150.0
 scale_amount_min = 8.0
 scale_amount_max = 8.0
 scale_amount_curve = SubResource("Curve_2qoxu")
-color = Color(1, 0, 0.0431373, 1)
+color = Color(1, 0.498039, 0.152941, 1)
 
 [node name="DamageTimer" type="Timer" parent="."]
 wait_time = 0.5
