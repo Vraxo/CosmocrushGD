@@ -59,8 +59,10 @@ _data = {
 _data = [Vector2(0.00433911, 0.993671), 0.0, 0.0, 0, 0, Vector2(0.998999, 0.00219095), 0.0, 0.0, 0, 0]
 point_count = 2
 
-[node name="MeleeEnemy" type="CharacterBody2D" node_paths=PackedStringArray("Navigator", "Sprite", "DeathTimer", "DamageCooldownTimer", "Collider", "DamageParticles", "DeathParticles", "HitAnimationPlayer")]
+[node name="RangedEnemy" type="CharacterBody2D" node_paths=PackedStringArray("Navigator", "Sprite", "DeathTimer", "DamageCooldownTimer", "Collider", "DamageParticles", "DeathParticles", "HitAnimationPlayer")]
 material = SubResource("ShaderMaterial_kqe6k")
+position = Vector2(56, 104)
+collision_mask = 5
 input_pickable = true
 motion_mode = 1
 script = ExtResource("1_3crpb")

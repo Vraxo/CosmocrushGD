@@ -61,6 +61,7 @@ point_count = 2
 
 [node name="ExplodingEnemy" type="CharacterBody2D" node_paths=PackedStringArray("Navigator", "Sprite", "DeathTimer", "DamageCooldownTimer", "Collider", "DamageParticles", "DeathParticles", "HitAnimationPlayer")]
 material = SubResource("ShaderMaterial_kqe6k")
+collision_mask = 5
 input_pickable = true
 motion_mode = 1
 script = ExtResource("2_p2ur1")

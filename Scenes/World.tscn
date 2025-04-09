@@ -30,11 +30,12 @@ vertices = PackedVector2Array(1766, 942, -518, 942, -518, -278, 1766, -278)
 polygons = Array[PackedInt32Array]([PackedInt32Array(0, 1, 2, 3)])
 outlines = Array[PackedVector2Array]([PackedVector2Array(-528, -288, -528, 952, 1776, 952, 1776, -288)])
 
-[node name="World" type="WorldEnvironment" node_paths=PackedStringArray("pauseButton")]
+[node name="World" type="WorldEnvironment" node_paths=PackedStringArray("pauseButton", "hudLayer")]
 environment = SubResource("Environment_fpnmc")
 script = ExtResource("1_k2m3n")
 pauseMenuScene = ExtResource("2_oslhl")
 pauseButton = NodePath("HUD/PauseButton")
+hudLayer = NodePath("HUD")
 metadata/_edit_horizontal_guides_ = [-408.0]
 
 [node name="Background" type="ColorRect" parent="."]
@@ -142,9 +143,6 @@ position = Vector2(584, 888)
 [node name="Camera2D" type="Camera2D" parent="Player"]
 process_mode = 3
 script = ExtResource("11_0a8f1")
-
-[node name="PauseMenu" parent="Player/Camera2D" instance=ExtResource("2_oslhl")]
-visible = false
 
 [node name="EnemySpawner" parent="." node_paths=PackedStringArray("enemyPoolManager") instance=ExtResource("9_ukot3")]
 explodingEnemyScene = ExtResource("11_dqhek")

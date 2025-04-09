@@ -5,7 +5,6 @@
 [ext_resource type="PackedScene" uid="uid://1jkhq6d44qfr" path="res://Scenes/DamageIndicator.tscn" id="2_r1px8"]
 [ext_resource type="Texture2D" uid="uid://bhw4l7v110fek" path="res://Sprites/Enemies/Enemy.png" id="2_y6omx"]
 
-
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_kqe6k"]
 shader = ExtResource("2_2b341")
 shader_parameter/flash_color = Color(1, 1, 1, 1)
@@ -61,6 +60,7 @@ point_count = 2
 
 [node name="MeleeEnemy" type="CharacterBody2D" node_paths=PackedStringArray("Navigator", "Sprite", "DeathTimer", "DamageCooldownTimer", "Collider", "DamageParticles", "DeathParticles", "HitAnimationPlayer")]
 material = SubResource("ShaderMaterial_kqe6k")
+collision_mask = 5
 input_pickable = true
 motion_mode = 1
 script = ExtResource("2_p2ur1")
