@@ -31,7 +31,8 @@ Button/styles/hover_pressed = SubResource("StyleBoxFlat_wrfhg")
 Button/styles/normal = SubResource("StyleBoxFlat_73cej")
 Button/styles/pressed = SubResource("StyleBoxFlat_75km2")
 
-[node name="StatisticsMenu" type="ColorRect" node_paths=PackedStringArray("gamesPlayedLabel", "totalScoreLabel", "topScoreLabel", "averageScoreLabel", "clearButton", "returnButton")]
+[node name="StatisticsMenu" type="ColorRect" node_paths=PackedStringArray("gamesPlayedLabel", "totalScoreLabel", "topScoreLabel", "averageScoreLabel", "clearButton", "returnButton", "confirmationDialog")]
+process_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
@@ -45,6 +46,7 @@ topScoreLabel = NodePath("CenterContainer/VBoxContainer/StatsGrid/TopScoreLabel"
 averageScoreLabel = NodePath("CenterContainer/VBoxContainer/StatsGrid/AverageScoreLabel")
 clearButton = NodePath("CenterContainer/VBoxContainer/ButtonContainer/ClearButton")
 returnButton = NodePath("CenterContainer/VBoxContainer/ButtonContainer/ReturnButton")
+confirmationDialog = NodePath("ConfirmationDialog")
 
 [node name="CenterContainer" type="CenterContainer" parent="."]
 layout_mode = 1
@@ -130,3 +132,10 @@ theme_override_fonts/font = ExtResource("2_venite_font")
 theme_override_font_sizes/font_size = 20
 text = "Return"
 script = ExtResource("3_button_script")
+
+[node name="ConfirmationDialog" type="ConfirmationDialog" parent="."]
+title = "Confirm Reset"
+initial_position = 2
+size = Vector2i(300, 100)
+dialog_text = "Are you sure you want to reset all statistics? This cannot be undone."
+dialog_autowrap = true
