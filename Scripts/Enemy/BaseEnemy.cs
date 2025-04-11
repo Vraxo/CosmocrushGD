@@ -3,10 +3,8 @@ using Godot;
 
 namespace CosmocrushGD;
 
-public partial class BaseEnemy : CharacterBody2D
+public abstract partial class BaseEnemy : CharacterBody2D
 {
-	[Signal]
-	public delegate void EnemyDiedEventHandler();
 	[Export] protected NavigationAgent2D Navigator;
 	[Export] protected Sprite2D Sprite;
 	[Export] protected Timer DeathTimer;
@@ -183,7 +181,7 @@ public partial class BaseEnemy : CharacterBody2D
 		Sprite.FlipH = GlobalPosition.X > TargetPlayer.GlobalPosition.X;
 	}
 
-	protected virtual void AttemptAttack() { }
+	protected abstract void AttemptAttack();
 
 	protected virtual void Die()
 	{
@@ -201,8 +199,6 @@ public partial class BaseEnemy : CharacterBody2D
 		DeathParticles.Emitting = true;
 
 		DeathTimer.Start();
-		ScoreManager.Instance?.IncrementScore();
-		EmitSignal(SignalName.EnemyDied);
 	}
 
 	private void ShowDamageIndicator(int damage)
@@ -235,7 +231,7 @@ public partial class BaseEnemy : CharacterBody2D
 		{
 			GD.PushError("Enemy cannot return to pool: PoolManager reference missing!");
 			QueueFree();
-			ScoreManager.Instance?.IncrementScore();
+			return;
 		}
 		
 		PoolManager.ReturnEnemy(this);

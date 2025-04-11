@@ -80,7 +80,6 @@ public partial class Player : CharacterBody2D
 	private void Die()
 	{
 		QueueFree();
-		GameStatsManager.Instance?.GameFinished(ScoreManager.Instance?.CurrentScore ?? 0);
 	}
 
 	public void ApplyKnockback(Vector2 knockback)

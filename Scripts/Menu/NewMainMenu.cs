@@ -138,8 +138,6 @@ namespace CosmocrushGD
 		private void OnStartButtonPressed()
 		{
 			GD.Print("Start button pressed.");
-			ScoreManager.Instance?.ResetScore();
-			GameStatsManager.Instance?.GameStarted();
 			GetTree().ChangeSceneToFile(GameScenePath);
 		}
 
