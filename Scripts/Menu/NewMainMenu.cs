@@ -10,12 +10,13 @@ namespace CosmocrushGD
 		[Export] private Button statisticsButton; // Added Export
 		[Export] private Button quitButton;
 		[Export] private Node starParticlesNode;
-		[Export] private PackedScene statisticsMenuScene; // Added Export
+		// [Export] private PackedScene statisticsMenuScene; // No longer needed if using path
 		private CpuParticles2D _starParticles;
 
 		private const string GameScenePath = "res://Scenes/World.tscn";
 		private const string SettingsScenePath = "res://Scenes/Menu/SettingsMenu.tscn";
-		// Removed statisticsMenuScene path const, using PackedScene export now
+		private const string StatisticsScenePath = "res://Scenes/Menu/StatisticsMenu.tscn"; // Path to the statistics menu scene
+
 
 		public override void _Ready()
 		{
@@ -46,11 +47,11 @@ namespace CosmocrushGD
 			}
 			GD.Print("Buttons checked/retrieved.");
 
-			// Check if statisticsMenuScene is assigned
-			if (statisticsMenuScene == null)
-			{
-				GD.PrintErr("NewMainMenu: statisticsMenuScene is not assigned in the inspector!");
-			}
+			// Check if statisticsMenuScene path exists (optional check)
+			// if (!FileAccess.FileExists(StatisticsScenePath))
+			// {
+			//     GD.PrintErr($"NewMainMenu: Statistics scene file not found at path: {StatisticsScenePath}");
+			// }
 
 			GD.Print("Attempting to get StarParticles...");
 			if (starParticlesNode != null && starParticlesNode is CpuParticles2D specificParticles)
@@ -166,17 +167,11 @@ namespace CosmocrushGD
 			GetTree().ChangeSceneToFile(SettingsScenePath);
 		}
 
-		private void OnStatisticsButtonPressed() // Added handler
+		private void OnStatisticsButtonPressed() // Modified handler
 		{
 			GD.Print("Statistics button pressed.");
-			if (statisticsMenuScene != null)
-			{
-				GetTree().ChangeSceneToPacked(statisticsMenuScene);
-			}
-			else
-			{
-				GD.PrintErr("Cannot switch to Statistics Menu: Scene not assigned in NewMainMenu script!");
-			}
+			// Use ChangeSceneToFile instead of ChangeSceneToPacked
+			GetTree().ChangeSceneToFile(StatisticsScenePath);
 		}
 
 		private void OnQuitButtonPressed()
