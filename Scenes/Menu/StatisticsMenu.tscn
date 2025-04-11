@@ -27,10 +27,9 @@ Button/styles/hover_pressed = SubResource("StyleBoxFlat_wrfhg")
 Button/styles/normal = SubResource("StyleBoxFlat_73cej")
 Button/styles/pressed = SubResource("StyleBoxFlat_75km2")
 
-[sub_resource type="Theme" id="Theme_richtext_labels"]
-RichTextLabel/colors/default_color = Color(1, 1, 1, 1)
-RichTextLabel/font_sizes/normal_font_size = 24
-RichTextLabel/fonts/normal_font = ExtResource("2_venite_font")
+[sub_resource type="Theme" id="Theme_labels"]
+Label/font_sizes/font_size = 24
+Label/fonts/font = ExtResource("2_venite_font")
 
 [node name="StatisticsMenu" type="ColorRect" node_paths=PackedStringArray("gamesPlayedLabel", "totalScoreLabel", "topScoreLabel", "averageScoreLabel", "clearButton", "returnButton")]
 anchors_preset = 15
@@ -67,7 +66,6 @@ theme_override_constants/separation = 30
 
 [node name="TitleLabel" type="Label" parent="CenterContainer/VBoxContainer"]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.529412, 0.807843, 0.921569, 1)
 theme_override_fonts/font = ExtResource("2_venite_font")
 theme_override_font_sizes/font_size = 36
 text = "Game Statistics"
@@ -75,40 +73,24 @@ horizontal_alignment = 1
 
 [node name="StatsGrid" type="GridContainer" parent="CenterContainer/VBoxContainer"]
 layout_mode = 2
-theme = SubResource("Theme_richtext_labels")
+theme = SubResource("Theme_labels")
 columns = 1
 
-[node name="GamesPlayedLabel" type="RichTextLabel" parent="CenterContainer/VBoxContainer/StatsGrid"]
-custom_minimum_size = Vector2(0, 30)
+[node name="GamesPlayedLabel" type="Label" parent="CenterContainer/VBoxContainer/StatsGrid"]
 layout_mode = 2
-size_flags_vertical = 3
-bbcode_enabled = true
-text = "[color=#AAAAAA]Games Played:[/color] [color=#FFFFFF]0[/color]"
-scroll_active = false
+text = "Games Played: 0"
 
-[node name="TotalScoreLabel" type="RichTextLabel" parent="CenterContainer/VBoxContainer/StatsGrid"]
-custom_minimum_size = Vector2(0, 30)
+[node name="TotalScoreLabel" type="Label" parent="CenterContainer/VBoxContainer/StatsGrid"]
 layout_mode = 2
-size_flags_vertical = 3
-bbcode_enabled = true
-text = "[color=#AAAAAA]Total Score:[/color] [color=#FFFFFF]0[/color]"
-scroll_active = false
+text = "Total Score: 0"
 
-[node name="TopScoreLabel" type="RichTextLabel" parent="CenterContainer/VBoxContainer/StatsGrid"]
-custom_minimum_size = Vector2(0, 30)
+[node name="TopScoreLabel" type="Label" parent="CenterContainer/VBoxContainer/StatsGrid"]
 layout_mode = 2
-size_flags_vertical = 3
-bbcode_enabled = true
-text = "[color=#AAAAAA]Top Score:[/color] [color=#FFFFFF]0[/color]"
-scroll_active = false
+text = "Top Score: 0"
 
-[node name="AverageScoreLabel" type="RichTextLabel" parent="CenterContainer/VBoxContainer/StatsGrid"]
-custom_minimum_size = Vector2(0, 30)
+[node name="AverageScoreLabel" type="Label" parent="CenterContainer/VBoxContainer/StatsGrid"]
 layout_mode = 2
-size_flags_vertical = 3
-bbcode_enabled = true
-text = "[color=#AAAAAA]Average Score:[/color] [color=#FFFFFF]0.00[/color]"
-scroll_active = false
+text = "Average Score: 0.00"
 
 [node name="ButtonContainer" type="HBoxContainer" parent="CenterContainer/VBoxContainer"]
 layout_mode = 2
