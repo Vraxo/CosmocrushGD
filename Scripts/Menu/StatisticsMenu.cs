@@ -15,9 +15,16 @@ namespace CosmocrushGD
 
 		private const string MainMenuScenePath = "res://Scenes/Menu/NewMainMenu.tscn";
 
-		// Define colors for BBCode
-		private const string DescriptionColor = "#CCCCCC"; // Light Grey
+		// --- Define colors for BBCode ---
+		// Unique colors for the descriptive part of the text
+		private const string GamesPlayedDescColor = "#FFE000";     // Even Less Saturated Yellow (Changed from #FFEB00)
+		private const string TotalScoreDescColor = "#87CEEB";      // Sky Blue (different shade)
+		private const string TopScoreDescColor = "#FFA07A";        // Light Salmon
+		private const string AverageScoreDescColor = "#98FB98";    // Pale Green
+
+		// Consistent color for the value part of the text
 		private const string ValueColor = "#FFFFFF";       // White
+		// --- End Color Definitions ---
 
 		public override void _Ready()
 		{
@@ -36,7 +43,6 @@ namespace CosmocrushGD
 				if (!clearButton.IsConnected(Button.SignalName.Pressed, Callable.From(OnClearButtonPressed)))
 				{
 					clearButton.Pressed += OnClearButtonPressed;
-					GD.Print("StatisticsMenu: Connected clearButton.Pressed");
 				}
 			}
 			if (returnButton != null)
@@ -44,7 +50,6 @@ namespace CosmocrushGD
 				if (!returnButton.IsConnected(Button.SignalName.Pressed, Callable.From(OnReturnButtonPressed)))
 				{
 					returnButton.Pressed += OnReturnButtonPressed;
-					GD.Print("StatisticsMenu: Connected returnButton.Pressed");
 				}
 			}
 			// Connect the dialog's confirmed signal
@@ -53,7 +58,6 @@ namespace CosmocrushGD
 				if (!confirmationDialog.IsConnected(ConfirmationDialog.SignalName.Confirmed, Callable.From(OnResetConfirmed)))
 				{
 					confirmationDialog.Confirmed += OnResetConfirmed;
-					GD.Print("StatisticsMenu: Connected confirmationDialog.Confirmed");
 				}
 			}
 
@@ -74,29 +78,28 @@ namespace CosmocrushGD
 			var statsManager = StatisticsManager.Instance;
 			var stats = statsManager.StatsData;
 
-			// Use BBCode to set colors. This works directly with RichTextLabel's Text property.
+			// Use BBCode to set specific colors for each description, and white for the value
 			if (gamesPlayedLabel != null)
-				gamesPlayedLabel.Text = $"[color={DescriptionColor}]Games Played:[/color] [color={ValueColor}]{stats.GamesPlayed}[/color]";
+				gamesPlayedLabel.Text = $"[color={GamesPlayedDescColor}]Games Played:[/color] [color={ValueColor}]{stats.GamesPlayed}[/color]";
 			if (totalScoreLabel != null)
-				totalScoreLabel.Text = $"[color={DescriptionColor}]Total Score:[/color] [color={ValueColor}]{stats.TotalScore}[/color]";
+				totalScoreLabel.Text = $"[color={TotalScoreDescColor}]Total Score:[/color] [color={ValueColor}]{stats.TotalScore}[/color]";
 			if (topScoreLabel != null)
-				topScoreLabel.Text = $"[color={DescriptionColor}]Top Score:[/color] [color={ValueColor}]{stats.TopScore}[/color]";
+				topScoreLabel.Text = $"[color={TopScoreDescColor}]Top Score:[/color] [color={ValueColor}]{stats.TopScore}[/color]";
 			if (averageScoreLabel != null)
-				averageScoreLabel.Text = $"[color={DescriptionColor}]Average Score:[/color] [color={ValueColor}]{statsManager.GetAverageScore():F2}[/color]"; // Format to 2 decimal places
+				averageScoreLabel.Text = $"[color={AverageScoreDescColor}]Average Score:[/color] [color={ValueColor}]{statsManager.GetAverageScore():F2}[/color]"; // Format to 2 decimal places
 		}
 
 		private void OnClearButtonPressed()
 		{
-			GD.Print("Clear Stats button pressed."); // Add this line for logging
+			GD.Print("Clear Stats button pressed.");
 			// Show the confirmation dialog instead of resetting directly
 			if (confirmationDialog != null)
 			{
-				GD.Print("ConfirmationDialog reference is valid. Popping up..."); // Add this line
 				confirmationDialog.PopupCentered();
 			}
 			else
 			{
-				GD.PrintErr("Cannot show confirmation dialog because confirmationDialog reference is NULL!"); // Add this line
+				GD.PrintErr("Cannot show confirmation dialog because confirmationDialog reference is NULL!");
 			}
 			// Play UI sound when initiating the action
 			GlobalAudioPlayer.Instance.PlaySound(GlobalAudioPlayer.Instance.UiSound);
@@ -109,8 +112,6 @@ namespace CosmocrushGD
 			StatisticsManager.Instance.ResetStats(); // Reset the data
 			StatisticsManager.Instance.Save();      // Save the reset state immediately
 			LoadAndDisplayStats();                  // Update the labels on screen
-			// Optionally play another sound on confirmation, though maybe redundant
-			// GlobalAudioPlayer.Instance.PlaySound(GlobalAudioPlayer.Instance.UiSound);
 		}
 
 
@@ -138,13 +139,11 @@ namespace CosmocrushGD
 
 		public override void _ExitTree()
 		{
-			GD.Print("StatisticsMenu Exiting Tree"); // Debugging
 			if (clearButton != null && IsInstanceValid(clearButton))
 			{
 				if (clearButton.IsConnected(Button.SignalName.Pressed, Callable.From(OnClearButtonPressed)))
 				{
 					clearButton.Pressed -= OnClearButtonPressed;
-					GD.Print("StatisticsMenu: Disconnected clearButton.Pressed");
 				}
 			}
 			if (returnButton != null && IsInstanceValid(returnButton))
@@ -152,7 +151,6 @@ namespace CosmocrushGD
 				if (returnButton.IsConnected(Button.SignalName.Pressed, Callable.From(OnReturnButtonPressed)))
 				{
 					returnButton.Pressed -= OnReturnButtonPressed;
-					GD.Print("StatisticsMenu: Disconnected returnButton.Pressed");
 				}
 			}
 
@@ -162,7 +160,6 @@ namespace CosmocrushGD
 				if (confirmationDialog.IsConnected(ConfirmationDialog.SignalName.Confirmed, Callable.From(OnResetConfirmed)))
 				{
 					confirmationDialog.Disconnect(ConfirmationDialog.SignalName.Confirmed, Callable.From(OnResetConfirmed));
-					GD.Print("StatisticsMenu: Disconnected confirmationDialog.Confirmed");
 				}
 			}
 			base._ExitTree();
