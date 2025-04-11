@@ -7,54 +7,45 @@ public partial class Player : CharacterBody2D
 {
 	public int Health = 100;
 	public int MaxHealth = 100;
-	public Inventory PlayerInventory = new();
+	public Inventory Inventory = new();
 
-	public const float MovementSpeed = 300.0f;
-
-	[Export] private Gun playerGun;
+	public const float Speed = 300.0f;
+	
+	[Export] private Gun gun;
 	[Export] private AudioStream damageAudio;
-	[Export] private Sprite2D playerSprite;
+	[Export] private Sprite2D sprite;
 	[Export] private CpuParticles2D damageParticles;
 	[Export] private Node audioPlayerContainer;
 
 	private Vector2 knockbackVelocity = Vector2.Zero;
-	private const float KnockbackRecoverySpeed = 0.1f;
+	private const float knockbackRecoverySpeed = 0.1f;
+
+	public event Action AudioPlayerFinished;
 
 	public override void _Ready()
 	{
-		playerGun ??= GetNode<Gun>("Gun");
-		playerSprite ??= GetNode<Sprite2D>("Sprite");
-		damageParticles ??= GetNode<CpuParticles2D>("DamageParticles");
-		audioPlayerContainer ??= GetNode<Node>("AudioPlayerContainer");
+		gun = GetNode<Gun>("Gun");
+
+		AudioPlayerFinished += OnAudioPlayerFinished;
 	}
 
-	// Added 'void' return type
+	// Player.cs
 	public override void _PhysicsProcess(double delta)
 	{
-		knockbackVelocity = knockbackVelocity.Lerp(Vector2.Zero, KnockbackRecoverySpeed);
+		knockbackVelocity = knockbackVelocity.Lerp(Vector2.Zero, knockbackRecoverySpeed);
 
-		Vector2 inputDirection = Input.GetVector("left", "right", "up", "down");
-		Vector2 targetVelocity = inputDirection * MovementSpeed + knockbackVelocity;
-		Velocity = targetVelocity;
-
+		// Get combined input from keyboard and simulated joystick
+		Vector2 direction = Input.GetVector("left", "right", "up", "down");
+		Vector2 movement = direction * Speed + knockbackVelocity;
+		Velocity = movement;
 		MoveAndSlide();
 	}
 
-	public void TakeDamage(int damageAmount)
+	public void TakeDamage(int damage)
 	{
-		if (damageAmount <= 0)
-		{
-			return;
-		}
+		Health -= damage;
 
-		Health -= damageAmount;
-		Health = Mathf.Max(Health, 0);
-
-		if (damageParticles is not null)
-		{
-			damageParticles.Emitting = true;
-		}
-
+		damageParticles.Emitting = true;
 		PlayDamageSound();
 
 		if (Health <= 0)
@@ -65,40 +56,36 @@ public partial class Player : CharacterBody2D
 
 	private void PlayDamageSound()
 	{
-		if (damageAudio is null || audioPlayerContainer is null)
+		AudioStreamPlayer2D newAudioPlayer = new();
+		audioPlayerContainer.AddChild(newAudioPlayer);
+		
+		newAudioPlayer.Stream = damageAudio;
+		newAudioPlayer.Finished += () => AudioPlayerFinished?.Invoke();
+		newAudioPlayer.Play();
+	}
+
+	private void OnAudioPlayerFinished()
+	{
+		foreach (Node child in audioPlayerContainer.GetChildren())
 		{
-			return;
+			if (child is not AudioStreamPlayer2D audioPlayer || audioPlayer.Playing)
+			{
+				continue;
+			}
+
+			audioPlayer.QueueFree();
 		}
-
-		AudioStreamPlayer2D audioPlayer = new()
-		{
-			Stream = damageAudio,
-			VolumeDb = Mathf.LinearToDb(0.8f),
-			Bus = "SFX"
-		};
-
-		audioPlayerContainer.AddChild(audioPlayer);
-		audioPlayer.Play();
-		audioPlayer.Finished += () => audioPlayer.QueueFree();
 	}
 
 	private void Die()
 	{
-		StatisticsManager.Instance.EndGame();
-
-		GD.Print("Player Died!");
 		QueueFree();
 	}
 
-	public void ApplyKnockback(Vector2 knockbackForce)
+	public void ApplyKnockback(Vector2 knockback)
 	{
-		if (knockbackForce.LengthSquared() > knockbackVelocity.LengthSquared())
-		{
-			knockbackVelocity = knockbackForce;
-		}
-		else
-		{
-			knockbackVelocity += knockbackForce * 0.5f;
-		}
+		knockbackVelocity = (knockbackVelocity.Length() < knockback.Length())
+			? knockback
+			: knockbackVelocity + knockback;
 	}
 }

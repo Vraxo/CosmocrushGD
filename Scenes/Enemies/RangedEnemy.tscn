@@ -21,7 +21,7 @@ shader_parameter/flash_color = Color(1, 1, 1, 1)
 shader_parameter/flash_value = 0.0
 
 [sub_resource type="Animation" id="Animation_pnc6v"]
-resource_name = "HitFlash" # Renamed
+resource_name = "new_animation"
 length = 0.6
 tracks/0/type = "bezier"
 tracks/0/imported = false
@@ -61,10 +61,9 @@ point_count = 2
 
 [node name="RangedEnemy" type="CharacterBody2D" node_paths=PackedStringArray("Navigator", "Sprite", "DeathTimer", "DamageCooldownTimer", "Collider", "DamageParticles", "DeathParticles", "HitAnimationPlayer")]
 material = SubResource("ShaderMaterial_kqe6k")
-position = Vector2(56, 104) # Default position in scene, overridden by spawner
-collision_layer = 3 # Layer 3: Enemies
-collision_mask = 3 # Collide with Layer 1 (World) and Layer 2 (Player)
-input_pickable = true # Remove?
+position = Vector2(56, 104)
+collision_mask = 5
+input_pickable = true
 motion_mode = 1
 script = ExtResource("1_3crpb")
 projectileScene = ExtResource("3_12pu3")
@@ -82,7 +81,6 @@ HitAnimationPlayer = NodePath("Sprite/AnimationPlayer")
 shape = SubResource("RectangleShape2D_85f4y")
 
 [node name="Navigator" type="NavigationAgent2D" parent="."]
-# Consider adjusting agent radius/height/neighbor dist etc. if needed
 
 [node name="Sprite" type="Sprite2D" parent="."]
 material = SubResource("ShaderMaterial_5b5ve")
@@ -94,7 +92,6 @@ libraries = {
 }
 
 [node name="DeathTimer" type="Timer" parent="."]
-one_shot = true
 
 [node name="DamageParticles" type="CPUParticles2D" parent="."]
 position = Vector2(0, -1)
@@ -130,5 +127,4 @@ scale_amount_curve = SubResource("Curve_2qoxu")
 color = Color(0.639216, 0.286275, 0.643137, 1)
 
 [node name="DamageTimer" type="Timer" parent="."]
-wait_time = 1.5 # Linked to RangedEnemy AttackInterval override
-one_shot = true
+wait_time = 0.5

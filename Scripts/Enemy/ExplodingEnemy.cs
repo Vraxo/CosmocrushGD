@@ -1,90 +1,76 @@
 using Godot;
-using System;
+using System; // Required for Math
 
 namespace CosmocrushGD;
 
 public partial class ExplodingEnemy : BaseEnemy
 {
-	[Export] private PackedScene projectileScene;
-	[Export] private int projectileCount = 8;
-	[Export] private float meleeKnockbackForce = 500f;
+	[Export] private PackedScene projectileScene; // Need this to spawn projectiles
+	[Export] private int projectileCount = 8; // Number of projectiles to spawn on death
+	[Export] private float meleeKnockbackForce = 500f; // Same as MeleeEnemy
 
-	// Inherit properties like MovementSpeed, MaxHealth from BaseEnemy
-	// Override specific values if needed, e.g.:
-	// protected override int MaxHealth => 15; // Make it weaker
-	// protected override float MovementSpeed => 80f; // Make it slower
+	// Inherit most properties like Speed, Damage, Health from BaseEnemy
+	// We can override them here if needed, e.g., make it slower or tougher
 
 	protected override void AttemptAttack()
 	{
-		// Use corrected property names from BaseEnemy
-		if (!CanAttack || TargetPlayer is null || !IsInstanceValid(TargetPlayer))
+		// Standard melee attack logic
+		if (!CanShoot || TargetPlayer is null || !IsInstanceValid(TargetPlayer))
 		{
 			return;
 		}
 
 		float distance = GlobalPosition.DistanceTo(TargetPlayer.GlobalPosition);
 
-		// Use corrected property name AttackRadius
-		if (distance > AttackRadius)
+		if (distance > DamageRadius) // Use DamageRadius from BaseEnemy or override
 		{
 			return;
 		}
 
-		// Use corrected property name BaseDamage
-		TargetPlayer.TakeDamage(BaseDamage);
+		TargetPlayer.TakeDamage(Damage); // Use Damage from BaseEnemy or override
 
-		Vector2 knockbackDirection = (TargetPlayer.GlobalPosition - GlobalPosition).Normalized();
-		TargetPlayer.ApplyKnockback(knockbackDirection * meleeKnockbackForce);
+		Vector2 knockbackDir = (TargetPlayer.GlobalPosition - GlobalPosition).Normalized();
+		TargetPlayer.ApplyKnockback(knockbackDir * meleeKnockbackForce);
 
-		// Use corrected property name CanAttack
-		CanAttack = false;
-		DamageCooldownTimer?.Start(); // Use AttackInterval from BaseEnemy or override
+		CanShoot = false;
+		DamageCooldownTimer.Start(); // Use AttackCooldown from BaseEnemy or override
 	}
 
 	protected override void Die()
 	{
-		// Call base Die first (handles disabling, particles, score, etc.)
+		// Call the base Die() method first to handle standard death logic
+		// (disable collider, hide sprite, start death timer, etc.)
 		base.Die();
 
-		// Spawn projectiles specific to this enemy type
+		// Now, spawn projectiles in a circle
 		if (projectileScene is null || projectileCount <= 0)
 		{
 			return;
 		}
 
-		float angleStep = Mathf.Tau / projectileCount; // Use Tau for 2 * PI
+		float angleStep = (float)(2 * Math.PI / projectileCount); // Angle between projectiles
 
 		for (int i = 0; i < projectileCount; i++)
 		{
-			Projectile projectile = projectileScene.Instantiate<Projectile>();
+			var projectile = projectileScene.Instantiate<Projectile>();
 
 			if (projectile is null)
 			{
-				GD.PrintErr("ExplodingEnemy: Failed to instantiate projectile.");
-				continue; // Skip this projectile
+				continue;
 			}
 
-			// Optional: Customize projectile appearance/properties
-			if (projectile.Sprite is not null && Sprite?.Texture is not null)
-			{
-				projectile.Sprite.Texture = Sprite.Texture; // Use enemy's texture?
-			}
-			if (projectile.DestructionParticles is not null)
-			{
-				// Orange color for explosion fragments
-				projectile.DestructionParticles.Color = new Color(1.0f, 0.5f, 0.15f);
-			}
+			projectile.Sprite.Texture = Sprite.Texture;
+			projectile.DestructionParticles.Color = new(255, 127, 39);
 
 			float angle = i * angleStep;
-			// Use Godot's Vector2.FromAngle for clarity
-			Vector2 direction = Vector2.FromAngle(angle);
+			Vector2 direction = new Vector2((float)Math.Cos(angle), (float)Math.Sin(angle)).Normalized();
 
 			projectile.GlobalPosition = GlobalPosition; // Spawn at enemy's death position
 			projectile.Direction = direction;
 
-			// Add projectile to the main scene tree (or a dedicated container if preferred)
+			// Add projectile to the main scene tree
 			GetTree().Root.AddChild(projectile);
 		}
-		// base.Die() already starts the DeathTimer which calls ReturnToPool
+		// The base.Die() already starts the DeathTimer which calls ReturnToPool
 	}
 }

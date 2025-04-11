@@ -9,11 +9,11 @@ size = Vector2(32, 32)
 texture = ExtResource("1_qk0hm")
 
 [node name="StaticBody2D" type="StaticBody2D" parent="."]
-collision_layer = 1 # Layer 1: World
-collision_mask = 0 # World doesn't need to detect collisions
+collision_layer = 4
+collision_mask = 0
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="StaticBody2D"]
 shape = SubResource("RectangleShape2D_sfwv6")
 
 [node name="NavigationObstacle2D" type="NavigationObstacle2D" parent="."]
-radius = 64.0 # Keep obstacle for navmesh
+radius = 64.0

@@ -14,8 +14,7 @@ _data = [Vector2(0.00433911, 0.993671), 0.0, 0.0, 0, 0, Vector2(0.998999, 0.0021
 point_count = 2
 
 [node name="Player" type="CharacterBody2D" node_paths=PackedStringArray("damageParticles", "audioPlayerContainer")]
-collision_layer = 2 # Layer 2: Player
-collision_mask = 5 # Collide with Layer 1 (World) and Layer 3 (Enemies)
+collision_mask = 5
 motion_mode = 1
 script = ExtResource("2_8tp0t")
 damageAudio = ExtResource("5_42wm7")
@@ -36,8 +35,8 @@ visible = false
 position = Vector2(16, 0)
 exclude_parent = false
 target_position = Vector2(500, 0)
-collision_mask = 6 # Collide with Layer 2 (Enemies=3?) and Layer 3 (??). Needs check -> Layer 3 (Enemies) and Layer 1 (World) = 1 | 4 = 5? No, Raycast needs layer 3 for Enemies. Mask = 4
-collide_with_areas = true # Important if projectiles are Areas
+collision_mask = 6
+collide_with_areas = true
 
 [node name="AudioPlayers" type="Node" parent="."]
 
