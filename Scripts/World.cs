@@ -32,6 +32,10 @@ public partial class World : WorldEnvironment
 			GD.PrintErr("Pause Button reference not set in World!");
 		}
 
+		// Increment games played when the world starts
+		StatisticsManager.Instance.IncrementGamesPlayed();
+		// Note: Saving happens within StatisticsManager methods now, or on quit.
+
 		UpdateScoreLabel(); // Initialize label text
 	}
 

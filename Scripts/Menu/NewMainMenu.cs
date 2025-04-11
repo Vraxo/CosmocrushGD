@@ -20,12 +20,17 @@ namespace CosmocrushGD
 
 			try
 			{
-				var _ = CosmocrushGD.Settings.Instance;
+				// Initialize Settings singleton (already done)
+				var _settings = CosmocrushGD.Settings.Instance;
 				GD.Print("Settings Instance accessed.");
+
+				// Initialize StatisticsManager singleton
+				var _stats = CosmocrushGD.StatisticsManager.Instance;
+				GD.Print("Statistics Manager Instance accessed.");
 			}
 			catch (Exception e)
 			{
-				GD.PrintErr($"Error accessing Settings.Instance: {e.Message}");
+				GD.PrintErr($"Error accessing Singletons (Settings/Statistics): {e.Message}");
 			}
 
 			startButton ??= GetNode<Button>("CenterContainer/VBoxContainer/StartButton");
@@ -65,6 +70,7 @@ namespace CosmocrushGD
 			var root = GetTree()?.Root;
 			if (root != null)
 			{
+				// Connect AFTER the StatisticsManager has been potentially loaded
 				root.CloseRequested += OnWindowCloseRequested;
 				GD.Print("CloseRequested signal connected.");
 			}
@@ -72,6 +78,7 @@ namespace CosmocrushGD
 			{
 				GD.PrintErr("GetTree().Root is null, cannot connect CloseRequested signal.");
 			}
+
 
 			GD.Print("Connecting Resized signal...");
 			Resized += UpdateParticleEmitterBounds;
@@ -89,12 +96,13 @@ namespace CosmocrushGD
 				GD.Print("Skipping deferred call because _starParticles is null.");
 			}
 
+
 			GD.Print("--- NewMainMenu _Ready: End ---");
 		}
 
 		private void UpdateParticleEmitterBounds()
 		{
-			GD.Print("--- UpdateParticleEmitterBounds: Start ---");
+			// GD.Print("--- UpdateParticleEmitterBounds: Start ---"); // Reduce log spam
 
 			if (_starParticles == null)
 			{
@@ -104,7 +112,7 @@ namespace CosmocrushGD
 
 			if (!IsInsideTree())
 			{
-				GD.PrintErr("UpdateParticleEmitterBounds: Node is not inside the tree. Aborting.");
+				// GD.PrintErr("UpdateParticleEmitterBounds: Node is not inside the tree. Aborting."); // Can happen during scene change
 				return;
 			}
 
@@ -116,22 +124,22 @@ namespace CosmocrushGD
 			}
 
 			var viewportHeight = GetViewportRect().Size.Y;
-			GD.Print($"Viewport height: {viewportHeight}");
+			// GD.Print($"Viewport height: {viewportHeight}");
 
 			// --- CHANGE HERE: Shift X position slightly left ---
 			const float spawnOffsetX = -10.0f; // Adjust this value as needed
 			_starParticles.Position = new Vector2(spawnOffsetX, viewportHeight / 2.0f);
 			// --- END CHANGE ---
-			GD.Print($"Set particle position to: {_starParticles.Position}");
+			// GD.Print($"Set particle position to: {_starParticles.Position}");
 
 			_starParticles.EmissionRectExtents = new Vector2(1.0f, viewportHeight / 2.0f);
-			GD.Print($"Set EmissionRectExtents to: {_starParticles.EmissionRectExtents}");
+			// GD.Print($"Set EmissionRectExtents to: {_starParticles.EmissionRectExtents}");
 
 			_starParticles.EmissionShape = CpuParticles2D.EmissionShapeEnum.Rectangle;
 
 			// No Restart needed
 
-			GD.Print("--- UpdateParticleEmitterBounds: End ---");
+			// GD.Print("--- UpdateParticleEmitterBounds: End ---");
 		}
 
 		// --- Button Handlers ---
@@ -149,7 +157,9 @@ namespace CosmocrushGD
 
 		private void OnQuitButtonPressed()
 		{
-			GD.Print("Quit button pressed. Quitting application...");
+			GD.Print("Quit button pressed. Saving stats and quitting application...");
+			// Save stats before quitting
+			StatisticsManager.Instance.Save();
 			GetTree().Quit();
 		}
 		// --- End Button Handlers ---
@@ -157,8 +167,10 @@ namespace CosmocrushGD
 		// --- Window Close Handler ---
 		private void OnWindowCloseRequested()
 		{
-			GD.Print("Window close requested via signal. Quitting application...");
-			GetTree().Quit();
+			GD.Print("Window close requested via signal. Saving stats and quitting application...");
+			// Save stats before quitting
+			StatisticsManager.Instance.Save();
+			GetTree().Quit(); // Ensure the application actually quits
 		}
 		// --- End Window Close Handler ---
 
@@ -166,15 +178,21 @@ namespace CosmocrushGD
 		public override void _ExitTree()
 		{
 			GD.Print("--- NewMainMenu _ExitTree ---");
-			Resized -= UpdateParticleEmitterBounds;
+			if (IsInstanceValid(this))
+			{
+				Resized -= UpdateParticleEmitterBounds;
+			}
+
 
 			var root = GetTree()?.Root;
 			if (root != null && IsInstanceValid(root))
 			{
-				if (root.IsConnected(Window.SignalName.CloseRequested, Callable.From(OnWindowCloseRequested)))
+				// Check connection before disconnecting
+				var callable = Callable.From(OnWindowCloseRequested);
+				if (root.IsConnected(Window.SignalName.CloseRequested, callable))
 				{
 					GD.Print("Disconnecting CloseRequested signal.");
-					root.Disconnect(Window.SignalName.CloseRequested, Callable.From(OnWindowCloseRequested));
+					root.Disconnect(Window.SignalName.CloseRequested, callable);
 				}
 			}
 

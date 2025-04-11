@@ -1,4 +1,5 @@
 using Godot;
+using CosmocrushGD; // Needed for StatisticsManager
 
 namespace Cosmocrush;
 
@@ -45,6 +46,20 @@ public partial class PauseMenu : ColorRect
 
 	private void OnReturnButtonPressed()
 	{
+		// Update statistics before returning to menu
+		var worldNode = GetNode<World>("/root/World"); // Assumes World node path
+		if (worldNode != null)
+		{
+			StatisticsManager.Instance.UpdateScores(worldNode.Score);
+			GD.Print($"Returning to menu. Recorded Score: {worldNode.Score}");
+		}
+		else
+		{
+			GD.PrintErr("PauseMenu: Could not find World node at /root/World to update scores.");
+			// Still save whatever might be dirty
+			StatisticsManager.Instance.Save();
+		}
+
 		if (GetTree() is SceneTree tree)
 		{
 			tree.Paused = false;
@@ -54,6 +69,20 @@ public partial class PauseMenu : ColorRect
 
 	private void OnQuitButtonPressed()
 	{
+		// Update statistics before quitting
+		var worldNode = GetNode<World>("/root/World"); // Assumes World node path
+		if (worldNode != null)
+		{
+			StatisticsManager.Instance.UpdateScores(worldNode.Score);
+			GD.Print($"Quitting game. Recorded Score: {worldNode.Score}");
+		}
+		else
+		{
+			GD.PrintErr("PauseMenu: Could not find World node at /root/World to update scores.");
+			// Still save whatever might be dirty
+			StatisticsManager.Instance.Save();
+		}
+
 		GetTree()?.Quit();
 	}
 
@@ -73,6 +102,7 @@ public partial class PauseMenu : ColorRect
 
 	public override void _ExitTree()
 	{
+		// Ensure game is unpaused if the menu is removed unexpectedly
 		if (GetTree()?.Paused ?? false)
 		{
 			GetTree().Paused = false;
