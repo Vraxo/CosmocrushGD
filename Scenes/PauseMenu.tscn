@@ -26,8 +26,21 @@ Button/styles/hover_pressed = SubResource("StyleBoxFlat_wrfhg")
 Button/styles/normal = SubResource("StyleBoxFlat_73cej")
 Button/styles/pressed = SubResource("StyleBoxFlat_75km2")
 
-[node name="PauseMenu" type="ColorRect" node_paths=PackedStringArray("continueButton", "quitButton")]
+[node name="PauseMenu" type="ColorRect" node_paths=PackedStringArray("continueButton", "returnButton", "quitButton")]
 process_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 0, 0.501961)
+script = ExtResource("1_d6sgd")
+continueButton = NodePath("CenterContainer/Container/ContinueButton")
+returnButton = NodePath("CenterContainer/Container/ReturnButton")
+quitButton = NodePath("CenterContainer/Container/QuitButton")
+
+[node name="CenterContainer" type="CenterContainer" parent="."]
+layout_mode = 1
 anchors_preset = 8
 anchor_left = 0.5
 anchor_top = 0.5
@@ -35,31 +48,30 @@ anchor_right = 0.5
 anchor_bottom = 0.5
 grow_horizontal = 2
 grow_vertical = 2
-size_flags_stretch_ratio = 13.11
-color = Color(0, 0, 0, 0.501961)
-script = ExtResource("1_d6sgd")
-continueButton = NodePath("Container/ContinueButton")
-quitButton = NodePath("Container/QuitButton")
 
-[node name="Container" type="VBoxContainer" parent="."]
+[node name="Container" type="VBoxContainer" parent="CenterContainer"]
 layout_mode = 2
-offset_left = -264.0
-offset_top = -104.0
-offset_right = 236.0
-offset_bottom = 100.0
 
-[node name="ContinueButton" type="Button" parent="Container"]
-custom_minimum_size = Vector2(250, 100)
+[node name="ContinueButton" type="Button" parent="CenterContainer/Container"]
+custom_minimum_size = Vector2(350, 100)
 layout_mode = 2
 theme = SubResource("Theme_ilgyb")
 theme_override_font_sizes/font_size = 25
 text = "Continue"
 script = ExtResource("2_co7yi")
 
-[node name="QuitButton" type="Button" parent="Container"]
-custom_minimum_size = Vector2(250, 100)
+[node name="ReturnButton" type="Button" parent="CenterContainer/Container"]
+custom_minimum_size = Vector2(350, 100)
 layout_mode = 2
 theme = SubResource("Theme_ilgyb")
 theme_override_font_sizes/font_size = 25
-text = "Quit"
+text = "Return to Main Menu"
+script = ExtResource("2_co7yi")
+
+[node name="QuitButton" type="Button" parent="CenterContainer/Container"]
+custom_minimum_size = Vector2(350, 100)
+layout_mode = 2
+theme = SubResource("Theme_ilgyb")
+theme_override_font_sizes/font_size = 25
+text = "Quit Game"
 script = ExtResource("2_co7yi")

@@ -34,7 +34,7 @@ public partial class World : WorldEnvironment
 		{
 			Pause();
 		}
-		else if (pauseMenu != null && IsInstanceValid(pauseMenu))
+		else if (pauseMenu is not null && IsInstanceValid(pauseMenu))
 		{
 			pauseMenu.TriggerContinue();
 		}
@@ -42,22 +42,27 @@ public partial class World : WorldEnvironment
 
 	private void Pause()
 	{
-		if (GetTree().Paused) return;
-
-		if (pauseMenu == null || !IsInstanceValid(pauseMenu))
+		if (GetTree().Paused)
 		{
-			if (pauseMenuScene == null)
+			return;
+		}
+
+		if (pauseMenu is null || !IsInstanceValid(pauseMenu))
+		{
+			if (pauseMenuScene is null)
 			{
 				GD.PrintErr("PauseMenuScene is not set in World script!");
 				return;
 			}
-			if (hudLayer == null)
+
+			if (hudLayer is null)
 			{
 				GD.PrintErr("HUD Layer is not set or found in World script!");
 				return;
 			}
+
 			pauseMenu = pauseMenuScene.Instantiate<PauseMenu>();
-			hudLayer.AddChild(pauseMenu); // Add to the HUD layer
+			hudLayer.AddChild(pauseMenu);
 		}
 
 		GetTree().Paused = true;

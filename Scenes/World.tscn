@@ -97,10 +97,14 @@ theme_override_styles/fill = SubResource("StyleBoxFlat_d0udc")
 script = ExtResource("8_h5gnh")
 
 [node name="PauseButton" type="Button" parent="HUD"]
-offset_left = 1160.0
-offset_top = 32.0
-offset_right = 1215.0
-offset_bottom = 63.0
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -120.0
+offset_top = 64.0
+offset_right = -65.0
+offset_bottom = 95.0
+grow_horizontal = 0
 text = "||"
 
 [node name="Obstacles" type="Node2D" parent="."]
