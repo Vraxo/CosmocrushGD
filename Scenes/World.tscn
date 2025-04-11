@@ -1,4 +1,4 @@
-[gd_scene load_steps=18 format=3 uid="uid://rflfyu4apk38"]
+[gd_scene load_steps=19 format=3 uid="uid://rflfyu4apk38"]
 
 [ext_resource type="AudioStream" uid="uid://blvqtb4sj0647" path="res://Audio/Songs/Going Ultimate!.mp3" id="1_4w1vw"]
 [ext_resource type="Script" path="res://Scripts/World.cs" id="1_k2m3n"]
@@ -25,17 +25,22 @@ glow_blend_mode = 4
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_d0udc"]
 bg_color = Color(0.0361791, 0.727803, 0, 1)
 
+[sub_resource type="Theme" id="Theme_score"]
+Label/colors/font_color = Color(1, 1, 1, 1)
+Label/font_sizes/font_size = 24
+
 [sub_resource type="NavigationPolygon" id="NavigationPolygon_hiflp"]
 vertices = PackedVector2Array(1766, 942, -518, 942, -518, -278, 1766, -278)
 polygons = Array[PackedInt32Array]([PackedInt32Array(0, 1, 2, 3)])
 outlines = Array[PackedVector2Array]([PackedVector2Array(-528, -288, -528, 952, 1776, 952, 1776, -288)])
 
-[node name="World" type="WorldEnvironment" node_paths=PackedStringArray("pauseButton", "hudLayer")]
+[node name="World" type="WorldEnvironment" node_paths=PackedStringArray("pauseButton", "hudLayer", "scoreLabel")]
 environment = SubResource("Environment_fpnmc")
 script = ExtResource("1_k2m3n")
 pauseMenuScene = ExtResource("2_oslhl")
 pauseButton = NodePath("HUD/PauseButton")
 hudLayer = NodePath("HUD")
+scoreLabel = NodePath("HUD/ScoreLabel")
 metadata/_edit_horizontal_guides_ = [-408.0]
 
 [node name="Background" type="ColorRect" parent="."]
@@ -106,6 +111,14 @@ offset_right = -65.0
 offset_bottom = 95.0
 grow_horizontal = 0
 text = "||"
+
+[node name="ScoreLabel" type="Label" parent="HUD"]
+offset_left = 40.0
+offset_top = 40.0
+offset_right = 180.0
+offset_bottom = 70.0
+theme = SubResource("Theme_score")
+text = "Score: 0"
 
 [node name="Obstacles" type="Node2D" parent="."]
 

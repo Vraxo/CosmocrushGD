@@ -25,6 +25,9 @@ public abstract partial class BaseEnemy : CharacterBody2D
 	public EnemyPoolManager PoolManager { get; set; }
 	public PackedScene SourceScene { get; set; }
 
+	// Score awarded for defeating this enemy
+	protected virtual int ScoreValue => 1;
+
 
 	protected virtual int MaxHealth => 20;
 	protected virtual int Damage => 1;
@@ -70,7 +73,7 @@ public abstract partial class BaseEnemy : CharacterBody2D
 		DamageCooldownTimer.Stop();
 
 		// Ensure animations are stopped or reset if applicable
-		if (HitAnimationPlayer.IsPlaying())
+		if (HitAnimationPlayer != null && HitAnimationPlayer.IsPlaying())
 		{
 			HitAnimationPlayer.Stop(true); // Reset animation
 		}
@@ -129,6 +132,7 @@ public abstract partial class BaseEnemy : CharacterBody2D
 		Rid mapRid = NavigationServer2D.AgentGetMap(Navigator.GetRid());
 		if (!mapRid.IsValid)
 		{
+			GD.PrintErr($"Navigator map invalid for {Name} at {GlobalPosition}");
 			return Vector2.Zero;
 		}
 		// Consider if you need iteration ID check every frame
@@ -153,7 +157,11 @@ public abstract partial class BaseEnemy : CharacterBody2D
 		HitAnimationPlayer?.Play("HitFlash");
 		ShowDamageIndicator(damage);
 
-		DamageParticles.Emitting = true;
+		if (DamageParticles != null)
+		{
+			DamageParticles.Emitting = true;
+		}
+
 
 		if (Health <= 0)
 		{
@@ -194,9 +202,21 @@ public abstract partial class BaseEnemy : CharacterBody2D
 		Velocity = Vector2.Zero;
 		Knockback = Vector2.Zero;
 
-		Collider.Disabled = true;
-		Sprite.Visible = false;
-		DeathParticles.Emitting = true;
+		if (Collider != null) Collider.Disabled = true;
+		if (Sprite != null) Sprite.Visible = false;
+		if (DeathParticles != null) DeathParticles.Emitting = true;
+
+		// Grant score
+		var worldNode = GetNode<Cosmocrush.World>("/root/World"); // Assumes World is direct child of root
+		if (worldNode != null)
+		{
+			worldNode.AddScore(ScoreValue);
+		}
+		else
+		{
+			GD.PrintErr("Could not find World node at /root/World to grant score.");
+		}
+
 
 		DeathTimer.Start();
 	}
@@ -233,7 +253,7 @@ public abstract partial class BaseEnemy : CharacterBody2D
 			QueueFree();
 			return;
 		}
-		
+
 		PoolManager.ReturnEnemy(this);
 		return;
 	}

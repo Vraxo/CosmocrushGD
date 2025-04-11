@@ -1,4 +1,5 @@
 using Godot;
+using CosmocrushGD; // Added for Player access if needed later
 
 namespace Cosmocrush;
 
@@ -7,7 +8,9 @@ public partial class World : WorldEnvironment
 	[Export] private PackedScene pauseMenuScene;
 	[Export] private Button pauseButton;
 	[Export] private CanvasLayer hudLayer; // Reference the existing HUD layer
+	[Export] private Label scoreLabel; // Reference to the new score label
 
+	public int Score { get; private set; } = 0; // Public getter, private setter
 	private PauseMenu pauseMenu;
 
 	public override void _Ready()
@@ -16,8 +19,20 @@ public partial class World : WorldEnvironment
 		{
 			GD.PrintErr("HUD Layer reference not set in World!");
 		}
+		if (scoreLabel == null)
+		{
+			GD.PrintErr("Score Label reference not set in World!");
+		}
+		if (pauseButton != null) // Check if pauseButton exists before connecting
+		{
+			pauseButton.Pressed += OnPauseButtonPressed;
+		}
+		else
+		{
+			GD.PrintErr("Pause Button reference not set in World!");
+		}
 
-		pauseButton.Pressed += OnPauseButtonPressed;
+		UpdateScoreLabel(); // Initialize label text
 	}
 
 	public override void _Process(double delta)
@@ -25,6 +40,20 @@ public partial class World : WorldEnvironment
 		if (Input.IsActionJustPressed("ui_cancel") && !GetTree().Paused)
 		{
 			Pause();
+		}
+	}
+
+	public void AddScore(int amount)
+	{
+		Score += amount;
+		UpdateScoreLabel();
+	}
+
+	private void UpdateScoreLabel()
+	{
+		if (scoreLabel != null)
+		{
+			scoreLabel.Text = $"Score: {Score}";
 		}
 	}
 
