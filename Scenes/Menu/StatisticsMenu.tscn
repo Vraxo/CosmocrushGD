@@ -1,12 +1,8 @@
-[gd_scene load_steps=11 format=3 uid="uid://cfrl1gptovmd0"]
+[gd_scene load_steps=11 format=3 uid="uid://c4x7wvf8j8k6m"]
 
 [ext_resource type="Script" path="res://Scripts/Menu/StatisticsMenu.cs" id="1_statmenu_script"]
 [ext_resource type="FontFile" uid="uid://0q2lkim75hwr" path="res://Fonts/VeniteAdoremus-rgRBA.ttf" id="2_venite_font"]
 [ext_resource type="Script" path="res://Scripts/UIButton.cs" id="3_button_script"]
-
-[sub_resource type="Theme" id="Theme_labels"]
-RichTextLabel/font_sizes/normal_font_size = 24
-RichTextLabel/fonts/normal_font = ExtResource("2_venite_font")
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_1mlyd"]
 bg_color = Color(0.6, 0.6, 0.6, 0)
@@ -30,6 +26,10 @@ Button/styles/hover = SubResource("StyleBoxFlat_n8g20")
 Button/styles/hover_pressed = SubResource("StyleBoxFlat_wrfhg")
 Button/styles/normal = SubResource("StyleBoxFlat_73cej")
 Button/styles/pressed = SubResource("StyleBoxFlat_75km2")
+
+[sub_resource type="Theme" id="Theme_labels"]
+RichTextLabel/font_sizes/normal_font_size = 24
+RichTextLabel/fonts/normal_font = ExtResource("2_venite_font")
 
 [node name="StatisticsMenu" type="ColorRect" node_paths=PackedStringArray("gamesPlayedLabel", "totalScoreLabel", "topScoreLabel", "averageScoreLabel", "clearButton", "returnButton", "confirmationDialog")]
 process_mode = 3
@@ -77,6 +77,7 @@ horizontal_alignment = 1
 [node name="StatsGrid" type="GridContainer" parent="CenterContainer/VBoxContainer"]
 layout_mode = 2
 theme = SubResource("Theme_labels")
+columns = 1
 
 [node name="GamesPlayedLabel" type="RichTextLabel" parent="CenterContainer/VBoxContainer/StatsGrid"]
 layout_mode = 2
