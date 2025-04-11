@@ -7,12 +7,15 @@ namespace CosmocrushGD
 	{
 		[Export] private Button startButton;
 		[Export] private Button settingsButton;
+		[Export] private Button statisticsButton; // Added Export
 		[Export] private Button quitButton;
 		[Export] private Node starParticlesNode;
+		[Export] private PackedScene statisticsMenuScene; // Added Export
 		private CpuParticles2D _starParticles;
 
 		private const string GameScenePath = "res://Scenes/World.tscn";
 		private const string SettingsScenePath = "res://Scenes/Menu/SettingsMenu.tscn";
+		// Removed statisticsMenuScene path const, using PackedScene export now
 
 		public override void _Ready()
 		{
@@ -35,12 +38,19 @@ namespace CosmocrushGD
 
 			startButton ??= GetNode<Button>("CenterContainer/VBoxContainer/StartButton");
 			settingsButton ??= GetNode<Button>("CenterContainer/VBoxContainer/SettingsButton");
+			statisticsButton ??= GetNode<Button>("CenterContainer/VBoxContainer/StatisticsButton"); // Assign statisticsButton
 			quitButton ??= GetNode<Button>("CenterContainer/VBoxContainer/QuitButton");
-			if (startButton == null || settingsButton == null || quitButton == null)
+			if (startButton == null || settingsButton == null || statisticsButton == null || quitButton == null) // Check statisticsButton
 			{
 				GD.PrintErr("NewMainMenu: One or more buttons Null!");
 			}
 			GD.Print("Buttons checked/retrieved.");
+
+			// Check if statisticsMenuScene is assigned
+			if (statisticsMenuScene == null)
+			{
+				GD.PrintErr("NewMainMenu: statisticsMenuScene is not assigned in the inspector!");
+			}
 
 			GD.Print("Attempting to get StarParticles...");
 			if (starParticlesNode != null && starParticlesNode is CpuParticles2D specificParticles)
@@ -64,6 +74,7 @@ namespace CosmocrushGD
 
 			if (startButton != null) startButton.Pressed += OnStartButtonPressed;
 			if (settingsButton != null) settingsButton.Pressed += OnSettingsButtonPressed;
+			if (statisticsButton != null) statisticsButton.Pressed += OnStatisticsButtonPressed; // Connect statisticsButton
 			if (quitButton != null) quitButton.Pressed += OnQuitButtonPressed;
 			GD.Print("Button signals connected.");
 
@@ -155,6 +166,19 @@ namespace CosmocrushGD
 			GetTree().ChangeSceneToFile(SettingsScenePath);
 		}
 
+		private void OnStatisticsButtonPressed() // Added handler
+		{
+			GD.Print("Statistics button pressed.");
+			if (statisticsMenuScene != null)
+			{
+				GetTree().ChangeSceneToPacked(statisticsMenuScene);
+			}
+			else
+			{
+				GD.PrintErr("Cannot switch to Statistics Menu: Scene not assigned in NewMainMenu script!");
+			}
+		}
+
 		private void OnQuitButtonPressed()
 		{
 			GD.Print("Quit button pressed. Saving stats and quitting application...");
@@ -198,6 +222,7 @@ namespace CosmocrushGD
 
 			if (IsInstanceValid(startButton)) startButton.Pressed -= OnStartButtonPressed;
 			if (IsInstanceValid(settingsButton)) settingsButton.Pressed -= OnSettingsButtonPressed;
+			if (IsInstanceValid(statisticsButton)) statisticsButton.Pressed -= OnStatisticsButtonPressed; // Disconnect statisticsButton
 			if (IsInstanceValid(quitButton)) quitButton.Pressed -= OnQuitButtonPressed;
 
 			base._ExitTree();

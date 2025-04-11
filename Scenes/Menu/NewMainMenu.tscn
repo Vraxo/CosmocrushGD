@@ -1,7 +1,8 @@
-[gd_scene load_steps=13 format=3 uid="uid://b7q8x6y5f4g3h"]
+[gd_scene load_steps=14 format=3 uid="uid://b7q8x6y5f4g3h"]
 
 [ext_resource type="Script" path="res://Scripts/Menu/NewMainMenu.cs" id="1_newmenu_script"]
 [ext_resource type="Script" path="res://Scripts/UIButton.cs" id="2_button_script"]
+[ext_resource type="PackedScene" uid="uid://c4x7wvf8j8k6m" path="res://Scenes/Menu/StatisticsMenu.tscn" id="3_stats_menu_scene"]
 [ext_resource type="FontFile" uid="uid://0q2lkim75hwr" path="res://Fonts/VeniteAdoremus-rgRBA.ttf" id="4_venite_font"]
 
 [sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_stars"]
@@ -51,7 +52,7 @@ Button/styles/hover_pressed = SubResource("StyleBoxFlat_wrfhg")
 Button/styles/normal = SubResource("StyleBoxFlat_73cej")
 Button/styles/pressed = SubResource("StyleBoxFlat_75km2")
 
-[node name="NewMainMenu" type="ColorRect" node_paths=PackedStringArray("startButton", "settingsButton", "quitButton", "starParticlesNode")]
+[node name="NewMainMenu" type="ColorRect" node_paths=PackedStringArray("startButton", "settingsButton", "statisticsButton", "quitButton", "starParticlesNode")]
 process_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -62,8 +63,10 @@ color = Color(0, 0, 0, 1)
 script = ExtResource("1_newmenu_script")
 startButton = NodePath("CenterContainer/VBoxContainer/StartButton")
 settingsButton = NodePath("CenterContainer/VBoxContainer/SettingsButton")
+statisticsButton = NodePath("CenterContainer/VBoxContainer/StatisticsButton")
 quitButton = NodePath("CenterContainer/VBoxContainer/QuitButton")
 starParticlesNode = NodePath("StarParticles")
+statisticsMenuScene = ExtResource("3_stats_menu_scene")
 
 [node name="StarParticles" type="CPUParticles2D" parent="."]
 z_index = 1
@@ -103,6 +106,15 @@ theme = SubResource("Theme_ilgyb")
 theme_override_fonts/font = ExtResource("4_venite_font")
 theme_override_font_sizes/font_size = 25
 text = "Settings"
+script = ExtResource("2_button_script")
+
+[node name="StatisticsButton" type="Button" parent="CenterContainer/VBoxContainer"]
+custom_minimum_size = Vector2(250, 100)
+layout_mode = 2
+theme = SubResource("Theme_ilgyb")
+theme_override_fonts/font = ExtResource("4_venite_font")
+theme_override_font_sizes/font_size = 25
+text = "Statistics"
 script = ExtResource("2_button_script")
 
 [node name="QuitButton" type="Button" parent="CenterContainer/VBoxContainer"]

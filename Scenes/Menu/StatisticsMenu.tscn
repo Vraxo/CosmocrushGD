@@ -1,0 +1,115 @@
+[gd_scene load_steps=11 format=3 uid="uid://c4x7wvf8j8k6m"]
+
+[ext_resource type="Script" path="res://Scripts/Menu/StatisticsMenu.cs" id="1_statmenu_script"]
+[ext_resource type="FontFile" uid="uid://0q2lkim75hwr" path="res://Fonts/VeniteAdoremus-rgRBA.ttf" id="2_venite_font"]
+[ext_resource type="Script" path="res://Scripts/UIButton.cs" id="3_button_script"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_1mlyd"]
+bg_color = Color(0.6, 0.6, 0.6, 0)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_n8g20"]
+bg_color = Color(0.6, 0.6, 0.6, 0)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_wrfhg"]
+bg_color = Color(0.6, 0.6, 0.6, 0)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_73cej"]
+bg_color = Color(0.811765, 0.6, 0.6, 0)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_75km2"]
+bg_color = Color(0.6, 0.6, 0.6, 0)
+border_color = Color(0.8, 0.8, 0.8, 0)
+
+[sub_resource type="Theme" id="Theme_buttons"]
+Button/styles/focus = SubResource("StyleBoxFlat_1mlyd")
+Button/styles/hover = SubResource("StyleBoxFlat_n8g20")
+Button/styles/hover_pressed = SubResource("StyleBoxFlat_wrfhg")
+Button/styles/normal = SubResource("StyleBoxFlat_73cej")
+Button/styles/pressed = SubResource("StyleBoxFlat_75km2")
+
+[sub_resource type="Theme" id="Theme_labels"]
+Label/font_sizes/font_size = 24
+Label/fonts/font = ExtResource("2_venite_font")
+
+[node name="StatisticsMenu" type="ColorRect" node_paths=PackedStringArray("gamesPlayedLabel", "totalScoreLabel", "topScoreLabel", "averageScoreLabel", "clearButton", "returnButton")]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 0, 1)
+script = ExtResource("1_statmenu_script")
+gamesPlayedLabel = NodePath("CenterContainer/VBoxContainer/StatsGrid/GamesPlayedLabel")
+totalScoreLabel = NodePath("CenterContainer/VBoxContainer/StatsGrid/TotalScoreLabel")
+topScoreLabel = NodePath("CenterContainer/VBoxContainer/StatsGrid/TopScoreLabel")
+averageScoreLabel = NodePath("CenterContainer/VBoxContainer/StatsGrid/AverageScoreLabel")
+clearButton = NodePath("CenterContainer/VBoxContainer/ButtonContainer/ClearButton")
+returnButton = NodePath("CenterContainer/VBoxContainer/ButtonContainer/ReturnButton")
+
+[node name="CenterContainer" type="CenterContainer" parent="."]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -250.0
+offset_top = -200.0
+offset_right = 250.0
+offset_bottom = 200.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="CenterContainer"]
+layout_mode = 2
+theme_override_constants/separation = 30
+
+[node name="TitleLabel" type="Label" parent="CenterContainer/VBoxContainer"]
+layout_mode = 2
+theme_override_fonts/font = ExtResource("2_venite_font")
+theme_override_font_sizes/font_size = 36
+text = "Game Statistics"
+horizontal_alignment = 1
+
+[node name="StatsGrid" type="GridContainer" parent="CenterContainer/VBoxContainer"]
+layout_mode = 2
+theme = SubResource("Theme_labels")
+columns = 1
+
+[node name="GamesPlayedLabel" type="Label" parent="CenterContainer/VBoxContainer/StatsGrid"]
+layout_mode = 2
+text = "Games Played: 0"
+
+[node name="TotalScoreLabel" type="Label" parent="CenterContainer/VBoxContainer/StatsGrid"]
+layout_mode = 2
+text = "Total Score: 0"
+
+[node name="TopScoreLabel" type="Label" parent="CenterContainer/VBoxContainer/StatsGrid"]
+layout_mode = 2
+text = "Top Score: 0"
+
+[node name="AverageScoreLabel" type="Label" parent="CenterContainer/VBoxContainer/StatsGrid"]
+layout_mode = 2
+text = "Average Score: 0.00"
+
+[node name="ButtonContainer" type="HBoxContainer" parent="CenterContainer/VBoxContainer"]
+layout_mode = 2
+alignment = 1
+
+[node name="ClearButton" type="Button" parent="CenterContainer/VBoxContainer/ButtonContainer"]
+custom_minimum_size = Vector2(150, 50)
+layout_mode = 2
+theme = SubResource("Theme_buttons")
+theme_override_fonts/font = ExtResource("2_venite_font")
+theme_override_font_sizes/font_size = 20
+text = "Clear Stats"
+script = ExtResource("3_button_script")
+
+[node name="ReturnButton" type="Button" parent="CenterContainer/VBoxContainer/ButtonContainer"]
+custom_minimum_size = Vector2(150, 50)
+layout_mode = 2
+theme = SubResource("Theme_buttons")
+theme_override_fonts/font = ExtResource("2_venite_font")
+theme_override_font_sizes/font_size = 20
+text = "Return"
+script = ExtResource("3_button_script")

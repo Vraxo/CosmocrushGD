@@ -118,7 +118,18 @@ namespace CosmocrushGD
 			{
 				return 0.0;
 			}
+			// Ensure floating point division
 			return (double)StatsData.TotalScore / StatsData.GamesPlayed;
+		}
+
+		// New method to reset statistics
+		public void ResetStats()
+		{
+			StatsData = new StatisticsData(); // Create a new blank data object
+			_dirty = true; // Mark as dirty so it gets saved
+			GD.Print("Statistics have been reset.");
+			// Save(); // Call Save here if you want the reset to persist immediately
+			// It's called explicitly in StatisticsMenu after calling ResetStats now.
 		}
 	}
 }
