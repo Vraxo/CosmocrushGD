@@ -1,8 +1,12 @@
-[gd_scene load_steps=11 format=3 uid="uid://c4x7wvf8j8k6m"]
+[gd_scene load_steps=11 format=3 uid="uid://cfrl1gptovmd0"]
 
 [ext_resource type="Script" path="res://Scripts/Menu/StatisticsMenu.cs" id="1_statmenu_script"]
 [ext_resource type="FontFile" uid="uid://0q2lkim75hwr" path="res://Fonts/VeniteAdoremus-rgRBA.ttf" id="2_venite_font"]
 [ext_resource type="Script" path="res://Scripts/UIButton.cs" id="3_button_script"]
+
+[sub_resource type="Theme" id="Theme_labels"]
+RichTextLabel/font_sizes/normal_font_size = 24
+RichTextLabel/fonts/normal_font = ExtResource("2_venite_font")
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_1mlyd"]
 bg_color = Color(0.6, 0.6, 0.6, 0)
@@ -26,10 +30,6 @@ Button/styles/hover = SubResource("StyleBoxFlat_n8g20")
 Button/styles/hover_pressed = SubResource("StyleBoxFlat_wrfhg")
 Button/styles/normal = SubResource("StyleBoxFlat_73cej")
 Button/styles/pressed = SubResource("StyleBoxFlat_75km2")
-
-[sub_resource type="Theme" id="Theme_labels"]
-Label/font_sizes/font_size = 24
-Label/fonts/font = ExtResource("2_venite_font")
 
 [node name="StatisticsMenu" type="ColorRect" node_paths=PackedStringArray("gamesPlayedLabel", "totalScoreLabel", "topScoreLabel", "averageScoreLabel", "clearButton", "returnButton")]
 anchors_preset = 15
@@ -66,6 +66,7 @@ theme_override_constants/separation = 30
 
 [node name="TitleLabel" type="Label" parent="CenterContainer/VBoxContainer"]
 layout_mode = 2
+theme_override_colors/font_color = Color(0.490196, 0.976471, 1, 1)
 theme_override_fonts/font = ExtResource("2_venite_font")
 theme_override_font_sizes/font_size = 36
 text = "Game Statistics"
@@ -74,26 +75,42 @@ horizontal_alignment = 1
 [node name="StatsGrid" type="GridContainer" parent="CenterContainer/VBoxContainer"]
 layout_mode = 2
 theme = SubResource("Theme_labels")
-columns = 1
 
-[node name="GamesPlayedLabel" type="Label" parent="CenterContainer/VBoxContainer/StatsGrid"]
+[node name="GamesPlayedLabel" type="RichTextLabel" parent="CenterContainer/VBoxContainer/StatsGrid"]
 layout_mode = 2
+size_flags_vertical = 4
+bbcode_enabled = true
 text = "Games Played: 0"
+fit_content = true
+autowrap_mode = 0
 
-[node name="TotalScoreLabel" type="Label" parent="CenterContainer/VBoxContainer/StatsGrid"]
+[node name="TotalScoreLabel" type="RichTextLabel" parent="CenterContainer/VBoxContainer/StatsGrid"]
 layout_mode = 2
+size_flags_vertical = 4
+bbcode_enabled = true
 text = "Total Score: 0"
+fit_content = true
+autowrap_mode = 0
 
-[node name="TopScoreLabel" type="Label" parent="CenterContainer/VBoxContainer/StatsGrid"]
+[node name="TopScoreLabel" type="RichTextLabel" parent="CenterContainer/VBoxContainer/StatsGrid"]
 layout_mode = 2
+size_flags_vertical = 4
+bbcode_enabled = true
 text = "Top Score: 0"
+fit_content = true
+autowrap_mode = 0
 
-[node name="AverageScoreLabel" type="Label" parent="CenterContainer/VBoxContainer/StatsGrid"]
+[node name="AverageScoreLabel" type="RichTextLabel" parent="CenterContainer/VBoxContainer/StatsGrid"]
 layout_mode = 2
+size_flags_vertical = 4
+bbcode_enabled = true
 text = "Average Score: 0.00"
+fit_content = true
+autowrap_mode = 0
 
 [node name="ButtonContainer" type="HBoxContainer" parent="CenterContainer/VBoxContainer"]
 layout_mode = 2
+theme_override_constants/separation = 20
 alignment = 1
 
 [node name="ClearButton" type="Button" parent="CenterContainer/VBoxContainer/ButtonContainer"]
