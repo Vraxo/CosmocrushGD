@@ -9,47 +9,65 @@ namespace CosmocrushGD
 		[Export] private Button settingsButton;
 		[Export] private Button quitButton;
 		[Export] private Node starParticlesNode;
-		private CpuParticles2D _starParticles;
+
+		private CpuParticles2D starParticlesInstance;
 
 		private const string GameScenePath = "res://Scenes/World.tscn";
 		private const string SettingsScenePath = "res://Scenes/Menu/SettingsMenu.tscn";
 
 		public override void _Ready()
 		{
-			GD.Print("--- NewMainMenu _Ready: Start ---");
-
+			// --- Initialize Settings & Statistics ---
 			try
 			{
-				var _ = CosmocrushGD.Settings.Instance;
-				GD.Print("Settings Instance accessed.");
+				// Accessing the Instance getter is enough to ensure initialization/loading
+				// for both Settings (via its constructor) and StatisticsManager (via EnsureLoaded).
+				var settings = Settings.Instance; // Access to ensure loaded
+				StatisticsManager.Instance.EnsureLoaded();
+				GD.Print("Settings and Statistics Instances accessed/loaded.");
 			}
 			catch (Exception e)
 			{
-				GD.PrintErr($"Error accessing Settings.Instance: {e.Message}");
+				GD.PrintErr($"Error accessing Singletons (Settings/Statistics): {e.Message}");
+			}
+			// --- End Initialization ---
+
+			// (Rest of the _Ready method remains the same...)
+			startButton ??= GetNodeOrNull<Button>("CenterContainer/VBoxContainer/StartButton");
+			settingsButton ??= GetNodeOrNull<Button>("CenterContainer/VBoxContainer/SettingsButton");
+			quitButton ??= GetNodeOrNull<Button>("CenterContainer/VBoxContainer/QuitButton");
+
+			bool buttonsMissing = false;
+			if (startButton is null) { GD.PrintErr("NewMainMenu: StartButton is null!"); buttonsMissing = true; }
+			if (settingsButton is null) { GD.PrintErr("NewMainMenu: SettingsButton is null!"); buttonsMissing = true; }
+			if (quitButton is null) { GD.PrintErr("NewMainMenu: QuitButton is null!"); buttonsMissing = true; }
+
+			if (buttonsMissing)
+			{
+				GD.PrintErr("One or more critical buttons missing. UI may not function.");
+			}
+			else
+			{
+				GD.Print("Buttons checked/retrieved.");
+				startButton.Pressed += OnStartButtonPressed;
+				settingsButton.Pressed += OnSettingsButtonPressed;
+				quitButton.Pressed += OnQuitButtonPressed;
+				GD.Print("Button signals connected.");
 			}
 
-			startButton ??= GetNode<Button>("CenterContainer/VBoxContainer/StartButton");
-			settingsButton ??= GetNode<Button>("CenterContainer/VBoxContainer/SettingsButton");
-			quitButton ??= GetNode<Button>("CenterContainer/VBoxContainer/QuitButton");
-			if (startButton == null || settingsButton == null || quitButton == null)
+			if (starParticlesNode is CpuParticles2D specificParticles)
 			{
-				GD.PrintErr("NewMainMenu: One or more buttons Null!");
-			}
-			GD.Print("Buttons checked/retrieved.");
-
-			GD.Print("Attempting to get StarParticles...");
-			if (starParticlesNode != null && starParticlesNode is CpuParticles2D specificParticles)
-			{
-				_starParticles = specificParticles;
+				starParticlesInstance = specificParticles;
 				GD.Print("StarParticles obtained from Exported Node.");
 			}
 			else
 			{
 				GD.Print($"Exported starParticlesNode is {(starParticlesNode == null ? "null" : "not a CpuParticles2D")}. Trying GetNode...");
-				_starParticles = GetNode<CpuParticles2D>("StarParticles");
-				if (_starParticles == null)
+				starParticlesInstance = GetNodeOrNull<CpuParticles2D>("StarParticles");
+
+				if (starParticlesInstance is null)
 				{
-					GD.PrintErr("Failed to get StarParticles node by path 'StarParticles'. Effect disabled, but continuing.");
+					GD.PrintErr("Failed to get StarParticles node. Effect disabled.");
 				}
 				else
 				{
@@ -57,48 +75,46 @@ namespace CosmocrushGD
 				}
 			}
 
-			if (startButton != null) startButton.Pressed += OnStartButtonPressed;
-			if (settingsButton != null) settingsButton.Pressed += OnSettingsButtonPressed;
-			if (quitButton != null) quitButton.Pressed += OnQuitButtonPressed;
-			GD.Print("Button signals connected.");
-
-			var root = GetTree()?.Root;
-			if (root != null)
+			SceneTree tree = GetTree();
+			if (tree?.Root is not null)
 			{
-				root.CloseRequested += OnWindowCloseRequested;
-				GD.Print("CloseRequested signal connected.");
+				if (!tree.Root.IsConnected(Window.SignalName.CloseRequested, Callable.From(OnWindowCloseRequested)))
+				{
+					tree.Root.Connect(Window.SignalName.CloseRequested, Callable.From(OnWindowCloseRequested));
+					GD.Print("CloseRequested signal connected.");
+				}
 			}
 			else
 			{
 				GD.PrintErr("GetTree().Root is null, cannot connect CloseRequested signal.");
 			}
 
-			GD.Print("Connecting Resized signal...");
-			Resized += UpdateParticleEmitterBounds;
-			GD.Print("Resized signal connected.");
-
-			GD.Print("Scheduling deferred call to UpdateParticleEmitterBounds...");
-			if (_starParticles != null)
+			if (!IsConnected(Control.SignalName.Resized, Callable.From(UpdateParticleEmitterBounds)))
 			{
-				_starParticles.EmissionShape = CpuParticles2D.EmissionShapeEnum.Rectangle;
+				Resized += UpdateParticleEmitterBounds;
+				GD.Print("Resized signal connected.");
+			}
+
+
+			if (starParticlesInstance is not null)
+			{
+				starParticlesInstance.EmissionShape = CpuParticles2D.EmissionShapeEnum.Rectangle;
 				CallDeferred(nameof(UpdateParticleEmitterBounds));
-				GD.Print("Deferred call scheduled.");
+				GD.Print("Deferred call to UpdateParticleEmitterBounds scheduled.");
 			}
 			else
 			{
-				GD.Print("Skipping deferred call because _starParticles is null.");
+				GD.Print("Skipping deferred call because starParticlesInstance is null.");
 			}
 
 			GD.Print("--- NewMainMenu _Ready: End ---");
 		}
 
+		// (... UpdateParticleEmitterBounds, Button Handlers, OnWindowCloseRequested remain the same ...)
 		private void UpdateParticleEmitterBounds()
 		{
-			GD.Print("--- UpdateParticleEmitterBounds: Start ---");
-
-			if (_starParticles == null)
+			if (starParticlesInstance is null)
 			{
-				GD.PrintErr("UpdateParticleEmitterBounds: _starParticles is null. Aborting.");
 				return;
 			}
 
@@ -108,82 +124,95 @@ namespace CosmocrushGD
 				return;
 			}
 
-			var viewport = GetViewport();
-			if (viewport == null)
+			Rect2 viewportRect = GetViewportRect();
+			if (viewportRect.Size == Vector2.Zero)
 			{
-				GD.PrintErr("UpdateParticleEmitterBounds: GetViewport() returned null. Aborting.");
+				GD.Print("UpdateParticleEmitterBounds: Viewport size is zero. Skipping update.");
 				return;
 			}
 
-			var viewportHeight = GetViewportRect().Size.Y;
+			float viewportHeight = viewportRect.Size.Y;
 			GD.Print($"Viewport height: {viewportHeight}");
 
-			// --- CHANGE HERE: Shift X position slightly left ---
-			const float spawnOffsetX = -10.0f; // Adjust this value as needed
-			_starParticles.Position = new Vector2(spawnOffsetX, viewportHeight / 2.0f);
-			// --- END CHANGE ---
-			GD.Print($"Set particle position to: {_starParticles.Position}");
+			const float spawnOffsetX = -10.0f;
+			starParticlesInstance.Position = new Vector2(spawnOffsetX, viewportHeight / 2.0f);
+			GD.Print($"Set particle position to: {starParticlesInstance.Position}");
 
-			_starParticles.EmissionRectExtents = new Vector2(1.0f, viewportHeight / 2.0f);
-			GD.Print($"Set EmissionRectExtents to: {_starParticles.EmissionRectExtents}");
+			starParticlesInstance.EmissionRectExtents = new Vector2(1.0f, viewportHeight / 2.0f);
+			GD.Print($"Set EmissionRectExtents to: {starParticlesInstance.EmissionRectExtents}");
 
-			_starParticles.EmissionShape = CpuParticles2D.EmissionShapeEnum.Rectangle;
-
-			// No Restart needed
+			starParticlesInstance.EmissionShape = CpuParticles2D.EmissionShapeEnum.Rectangle;
 
 			GD.Print("--- UpdateParticleEmitterBounds: End ---");
 		}
 
-		// --- Button Handlers ---
+		private void ChangeSceneSafely(string path)
+		{
+			SceneTree tree = GetTree();
+			Error error = tree?.ChangeSceneToFile(path) ?? Error.CantOpen;
+			if (error is not Error.Ok)
+			{
+				GD.PrintErr($"Failed to change scene to '{path}': {error}");
+			}
+		}
+
 		private void OnStartButtonPressed()
 		{
 			GD.Print("Start button pressed.");
-			GetTree().ChangeSceneToFile(GameScenePath);
+			ChangeSceneSafely(GameScenePath);
 		}
 
 		private void OnSettingsButtonPressed()
 		{
 			GD.Print("Settings button pressed.");
-			GetTree().ChangeSceneToFile(SettingsScenePath);
+			ChangeSceneSafely(SettingsScenePath);
 		}
 
 		private void OnQuitButtonPressed()
 		{
 			GD.Print("Quit button pressed. Quitting application...");
-			GetTree().Quit();
+			GetTree()?.Quit();
 		}
-		// --- End Button Handlers ---
 
-		// --- Window Close Handler ---
 		private void OnWindowCloseRequested()
 		{
 			GD.Print("Window close requested via signal. Quitting application...");
-			GetTree().Quit();
+			GetTree()?.Quit();
 		}
-		// --- End Window Close Handler ---
 
-		// --- Cleanup ---
 		public override void _ExitTree()
 		{
 			GD.Print("--- NewMainMenu _ExitTree ---");
-			Resized -= UpdateParticleEmitterBounds;
 
-			var root = GetTree()?.Root;
-			if (root != null && IsInstanceValid(root))
+			if (IsConnected(Control.SignalName.Resized, Callable.From(UpdateParticleEmitterBounds)))
 			{
-				if (root.IsConnected(Window.SignalName.CloseRequested, Callable.From(OnWindowCloseRequested)))
+				Resized -= UpdateParticleEmitterBounds;
+			}
+
+			SceneTree tree = GetTree();
+			if (tree?.Root is not null && IsInstanceValid(tree.Root))
+			{
+				if (tree.Root.IsConnected(Window.SignalName.CloseRequested, Callable.From(OnWindowCloseRequested)))
 				{
-					GD.Print("Disconnecting CloseRequested signal.");
-					root.Disconnect(Window.SignalName.CloseRequested, Callable.From(OnWindowCloseRequested));
+					tree.Root.Disconnect(Window.SignalName.CloseRequested, Callable.From(OnWindowCloseRequested));
+					GD.Print("Disconnected CloseRequested signal.");
 				}
 			}
 
-			if (IsInstanceValid(startButton)) startButton.Pressed -= OnStartButtonPressed;
-			if (IsInstanceValid(settingsButton)) settingsButton.Pressed -= OnSettingsButtonPressed;
-			if (IsInstanceValid(quitButton)) quitButton.Pressed -= OnQuitButtonPressed;
+			if (startButton is not null && IsInstanceValid(startButton) && startButton.IsConnected(Button.SignalName.Pressed, Callable.From(OnStartButtonPressed)))
+			{
+				startButton.Pressed -= OnStartButtonPressed;
+			}
+			if (settingsButton is not null && IsInstanceValid(settingsButton) && settingsButton.IsConnected(Button.SignalName.Pressed, Callable.From(OnSettingsButtonPressed)))
+			{
+				settingsButton.Pressed -= OnSettingsButtonPressed;
+			}
+			if (quitButton is not null && IsInstanceValid(quitButton) && quitButton.IsConnected(Button.SignalName.Pressed, Callable.From(OnQuitButtonPressed)))
+			{
+				quitButton.Pressed -= OnQuitButtonPressed;
+			}
 
 			base._ExitTree();
 		}
-		// --- End Cleanup ---
 	}
 }

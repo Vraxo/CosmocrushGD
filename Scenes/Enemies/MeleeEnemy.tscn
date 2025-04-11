@@ -20,7 +20,7 @@ shader_parameter/flash_color = Color(1, 1, 1, 1)
 shader_parameter/flash_value = 0.0
 
 [sub_resource type="Animation" id="Animation_pnc6v"]
-resource_name = "new_animation"
+resource_name = "HitFlash" # Renamed for clarity
 length = 0.6
 tracks/0/type = "bezier"
 tracks/0/imported = false
@@ -60,8 +60,9 @@ point_count = 2
 
 [node name="MeleeEnemy" type="CharacterBody2D" node_paths=PackedStringArray("Navigator", "Sprite", "DeathTimer", "DamageCooldownTimer", "Collider", "DamageParticles", "DeathParticles", "HitAnimationPlayer")]
 material = SubResource("ShaderMaterial_kqe6k")
-collision_mask = 5
-input_pickable = true
+collision_layer = 3 # Layer 3: Enemies
+collision_mask = 3 # Collide with Layer 1 (World) and Layer 2 (Player)
+input_pickable = true # Should enemies be pickable? Maybe remove if not needed.
 motion_mode = 1
 script = ExtResource("2_p2ur1")
 Navigator = NodePath("Navigator")
@@ -78,6 +79,7 @@ HitAnimationPlayer = NodePath("Sprite/AnimationPlayer")
 shape = SubResource("RectangleShape2D_85f4y")
 
 [node name="Navigator" type="NavigationAgent2D" parent="."]
+# Consider adjusting agent radius/height/neighbor dist etc. if needed
 
 [node name="Sprite" type="Sprite2D" parent="."]
 material = SubResource("ShaderMaterial_5b5ve")
@@ -89,6 +91,7 @@ libraries = {
 }
 
 [node name="DeathTimer" type="Timer" parent="."]
+one_shot = true # Ensure one_shot for death timer
 
 [node name="DamageParticles" type="CPUParticles2D" parent="."]
 position = Vector2(0, -1)
@@ -124,4 +127,5 @@ scale_amount_curve = SubResource("Curve_2qoxu")
 color = Color(1, 0, 0.0431373, 1)
 
 [node name="DamageTimer" type="Timer" parent="."]
-wait_time = 0.5
+wait_time = 0.5 # Linked to BaseEnemy AttackInterval property
+one_shot = true # Cooldown should be one_shot

@@ -1,30 +1,65 @@
 using Godot;
+using CosmocrushGD; // Add namespace for StatisticsManager and ScoreDisplay
 
-namespace Cosmocrush;
+namespace Cosmocrush; // Assuming this namespace is correct
 
 public partial class World : WorldEnvironment
 {
 	[Export] private PackedScene pauseMenuScene;
 	[Export] private Button pauseButton;
-	[Export] private CanvasLayer hudLayer; // Reference the existing HUD layer
+	[Export] private CanvasLayer hudLayer;
 
-	private PauseMenu pauseMenu;
+	private PauseMenu pauseMenuInstance; // Renamed for clarity
 
 	public override void _Ready()
 	{
-		if (hudLayer == null)
+		// --- Initialize Statistics Manager ---
+		StatisticsManager.Instance.EnsureLoaded();
+		// Reset current score at the start of a new game world
+		// Note: EndGame already resets it, but this ensures it if loading straight into World.
+		// StatisticsManager.Instance.ResetCurrentScore(); // Add this method if needed, or rely on EndGame.
+		// --- End Initialization ---
+
+
+		if (hudLayer is null)
 		{
-			GD.PrintErr("HUD Layer reference not set in World!");
+			GD.PrintErr("World: HUD Layer reference not set!");
+			// Attempt to find it if not set
+			hudLayer = GetNodeOrNull<CanvasLayer>("HUD");
+			if (hudLayer is null)
+			{
+				GD.PrintErr("World: Could not find HUD CanvasLayer. Pausing and Score will not work correctly.");
+				SetProcess(false); // Disable processing if HUD is critical
+				return;
+			}
 		}
 
-		pauseButton.Pressed += OnPauseButtonPressed;
+		if (pauseButton is not null)
+		{
+			pauseButton.Pressed += OnPauseButtonPressed;
+		}
+		else
+		{
+			GD.PrintErr("World: Pause Button reference not set!");
+			// Attempt to find it
+			pauseButton = hudLayer.GetNodeOrNull<Button>("PauseButton");
+			if (pauseButton is not null)
+			{
+				pauseButton.Pressed += OnPauseButtonPressed;
+			}
+			else
+			{
+				GD.PrintErr("World: Could not find PauseButton in HUD.");
+			}
+		}
 	}
 
 	public override void _Process(double delta)
 	{
+		// Handle pause input only if the game is not already paused
 		if (Input.IsActionJustPressed("ui_cancel") && !GetTree().Paused)
 		{
-			Pause();
+			PauseGame();
 		}
 	}
 
@@ -32,40 +67,52 @@ public partial class World : WorldEnvironment
 	{
 		if (!GetTree().Paused)
 		{
-			Pause();
+			PauseGame();
 		}
-		else if (pauseMenu is not null && IsInstanceValid(pauseMenu))
+		else if (pauseMenuInstance is not null && IsInstanceValid(pauseMenuInstance))
 		{
-			pauseMenu.TriggerContinue();
+			// If already paused, the pause button should unpause
+			pauseMenuInstance.TriggerContinue();
 		}
+		// Consider adding an else case here if pauseMenuInstance is somehow null while paused
 	}
 
-	private void Pause()
+	private void PauseGame()
 	{
-		if (GetTree().Paused)
+		if (GetTree().Paused) // Already paused, do nothing
 		{
 			return;
 		}
 
-		if (pauseMenu is null || !IsInstanceValid(pauseMenu))
+		// Instantiate pause menu if it doesn't exist or was freed
+		if (pauseMenuInstance is null || !IsInstanceValid(pauseMenuInstance))
 		{
 			if (pauseMenuScene is null)
 			{
-				GD.PrintErr("PauseMenuScene is not set in World script!");
+				GD.PrintErr("World: PauseMenuScene is not assigned!");
 				return;
 			}
 
 			if (hudLayer is null)
 			{
-				GD.PrintErr("HUD Layer is not set or found in World script!");
+				GD.PrintErr("World: HUD Layer is missing, cannot add Pause Menu!");
 				return;
 			}
 
-			pauseMenu = pauseMenuScene.Instantiate<PauseMenu>();
-			hudLayer.AddChild(pauseMenu);
+			pauseMenuInstance = pauseMenuScene.Instantiate<PauseMenu>();
+			hudLayer.AddChild(pauseMenuInstance); // Add to HUD layer
 		}
 
-		GetTree().Paused = true;
-		pauseMenu.Show();
+		pauseMenuInstance.Show(); // Make sure it's visible
+		GetTree().Paused = true; // Pause the game
+	}
+
+	public override void _ExitTree()
+	{
+		// Clean up connections
+		if (pauseButton is not null && pauseButton.IsConnected(Button.SignalName.Pressed, Callable.From(OnPauseButtonPressed)))
+		{
+			pauseButton.Pressed -= OnPauseButtonPressed;
+		}
 	}
 }

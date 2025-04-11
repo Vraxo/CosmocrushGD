@@ -6,26 +6,34 @@ public partial class MeleeEnemy : BaseEnemy
 {
     [Export] private float meleeKnockbackForce = 500f;
 
+    // Optional: Override base properties if needed
+    // protected override int MaxHealth => 25; // Example: Tougher melee enemy
+    // protected override float AttackInterval => 0.4f; // Example: Faster attacks
+
     protected override void AttemptAttack()
     {
-        if (!CanShoot || TargetPlayer == null)
+        // Use corrected property names from BaseEnemy
+        if (!CanAttack || TargetPlayer is null || !IsInstanceValid(TargetPlayer))
         {
             return;
         }
 
         float distance = GlobalPosition.DistanceTo(TargetPlayer.GlobalPosition);
 
-        if (distance > DamageRadius)
+        // Use corrected property name AttackRadius
+        if (distance > AttackRadius)
         {
             return;
         }
 
-        TargetPlayer.TakeDamage(Damage);
+        // Use corrected property name BaseDamage
+        TargetPlayer.TakeDamage(BaseDamage);
 
-        Vector2 knockbackDir = (TargetPlayer.GlobalPosition - GlobalPosition).Normalized();
-        TargetPlayer.ApplyKnockback(knockbackDir * meleeKnockbackForce);
+        Vector2 knockbackDirection = (TargetPlayer.GlobalPosition - GlobalPosition).Normalized();
+        TargetPlayer.ApplyKnockback(knockbackDirection * meleeKnockbackForce);
 
-        CanShoot = false;
-        DamageCooldownTimer.Start();
+        // Use corrected property name CanAttack
+        CanAttack = false;
+        DamageCooldownTimer?.Start();
     }
 }
