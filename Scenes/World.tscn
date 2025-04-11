@@ -1,4 +1,4 @@
-[gd_scene load_steps=19 format=3 uid="uid://rflfyu4apk38"]
+[gd_scene load_steps=18 format=3 uid="uid://rflfyu4apk38"]
 
 [ext_resource type="AudioStream" uid="uid://blvqtb4sj0647" path="res://Audio/Songs/Going Ultimate!.mp3" id="1_4w1vw"]
 [ext_resource type="Script" path="res://Scripts/World.cs" id="1_k2m3n"]
@@ -14,7 +14,6 @@
 [ext_resource type="PackedScene" uid="uid://kl8icgw5t1ag" path="res://Scenes/Joystick.tscn" id="12_vbg6t"]
 [ext_resource type="Script" path="res://Scripts/Enemy/EnemyPoolManager.cs" id="13_mra1g"]
 [ext_resource type="PackedScene" uid="uid://baoyd4vyuac" path="res://Scenes/Enemies/RangedEnemy.tscn" id="14_qfgrb"]
-[ext_resource type="Script" path="res://Scripts/UI/ScoreLabelUpdater.cs" id="15"]
 
 [sub_resource type="Environment" id="Environment_fpnmc"]
 background_mode = 3
@@ -40,10 +39,10 @@ hudLayer = NodePath("HUD")
 metadata/_edit_horizontal_guides_ = [-408.0]
 
 [node name="Background" type="ColorRect" parent="."]
-offset_left = -1232.0
-offset_top = -568.0
-offset_right = 3312.0
-offset_bottom = 1848.0
+offset_left = -1128.0
+offset_top = -640.0
+offset_right = 3416.0
+offset_bottom = 1776.0
 color = Color(0, 0, 0, 1)
 
 [node name="ThemePlayer" type="AudioStreamPlayer" parent="."]
@@ -81,16 +80,6 @@ grow_horizontal = 0
 grow_vertical = 0
 scale = Vector2(0.25, 0.25)
 SimulateInput = false
-
-[node name="ScoreLabel" type="Label" parent="HUD"]
-offset_left = 10.0
-offset_top = 10.0
-offset_right = 58.0
-offset_bottom = 36.0
-grow_horizontal = 2
-grow_vertical = 2
-text = "Score: 0"
-script = ExtResource("15")
 
 [node name="Healthbar" type="ProgressBar" parent="HUD"]
 top_level = true
