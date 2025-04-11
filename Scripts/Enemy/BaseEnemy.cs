@@ -5,6 +5,9 @@ namespace CosmocrushGD;
 
 public abstract partial class BaseEnemy : CharacterBody2D
 {
+	[Signal]
+	public delegate void EnemyKilledEventHandler(int scoreValue);
+
 	[Export] protected NavigationAgent2D Navigator;
 	[Export] protected Sprite2D Sprite;
 	[Export] protected Timer DeathTimer;
@@ -189,6 +192,10 @@ public abstract partial class BaseEnemy : CharacterBody2D
 		{
 			return;
 		}
+
+		// Add score when the enemy dies
+		//GetNode<ScoreManager>("/root/ScoreManager")?.AddScore(1); // Use null-conditional for safety
+		EmitSignal(SignalName.EnemyKilled, 1); // Emit signal with score value of 1
 
 		Dead = true;
 		Velocity = Vector2.Zero;

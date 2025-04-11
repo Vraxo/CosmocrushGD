@@ -79,6 +79,9 @@ public partial class Player : CharacterBody2D
 
 	private void Die()
 	{
+		// Record game stats before freeing the player
+		GetNode<ScoreManager>("/root/ScoreManager")?.RecordGamePlayed();
+
 		QueueFree();
 	}
 
