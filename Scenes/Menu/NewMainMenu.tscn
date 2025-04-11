@@ -87,31 +87,6 @@ grow_vertical = 2
 [node name="VBoxContainer" type="VBoxContainer" parent="CenterContainer"]
 layout_mode = 2
 
-[node name="StatsVBoxContainer" type="VBoxContainer" parent="CenterContainer/VBoxContainer"]
-layout_mode = 2
-alignment = 1
-
-[node name="TopScoreLabel" type="Label" parent="CenterContainer/VBoxContainer/StatsVBoxContainer"]
-layout_mode = 2
-theme_override_fonts/font = ExtResource("4_venite_font")
-theme_override_font_sizes/font_size = 20
-text = "Top Score: 0"
-horizontal_alignment = 1
-
-[node name="AverageScoreLabel" type="Label" parent="CenterContainer/VBoxContainer/StatsVBoxContainer"]
-layout_mode = 2
-theme_override_fonts/font = ExtResource("4_venite_font")
-theme_override_font_sizes/font_size = 20
-text = "Average Score: 0"
-horizontal_alignment = 1
-
-[node name="GamesPlayedLabel" type="Label" parent="CenterContainer/VBoxContainer/StatsVBoxContainer"]
-layout_mode = 2
-theme_override_fonts/font = ExtResource("4_venite_font")
-theme_override_font_sizes/font_size = 20
-text = "Games Played: 0"
-horizontal_alignment = 1
-
 [node name="StartButton" type="Button" parent="CenterContainer/VBoxContainer"]
 custom_minimum_size = Vector2(250, 100)
 layout_mode = 2

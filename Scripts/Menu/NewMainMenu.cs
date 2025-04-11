@@ -9,9 +9,6 @@ namespace CosmocrushGD
 		[Export] private Button settingsButton;
 		[Export] private Button quitButton;
 		[Export] private Node starParticlesNode;
-		[Export] private Label topScoreLabel;
-		[Export] private Label averageScoreLabel;
-		[Export] private Label gamesPlayedLabel;
 		private CpuParticles2D _starParticles;
 
 		private const string GameScenePath = "res://Scenes/World.tscn";
@@ -34,15 +31,11 @@ namespace CosmocrushGD
 			startButton ??= GetNode<Button>("CenterContainer/VBoxContainer/StartButton");
 			settingsButton ??= GetNode<Button>("CenterContainer/VBoxContainer/SettingsButton");
 			quitButton ??= GetNode<Button>("CenterContainer/VBoxContainer/QuitButton");
-			topScoreLabel ??= GetNode<Label>("CenterContainer/VBoxContainer/StatsVBoxContainer/TopScoreLabel");
-			averageScoreLabel ??= GetNode<Label>("CenterContainer/VBoxContainer/StatsVBoxContainer/AverageScoreLabel");
-			gamesPlayedLabel ??= GetNode<Label>("CenterContainer/VBoxContainer/StatsVBoxContainer/GamesPlayedLabel");
-
-			if (startButton == null || settingsButton == null || quitButton == null || topScoreLabel == null || averageScoreLabel == null || gamesPlayedLabel == null)
+			if (startButton == null || settingsButton == null || quitButton == null)
 			{
-				GD.PrintErr("NewMainMenu: One or more UI elements Null!");
+				GD.PrintErr("NewMainMenu: One or more buttons Null!");
 			}
-			GD.Print("UI elements checked/retrieved.");
+			GD.Print("Buttons checked/retrieved.");
 
 			GD.Print("Attempting to get StarParticles...");
 			if (starParticlesNode != null && starParticlesNode is CpuParticles2D specificParticles)
@@ -68,8 +61,6 @@ namespace CosmocrushGD
 			if (settingsButton != null) settingsButton.Pressed += OnSettingsButtonPressed;
 			if (quitButton != null) quitButton.Pressed += OnQuitButtonPressed;
 			GD.Print("Button signals connected.");
-
-			UpdateStatsLabels();
 
 			var root = GetTree()?.Root;
 			if (root != null)
@@ -99,22 +90,6 @@ namespace CosmocrushGD
 			}
 
 			GD.Print("--- NewMainMenu _Ready: End ---");
-		}
-
-		private void UpdateStatsLabels()
-		{
-			if (topScoreLabel != null)
-			{
-				topScoreLabel.Text = "Top Score: " + GameStatsManager.Instance.TopScore.ToString();
-			}
-			if (averageScoreLabel != null)
-			{
-				averageScoreLabel.Text = "Average Score: " + GameStatsManager.Instance.AverageScore.ToString("F2"); // Format to 2 decimal places
-			}
-			if (gamesPlayedLabel != null)
-			{
-				gamesPlayedLabel.Text = "Games Played: " + GameStatsManager.Instance.GamesPlayed.ToString();
-			}
 		}
 
 		private void UpdateParticleEmitterBounds()
@@ -163,7 +138,6 @@ namespace CosmocrushGD
 		private void OnStartButtonPressed()
 		{
 			GD.Print("Start button pressed.");
-			ScoreManager.Instance.StartNewGame(); // Start new game and reset score
 			GetTree().ChangeSceneToFile(GameScenePath);
 		}
 

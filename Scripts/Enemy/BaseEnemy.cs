@@ -3,11 +3,8 @@ using Godot;
 
 namespace CosmocrushGD;
 
-public abstract partial class BaseEnemy : CharacterBody
+public abstract partial class BaseEnemy : CharacterBody2D
 {
-	[Signal]
-	public delegate void EnemyDiedEventHandler();
-
 	[Export] protected NavigationAgent2D Navigator;
 	[Export] protected Sprite2D Sprite;
 	[Export] protected Timer DeathTimer;
@@ -17,9 +14,6 @@ public abstract partial class BaseEnemy : CharacterBody
 	[Export] public CpuParticles2D DeathParticles;
 	[Export] protected PackedScene DamageIndicatorScene;
 	[Export] protected AnimationPlayer HitAnimationPlayer;
-
-	[Signal]
-	public delegate void EnemyKilledEventHandler();
 
 	protected int Health;
 	protected bool Dead = false;
@@ -205,7 +199,6 @@ public abstract partial class BaseEnemy : CharacterBody
 		DeathParticles.Emitting = true;
 
 		DeathTimer.Start();
-		ScoreManager.Instance.IncrementScore(); // Increment score when enemy is killed
 	}
 
 	private void ShowDamageIndicator(int damage)
@@ -242,7 +235,6 @@ public abstract partial class BaseEnemy : CharacterBody
 		}
 		
 		PoolManager.ReturnEnemy(this);
-		EmitSignal(SignalName.EnemyDied);
 		return;
 	}
 }

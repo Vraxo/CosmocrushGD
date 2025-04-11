@@ -77,12 +77,8 @@ public partial class Player : CharacterBody2D
 		}
 	}
 
-	[Signal]
-	public delegate void PlayerDiedEventHandler();
-
 	private void Die()
 	{
-		EmitSignal(SignalName.PlayerDied);
 		QueueFree();
 	}
 
