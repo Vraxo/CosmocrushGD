@@ -10,17 +10,24 @@ public partial class Player : CharacterBody2D
 	public Inventory Inventory = new();
 
 	public const float Speed = 300.0f;
-	private const int RegenAmount = 1; // Amount to regenerate per tick
+	private const int RegenAmount = 1;
 
 	[Export] private Gun gun;
 	[Export] private AudioStream damageAudio;
 	[Export] private Sprite2D sprite;
 	[Export] private CpuParticles2D damageParticles;
-	[Export] private Node audioPlayerContainer; // Keep this for organization
+	[Export] private Node audioPlayerContainer;
 	[Export] private Timer regenTimer;
+	[Export] private NodePath cameraPath;
 
+	private ShakeyCamera camera;
 	private Vector2 knockbackVelocity = Vector2.Zero;
 	private const float knockbackRecoverySpeed = 0.1f;
+
+	// Damage Shake Parameters - Adjusted for gentler shake
+	private const float DamageShakeMinStrength = 0.8f; // Slightly reduced (was 1.0f)
+	private const float DamageShakeMaxStrength = 2.5f; // Significantly reduced (was 4.0f)
+	private const float DamageShakeDuration = 0.3f;
 
 	public event Action AudioPlayerFinished;
 
@@ -28,9 +35,18 @@ public partial class Player : CharacterBody2D
 	{
 		gun = GetNode<Gun>("Gun");
 
+		if (cameraPath is not null)
+		{
+			camera = GetNode<ShakeyCamera>(cameraPath);
+		}
+		else
+		{
+			GD.PrintErr("Camera Path not set in Player script!");
+		}
+
 		AudioPlayerFinished += OnAudioPlayerFinished;
 
-		if (regenTimer != null)
+		if (regenTimer is not null)
 		{
 			regenTimer.Timeout += OnRegenTimerTimeout;
 		}
@@ -53,10 +69,11 @@ public partial class Player : CharacterBody2D
 	public void TakeDamage(int damage)
 	{
 		Health -= damage;
-		Health = Math.Max(Health, 0); // Ensure health doesn't go below 0
+		Health = Math.Max(Health, 0);
 
 		damageParticles.Emitting = true;
 		PlayDamageSound();
+		TriggerDamageShake();
 
 		if (Health <= 0)
 		{
@@ -64,33 +81,47 @@ public partial class Player : CharacterBody2D
 		}
 	}
 
+	private void TriggerDamageShake()
+	{
+		if (camera is null)
+		{
+			return;
+		}
+
+		float healthRatio = MaxHealth > 0
+			? Mathf.Clamp((float)Health / MaxHealth, 0f, 1f)
+			: 0f;
+
+		float shakeStrength = Mathf.Lerp(DamageShakeMaxStrength, DamageShakeMinStrength, healthRatio);
+
+		camera.Shake(shakeStrength, DamageShakeDuration);
+	}
+
+
 	private void PlayDamageSound()
 	{
-		if (damageAudio == null || audioPlayerContainer == null) return;
+		if (damageAudio is null || audioPlayerContainer is null)
+		{
+			return;
+		}
 
-		// Use AudioStreamPlayer instead of AudioStreamPlayer2D
 		AudioStreamPlayer newAudioPlayer = new();
 		audioPlayerContainer.AddChild(newAudioPlayer);
 
 		newAudioPlayer.Stream = damageAudio;
-		// Connect Finished signal for cleanup using a lambda
 		newAudioPlayer.Finished += () => OnSingleAudioPlayerFinished(newAudioPlayer);
 		newAudioPlayer.Play();
 	}
 
-	// Simplified cleanup for single players
 	private void OnSingleAudioPlayerFinished(AudioStreamPlayer player)
 	{
 		player.QueueFree();
-		// No need to invoke the old event system here unless other things relied on it
 	}
 
-	// Kept old handler in case it's needed, but the new sounds use the lambda above
 	private void OnAudioPlayerFinished()
 	{
 		foreach (Node child in audioPlayerContainer.GetChildren())
 		{
-			// Check for both types just in case, but new ones are AudioStreamPlayer
 			if (child is AudioStreamPlayer audioPlayer && !audioPlayer.Playing)
 			{
 				audioPlayer.QueueFree();
@@ -105,7 +136,7 @@ public partial class Player : CharacterBody2D
 
 	private void Die()
 	{
-		if (regenTimer != null)
+		if (regenTimer is not null)
 		{
 			regenTimer.Stop();
 		}
@@ -114,7 +145,7 @@ public partial class Player : CharacterBody2D
 
 	public void ApplyKnockback(Vector2 knockback)
 	{
-		knockbackVelocity = (knockbackVelocity.Length() < knockback.Length())
+		knockbackVelocity = (knockbackVelocity.LengthSquared() < knockback.LengthSquared())
 			? knockback
 			: knockbackVelocity + knockback;
 	}
@@ -129,11 +160,10 @@ public partial class Player : CharacterBody2D
 
 	public override void _ExitTree()
 	{
-		if (regenTimer != null && regenTimer.IsConnected(Timer.SignalName.Timeout, Callable.From(OnRegenTimerTimeout)))
+		if (regenTimer is not null && regenTimer.IsConnected(Timer.SignalName.Timeout, Callable.From(OnRegenTimerTimeout)))
 		{
 			regenTimer.Timeout -= OnRegenTimerTimeout;
 		}
-		// Consider cleaning up remaining audio players in the container if the scene might exit abruptly
 		base._ExitTree();
 	}
 }

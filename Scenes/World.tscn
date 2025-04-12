@@ -157,7 +157,7 @@ position = Vector2(88, -64)
 self_modulate = Color(22, 22, 22, 1)
 position = Vector2(584, 888)
 
-[node name="Camera2D" type="Camera2D" parent="Player"]
+[node name="Camera2D2" type="Camera2D" parent="Player"]
 process_mode = 3
 script = ExtResource("11_0a8f1")
 

@@ -5,6 +5,7 @@
 [ext_resource type="PackedScene" uid="uid://be8lx86meoiyr" path="res://Scenes/Gun.tscn" id="3_yseaf"]
 [ext_resource type="AudioStream" uid="uid://yocd3vtwilsk" path="res://Audio/SFX/PlayerDamage.mp3" id="5_42wm7"]
 [ext_resource type="AudioStream" uid="uid://caa1jvfcokiae" path="res://Audio/SFX/PlayerDeath.mp3" id="6_uqcfv"]
+[ext_resource type="Script" path="res://Scripts/ShakeyCamera.cs" id="7_camera"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_oajf5"]
 size = Vector2(32, 31.5)
@@ -13,14 +14,17 @@ size = Vector2(32, 31.5)
 _data = [Vector2(0.00433911, 0.993671), 0.0, 0.0, 0, 0, Vector2(0.998999, 0.00219095), 0.0, 0.0, 0, 0]
 point_count = 2
 
-[node name="Player" type="CharacterBody2D" node_paths=PackedStringArray("damageParticles", "audioPlayerContainer", "regenTimer")]
+[node name="Player" type="CharacterBody2D" node_paths=PackedStringArray("gun", "damageParticles", "audioPlayerContainer", "regenTimer")]
 collision_mask = 5
 motion_mode = 1
 script = ExtResource("2_8tp0t")
+gun = NodePath("Gun")
 damageAudio = ExtResource("5_42wm7")
+sprite = NodePath("Sprite")
 damageParticles = NodePath("DamageParticles")
 audioPlayerContainer = NodePath("AudioPlayerContainer")
 regenTimer = NodePath("RegenTimer")
+cameraPath = NodePath("Camera2D")
 
 [node name="ActualCollider" type="CollisionShape2D" parent="."]
 position = Vector2(0, 0.25)
@@ -68,5 +72,8 @@ color = Color(0.447059, 1, 0.105882, 1)
 [node name="AudioPlayerContainer" type="Node" parent="."]
 
 [node name="RegenTimer" type="Timer" parent="."]
-wait_time = 1.0
 autostart = true
+
+[node name="Camera2D" type="Camera2D" parent="."]
+process_mode = 3
+script = ExtResource("7_camera")
