@@ -10,12 +10,14 @@ public partial class Player : CharacterBody2D
 	public Inventory Inventory = new();
 
 	public const float Speed = 300.0f;
-	
+	private const int RegenAmount = 1; // Amount to regenerate per tick
+
 	[Export] private Gun gun;
 	[Export] private AudioStream damageAudio;
 	[Export] private Sprite2D sprite;
 	[Export] private CpuParticles2D damageParticles;
 	[Export] private Node audioPlayerContainer;
+	[Export] private Timer regenTimer; // Added export for the regen timer
 
 	private Vector2 knockbackVelocity = Vector2.Zero;
 	private const float knockbackRecoverySpeed = 0.1f;
@@ -27,9 +29,18 @@ public partial class Player : CharacterBody2D
 		gun = GetNode<Gun>("Gun");
 
 		AudioPlayerFinished += OnAudioPlayerFinished;
+
+		// Connect the regen timer's timeout signal
+		if (regenTimer != null)
+		{
+			regenTimer.Timeout += OnRegenTimerTimeout;
+		}
+		else
+		{
+			GD.PrintErr("RegenTimer not assigned in Player script!");
+		}
 	}
 
-	// Player.cs
 	public override void _PhysicsProcess(double delta)
 	{
 		knockbackVelocity = knockbackVelocity.Lerp(Vector2.Zero, knockbackRecoverySpeed);
@@ -58,7 +69,7 @@ public partial class Player : CharacterBody2D
 	{
 		AudioStreamPlayer2D newAudioPlayer = new();
 		audioPlayerContainer.AddChild(newAudioPlayer);
-		
+
 		newAudioPlayer.Stream = damageAudio;
 		newAudioPlayer.Finished += () => AudioPlayerFinished?.Invoke();
 		newAudioPlayer.Play();
@@ -79,6 +90,11 @@ public partial class Player : CharacterBody2D
 
 	private void Die()
 	{
+		// Stop regeneration on death
+		if (regenTimer != null)
+		{
+			regenTimer.Stop();
+		}
 		QueueFree();
 	}
 
@@ -87,5 +103,24 @@ public partial class Player : CharacterBody2D
 		knockbackVelocity = (knockbackVelocity.Length() < knockback.Length())
 			? knockback
 			: knockbackVelocity + knockback;
+	}
+
+	// Handler for the regeneration timer timeout
+	private void OnRegenTimerTimeout()
+	{
+		if (Health < MaxHealth)
+		{
+			Health = Math.Min(Health + RegenAmount, MaxHealth); // Regenerate and cap at MaxHealth
+		}
+	}
+
+	public override void _ExitTree()
+	{
+		// Disconnect signal on exit
+		if (regenTimer != null && regenTimer.IsConnected(Timer.SignalName.Timeout, Callable.From(OnRegenTimerTimeout)))
+		{
+			regenTimer.Timeout -= OnRegenTimerTimeout;
+		}
+		base._ExitTree();
 	}
 }
