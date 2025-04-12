@@ -16,8 +16,8 @@ public partial class Player : CharacterBody2D
 	[Export] private AudioStream damageAudio;
 	[Export] private Sprite2D sprite;
 	[Export] private CpuParticles2D damageParticles;
-	[Export] private Node audioPlayerContainer;
-	[Export] private Timer regenTimer; // Added export for the regen timer
+	[Export] private Node audioPlayerContainer; // Keep this for organization
+	[Export] private Timer regenTimer;
 
 	private Vector2 knockbackVelocity = Vector2.Zero;
 	private const float knockbackRecoverySpeed = 0.1f;
@@ -30,7 +30,6 @@ public partial class Player : CharacterBody2D
 
 		AudioPlayerFinished += OnAudioPlayerFinished;
 
-		// Connect the regen timer's timeout signal
 		if (regenTimer != null)
 		{
 			regenTimer.Timeout += OnRegenTimerTimeout;
@@ -45,7 +44,6 @@ public partial class Player : CharacterBody2D
 	{
 		knockbackVelocity = knockbackVelocity.Lerp(Vector2.Zero, knockbackRecoverySpeed);
 
-		// Get combined input from keyboard and simulated joystick
 		Vector2 direction = Input.GetVector("left", "right", "up", "down");
 		Vector2 movement = direction * Speed + knockbackVelocity;
 		Velocity = movement;
@@ -55,6 +53,7 @@ public partial class Player : CharacterBody2D
 	public void TakeDamage(int damage)
 	{
 		Health -= damage;
+		Health = Math.Max(Health, 0); // Ensure health doesn't go below 0
 
 		damageParticles.Emitting = true;
 		PlayDamageSound();
@@ -67,30 +66,45 @@ public partial class Player : CharacterBody2D
 
 	private void PlayDamageSound()
 	{
-		AudioStreamPlayer2D newAudioPlayer = new();
+		if (damageAudio == null || audioPlayerContainer == null) return;
+
+		// Use AudioStreamPlayer instead of AudioStreamPlayer2D
+		AudioStreamPlayer newAudioPlayer = new();
 		audioPlayerContainer.AddChild(newAudioPlayer);
 
 		newAudioPlayer.Stream = damageAudio;
-		newAudioPlayer.Finished += () => AudioPlayerFinished?.Invoke();
+		// Connect Finished signal for cleanup using a lambda
+		newAudioPlayer.Finished += () => OnSingleAudioPlayerFinished(newAudioPlayer);
 		newAudioPlayer.Play();
 	}
 
+	// Simplified cleanup for single players
+	private void OnSingleAudioPlayerFinished(AudioStreamPlayer player)
+	{
+		player.QueueFree();
+		// No need to invoke the old event system here unless other things relied on it
+	}
+
+	// Kept old handler in case it's needed, but the new sounds use the lambda above
 	private void OnAudioPlayerFinished()
 	{
 		foreach (Node child in audioPlayerContainer.GetChildren())
 		{
-			if (child is not AudioStreamPlayer2D audioPlayer || audioPlayer.Playing)
+			// Check for both types just in case, but new ones are AudioStreamPlayer
+			if (child is AudioStreamPlayer audioPlayer && !audioPlayer.Playing)
 			{
-				continue;
+				audioPlayer.QueueFree();
 			}
-
-			audioPlayer.QueueFree();
+			else if (child is AudioStreamPlayer2D audioPlayer2D && !audioPlayer2D.Playing)
+			{
+				audioPlayer2D.QueueFree();
+			}
 		}
 	}
 
+
 	private void Die()
 	{
-		// Stop regeneration on death
 		if (regenTimer != null)
 		{
 			regenTimer.Stop();
@@ -105,22 +119,21 @@ public partial class Player : CharacterBody2D
 			: knockbackVelocity + knockback;
 	}
 
-	// Handler for the regeneration timer timeout
 	private void OnRegenTimerTimeout()
 	{
 		if (Health < MaxHealth)
 		{
-			Health = Math.Min(Health + RegenAmount, MaxHealth); // Regenerate and cap at MaxHealth
+			Health = Math.Min(Health + RegenAmount, MaxHealth);
 		}
 	}
 
 	public override void _ExitTree()
 	{
-		// Disconnect signal on exit
 		if (regenTimer != null && regenTimer.IsConnected(Timer.SignalName.Timeout, Callable.From(OnRegenTimerTimeout)))
 		{
 			regenTimer.Timeout -= OnRegenTimerTimeout;
 		}
+		// Consider cleaning up remaining audio players in the container if the scene might exit abruptly
 		base._ExitTree();
 	}
 }

@@ -8,7 +8,7 @@ public partial class Gun : Sprite2D
 	[Export] private Line2D bulletTrail;
 	[Export] private Timer cooldownTimer;
 	[Export] private AudioStream gunshotAudio;
-	[Export] private Node audioPlayerContainer;
+	[Export] private Node audioPlayerContainer; // Keep using this container
 
 	[Export] private float shakeStrength = 0.5f;
 	[Export] private float shakeDuration = 0.2f;
@@ -26,7 +26,6 @@ public partial class Gun : Sprite2D
 	{
 		camera = GetNode<ShakeyCamera>("/root/World/Player/Camera2D");
 
-		// Initialize joystick reference for mobile
 		if (OS.HasFeature("mobile"))
 		{
 			firingJoystick = GetNode<Joystick>("/root/World/HUD/FiringJoystick");
@@ -78,12 +77,10 @@ public partial class Gun : Sprite2D
 
 		if (OS.HasFeature("mobile"))
 		{
-			// Fire automatically when joystick is moved
 			shouldFire = firingJoystick != null && firingJoystick.PosVector != Vector2.Zero;
 		}
 		else
 		{
-			// Fire on mouse click
 			shouldFire = Input.IsActionPressed("fire");
 		}
 
@@ -104,11 +101,15 @@ public partial class Gun : Sprite2D
 
 	private void PlayGunshotSound()
 	{
-		AudioStreamPlayer2D newAudioPlayer = new AudioStreamPlayer2D();
+		if (gunshotAudio == null || audioPlayerContainer == null) return;
+
+		// Use AudioStreamPlayer instead of AudioStreamPlayer2D
+		AudioStreamPlayer newAudioPlayer = new AudioStreamPlayer();
 		audioPlayerContainer.AddChild(newAudioPlayer);
 		newAudioPlayer.Stream = gunshotAudio;
-		newAudioPlayer.Play();
+		// Connect Finished signal for cleanup using a lambda
 		newAudioPlayer.Finished += () => newAudioPlayer.QueueFree();
+		newAudioPlayer.Play();
 	}
 
 	private void PerformRayCast()
