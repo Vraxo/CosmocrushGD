@@ -13,7 +13,7 @@ public partial class Player : CharacterBody2D
 	[Export] private AudioStream damageAudio;
 	[Export] private Sprite2D sprite;
 	[Export] private CpuParticles2D damageParticles;
-	[Export] private CpuParticles2D deathParticles; // Added export for death particles
+	[Export] private CpuParticles2D deathParticles;
 	[Export] private Node audioPlayerContainer;
 	[Export] private Timer regenerationTimer;
 	[Export] private NodePath cameraPath;
@@ -27,6 +27,7 @@ public partial class Player : CharacterBody2D
 	private const float DamageShakeMinStrength = 0.8f;
 	private const float DamageShakeMaxStrength = 2.5f;
 	private const float DamageShakeDuration = 0.3f;
+	private const string SfxBusName = "SFX";
 
 	public event Action AudioPlayerFinished;
 	public event Action GameOver;
@@ -34,7 +35,7 @@ public partial class Player : CharacterBody2D
 	public override void _Ready()
 	{
 		gun = GetNode<Gun>("Gun");
-		sprite = GetNode<Sprite2D>("Sprite"); // Ensure sprite is retrieved if not set via export
+		sprite = GetNode<Sprite2D>("Sprite");
 
 		if (cameraPath is not null)
 		{
@@ -124,10 +125,13 @@ public partial class Player : CharacterBody2D
 			return;
 		}
 
-		AudioStreamPlayer newAudioPlayer = new();
-		audioPlayerContainer.AddChild(newAudioPlayer);
+		AudioStreamPlayer newAudioPlayer = new()
+		{
+			Stream = damageAudio,
+			Bus = SfxBusName
+		};
 
-		newAudioPlayer.Stream = damageAudio;
+		audioPlayerContainer.AddChild(newAudioPlayer);
 		newAudioPlayer.Finished += () => OnSingleAudioPlayerFinished(newAudioPlayer);
 		newAudioPlayer.Play();
 	}
@@ -160,7 +164,6 @@ public partial class Player : CharacterBody2D
 		ProcessMode = ProcessModeEnum.Disabled;
 		SetPhysicsProcess(false);
 
-		// Hide sprite and show death particles
 		if (sprite is not null)
 		{
 			sprite.Visible = false;
@@ -197,11 +200,11 @@ public partial class Player : CharacterBody2D
 	}
 
 	private static void OnSingleAudioPlayerFinished(AudioStreamPlayer player)
-    {
-        if (player is null || !IsInstanceValid(player))
-        {
-            return;
-        }
-        player.QueueFree();
-    }
+	{
+		if (player is null || !IsInstanceValid(player))
+		{
+			return;
+		}
+		player.QueueFree();
+	}
 }

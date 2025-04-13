@@ -8,7 +8,7 @@ public partial class Gun : Sprite2D
 	[Export] private Line2D bulletTrail;
 	[Export] private Timer cooldownTimer;
 	[Export] private AudioStream gunshotAudio;
-	[Export] private Node audioPlayerContainer; // Keep using this container
+	[Export] private Node audioPlayerContainer;
 
 	[Export] private float shakeStrength = 0.5f;
 	[Export] private float shakeDuration = 0.2f;
@@ -21,6 +21,7 @@ public partial class Gun : Sprite2D
 	private const float Cooldown = 0.182f;
 	private const float BulletRange = 10000f;
 	private const float KnockbackForce = 500f;
+	private const string SfxBusName = "SFX";
 
 	public override void _Ready()
 	{
@@ -57,7 +58,10 @@ public partial class Gun : Sprite2D
 
 	private void MobileAim()
 	{
-		if (firingJoystick == null || firingJoystick.PosVector == Vector2.Zero) return;
+		if (firingJoystick is null || firingJoystick.PosVector == Vector2.Zero)
+		{
+			return;
+		}
 
 		LookAt(GlobalPosition + firingJoystick.PosVector);
 		direction = firingJoystick.PosVector.Normalized();
@@ -77,7 +81,7 @@ public partial class Gun : Sprite2D
 
 		if (OS.HasFeature("mobile"))
 		{
-			shouldFire = firingJoystick != null && firingJoystick.PosVector != Vector2.Zero;
+			shouldFire = firingJoystick is not null && firingJoystick.PosVector != Vector2.Zero;
 		}
 		else
 		{
@@ -101,13 +105,18 @@ public partial class Gun : Sprite2D
 
 	private void PlayGunshotSound()
 	{
-		if (gunshotAudio == null || audioPlayerContainer == null) return;
+		if (gunshotAudio is null || audioPlayerContainer is null)
+		{
+			return;
+		}
 
-		// Use AudioStreamPlayer instead of AudioStreamPlayer2D
-		AudioStreamPlayer newAudioPlayer = new AudioStreamPlayer();
+		AudioStreamPlayer newAudioPlayer = new()
+		{
+			Stream = gunshotAudio,
+			Bus = SfxBusName
+		};
+
 		audioPlayerContainer.AddChild(newAudioPlayer);
-		newAudioPlayer.Stream = gunshotAudio;
-		// Connect Finished signal for cleanup using a lambda
 		newAudioPlayer.Finished += () => newAudioPlayer.QueueFree();
 		newAudioPlayer.Play();
 	}
