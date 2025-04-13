@@ -5,31 +5,30 @@ namespace CosmocrushGD;
 
 public partial class Player : CharacterBody2D
 {
-	public int Health = 100;
+	public int Health = 1;
 	public int MaxHealth = 100;
 	public Inventory Inventory = new();
-
-	public const float Speed = 300.0f;
-	private const int RegenAmount = 1;
 
 	[Export] private Gun gun;
 	[Export] private AudioStream damageAudio;
 	[Export] private Sprite2D sprite;
 	[Export] private CpuParticles2D damageParticles;
 	[Export] private Node audioPlayerContainer;
-	[Export] private Timer regenTimer;
+	[Export] private Timer regenerationTimer;
 	[Export] private NodePath cameraPath;
 
 	private ShakeyCamera camera;
 	private Vector2 knockbackVelocity = Vector2.Zero;
-	private const float knockbackRecoverySpeed = 0.1f;
 
-	// Damage Shake Parameters - Adjusted for gentler shake
-	private const float DamageShakeMinStrength = 0.8f; // Slightly reduced (was 1.0f)
-	private const float DamageShakeMaxStrength = 2.5f; // Significantly reduced (was 4.0f)
+	private const int RegenerationRate = 1;
+	private const float Speed = 300.0f;
+	private const float KnockbackRecoverySpeed = 0.1f;
+	private const float DamageShakeMinStrength = 0.8f;
+	private const float DamageShakeMaxStrength = 2.5f;
 	private const float DamageShakeDuration = 0.3f;
 
 	public event Action AudioPlayerFinished;
+	public event Action GameOver;
 
 	public override void _Ready()
 	{
@@ -41,29 +40,44 @@ public partial class Player : CharacterBody2D
 		}
 		else
 		{
-			GD.PrintErr("Camera Path not set in Player script!");
+			GD.PrintErr("Player: Camera Path not set!");
 		}
 
 		AudioPlayerFinished += OnAudioPlayerFinished;
 
-		if (regenTimer is not null)
+		if (regenerationTimer is not null)
 		{
-			regenTimer.Timeout += OnRegenTimerTimeout;
+			regenerationTimer.Timeout += OnRegenTimerTimeout;
 		}
 		else
 		{
-			GD.PrintErr("RegenTimer not assigned in Player script!");
+			GD.PrintErr("Player: RegenTimer not assigned!");
 		}
 	}
 
 	public override void _PhysicsProcess(double delta)
 	{
-		knockbackVelocity = knockbackVelocity.Lerp(Vector2.Zero, knockbackRecoverySpeed);
+		if (GetTree().Paused)
+		{
+			return;
+		}
+
+		knockbackVelocity = knockbackVelocity.Lerp(Vector2.Zero, KnockbackRecoverySpeed);
 
 		Vector2 direction = Input.GetVector("left", "right", "up", "down");
 		Vector2 movement = direction * Speed + knockbackVelocity;
 		Velocity = movement;
 		MoveAndSlide();
+	}
+
+	public override void _ExitTree()
+	{
+		if (regenerationTimer is not null && regenerationTimer.IsConnected(Timer.SignalName.Timeout, Callable.From(OnRegenTimerTimeout)))
+		{
+			regenerationTimer.Timeout -= OnRegenTimerTimeout;
+		}
+
+		base._ExitTree();
 	}
 
 	public void TakeDamage(int damage)
@@ -97,7 +111,6 @@ public partial class Player : CharacterBody2D
 		camera.Shake(shakeStrength, DamageShakeDuration);
 	}
 
-
 	private void PlayDamageSound()
 	{
 		if (damageAudio is null || audioPlayerContainer is null)
@@ -111,11 +124,6 @@ public partial class Player : CharacterBody2D
 		newAudioPlayer.Stream = damageAudio;
 		newAudioPlayer.Finished += () => OnSingleAudioPlayerFinished(newAudioPlayer);
 		newAudioPlayer.Play();
-	}
-
-	private void OnSingleAudioPlayerFinished(AudioStreamPlayer player)
-	{
-		player.QueueFree();
 	}
 
 	private void OnAudioPlayerFinished()
@@ -133,37 +141,49 @@ public partial class Player : CharacterBody2D
 		}
 	}
 
-
 	private void Die()
 	{
-		if (regenTimer is not null)
+		if (GetTree().Paused)
 		{
-			regenTimer.Stop();
+			GD.Print("Player.Die: Already paused, aborting Die logic.");
+			return;
 		}
-		QueueFree();
+
+		GD.Print("Player.Die: Player has died.");
+		regenerationTimer?.Stop();
+		ProcessMode = ProcessModeEnum.Disabled;
+		SetPhysicsProcess(false);
+
+		GD.Print("Player.Die: Pausing tree...");
+		GetTree().Paused = true;
+
+		GD.Print("Player.Die: Invoking GameOver event...");
+		GameOver?.Invoke();
+		GD.Print("Player.Die: GameOver event invoked (if any listeners).");
 	}
 
 	public void ApplyKnockback(Vector2 knockback)
 	{
-		knockbackVelocity = (knockbackVelocity.LengthSquared() < knockback.LengthSquared())
+		knockbackVelocity = knockbackVelocity.LengthSquared() < knockback.LengthSquared()
 			? knockback
 			: knockbackVelocity + knockback;
 	}
 
 	private void OnRegenTimerTimeout()
 	{
-		if (Health < MaxHealth)
+		if (Health >= MaxHealth)
 		{
-			Health = Math.Min(Health + RegenAmount, MaxHealth);
+			return;
 		}
+
+		Health = Math.Min(Health + RegenerationRate, MaxHealth);
 	}
 
-	public override void _ExitTree()
+	private static void OnSingleAudioPlayerFinished(AudioStreamPlayer player)
 	{
-		if (regenTimer is not null && regenTimer.IsConnected(Timer.SignalName.Timeout, Callable.From(OnRegenTimerTimeout)))
+		if (player is not null && IsInstanceValid(player))
 		{
-			regenTimer.Timeout -= OnRegenTimerTimeout;
+			player.QueueFree();
 		}
-		base._ExitTree();
 	}
 }

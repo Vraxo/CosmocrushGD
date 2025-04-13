@@ -1,0 +1,93 @@
+[gd_scene load_steps=10 format=3 uid="uid://40dd12m6jo1n"]
+
+[ext_resource type="Script" path="res://Scripts/GameOverMenu.cs" id="1_gameover_script"]
+[ext_resource type="Script" path="res://Scripts/UIButton.cs" id="2_button_script"]
+[ext_resource type="FontFile" uid="uid://0q2lkim75hwr" path="res://Fonts/VeniteAdoremus-rgRBA.ttf" id="3_venite_font"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_1mlyd"]
+bg_color = Color(0.6, 0.6, 0.6, 0)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_n8g20"]
+bg_color = Color(0.6, 0.6, 0.6, 0)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_wrfhg"]
+bg_color = Color(0.6, 0.6, 0.6, 0)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_73cej"]
+bg_color = Color(0.811765, 0.6, 0.6, 0)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_75km2"]
+bg_color = Color(0.6, 0.6, 0.6, 0)
+border_color = Color(0.8, 0.8, 0.8, 0)
+
+[sub_resource type="Theme" id="Theme_gameover"]
+Button/styles/focus = SubResource("StyleBoxFlat_1mlyd")
+Button/styles/hover = SubResource("StyleBoxFlat_n8g20")
+Button/styles/hover_pressed = SubResource("StyleBoxFlat_wrfhg")
+Button/styles/normal = SubResource("StyleBoxFlat_73cej")
+Button/styles/pressed = SubResource("StyleBoxFlat_75km2")
+Label/font_sizes/font_size = 32
+Label/fonts/font = ExtResource("3_venite_font")
+
+[node name="GameOverMenu" type="ColorRect" node_paths=PackedStringArray("scoreLabel", "playAgainButton", "returnButton")]
+process_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 0, 0.65)
+script = ExtResource("1_gameover_script")
+scoreLabel = NodePath("CenterContainer/VBoxContainer/ScoreLabel")
+playAgainButton = NodePath("CenterContainer/VBoxContainer/PlayAgainButton")
+returnButton = NodePath("CenterContainer/VBoxContainer/ReturnButton")
+
+[node name="CenterContainer" type="CenterContainer" parent="."]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -175.0
+offset_top = -150.0
+offset_right = 175.0
+offset_bottom = 150.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="CenterContainer"]
+layout_mode = 2
+theme_override_constants/separation = 20
+
+[node name="GameOverLabel" type="Label" parent="CenterContainer/VBoxContainer"]
+layout_mode = 2
+theme = SubResource("Theme_gameover")
+theme_override_colors/font_color = Color(1, 0.2, 0.2, 1)
+theme_override_font_sizes/font_size = 48
+text = "Game Over!"
+horizontal_alignment = 1
+
+[node name="ScoreLabel" type="Label" parent="CenterContainer/VBoxContainer"]
+layout_mode = 2
+theme = SubResource("Theme_gameover")
+theme_override_colors/font_color = Color(1, 1, 0.5, 1)
+theme_override_font_sizes/font_size = 28
+text = "Final Score: 0"
+horizontal_alignment = 1
+
+[node name="PlayAgainButton" type="Button" parent="CenterContainer/VBoxContainer"]
+custom_minimum_size = Vector2(350, 80)
+layout_mode = 2
+theme = SubResource("Theme_gameover")
+theme_override_font_sizes/font_size = 25
+text = "Play Again"
+script = ExtResource("2_button_script")
+
+[node name="ReturnButton" type="Button" parent="CenterContainer/VBoxContainer"]
+custom_minimum_size = Vector2(350, 80)
+layout_mode = 2
+theme = SubResource("Theme_gameover")
+theme_override_font_sizes/font_size = 25
+text = "Return to Main Menu"
+script = ExtResource("2_button_script")

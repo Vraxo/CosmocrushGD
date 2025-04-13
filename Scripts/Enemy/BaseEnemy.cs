@@ -207,7 +207,7 @@ public abstract partial class BaseEnemy : CharacterBody2D
 		if (DeathParticles != null) DeathParticles.Emitting = true;
 
 		// Grant score
-		var worldNode = GetNode<Cosmocrush.World>("/root/World"); // Assumes World is direct child of root
+		var worldNode = GetNode<World>("/root/World"); // Assumes World is direct child of root
 		if (worldNode != null)
 		{
 			worldNode.AddScore(ScoreValue);

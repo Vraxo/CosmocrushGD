@@ -14,16 +14,15 @@ size = Vector2(32, 31.5)
 _data = [Vector2(0.00433911, 0.993671), 0.0, 0.0, 0, 0, Vector2(0.998999, 0.00219095), 0.0, 0.0, 0, 0]
 point_count = 2
 
-[node name="Player" type="CharacterBody2D" node_paths=PackedStringArray("gun", "damageParticles", "audioPlayerContainer", "regenTimer")]
+[node name="Player" type="CharacterBody2D" node_paths=PackedStringArray("gun", "damageParticles", "audioPlayerContainer", "regenerationTimer")]
 collision_mask = 5
 motion_mode = 1
 script = ExtResource("2_8tp0t")
 gun = NodePath("Gun")
 damageAudio = ExtResource("5_42wm7")
-sprite = NodePath("Sprite")
 damageParticles = NodePath("DamageParticles")
 audioPlayerContainer = NodePath("AudioPlayerContainer")
-regenTimer = NodePath("RegenTimer")
+regenerationTimer = NodePath("RegenerationTimer")
 cameraPath = NodePath("Camera2D")
 
 [node name="ActualCollider" type="CollisionShape2D" parent="."]
@@ -71,7 +70,7 @@ color = Color(0.447059, 1, 0.105882, 1)
 
 [node name="AudioPlayerContainer" type="Node" parent="."]
 
-[node name="RegenTimer" type="Timer" parent="."]
+[node name="RegenerationTimer" type="Timer" parent="."]
 autostart = true
 
 [node name="Camera2D" type="Camera2D" parent="."]

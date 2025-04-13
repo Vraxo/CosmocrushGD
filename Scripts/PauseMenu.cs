@@ -1,7 +1,7 @@
 using Godot;
 using CosmocrushGD; // Needed for StatisticsManager
 
-namespace Cosmocrush;
+namespace CosmocrushGD;
 
 public partial class PauseMenu : ColorRect
 {
