@@ -1,126 +1,154 @@
-﻿using Godot;
+using Godot;
 using System.Collections.Generic;
-using CosmocrushGD; // Assuming your enemies are in this namespace
+
+namespace CosmocrushGD;
 
 public partial class EnemyPoolManager : Node
 {
 	[Export] private PackedScene meleeEnemyScene;
 	[Export] private PackedScene rangedEnemyScene;
-	[Export] private PackedScene explodingEnemyScene; // Added export for the new enemy scene
+	[Export] private PackedScene explodingEnemyScene;
 	[Export] private int initialPoolSizeMelee = 20;
 	[Export] private int initialPoolSizeRanged = 15;
-	[Export] private int initialPoolSizeExploding = 10; // Added initial pool size for exploding enemy
-	[Export] private NodePath enemyContainerPath; // Optional: Node where active enemies will be parented
+	[Export] private int initialPoolSizeExploding = 10;
+	[Export] private NodePath enemyContainerPath;
 
 	private Dictionary<PackedScene, Queue<BaseEnemy>> availableEnemies = new();
 	private Node enemyContainer;
 
 	public override void _Ready()
 	{
-		enemyContainer = GetNode<Node>(enemyContainerPath);
-		if (enemyContainer == null)
+		enemyContainer = GetNodeOrNull<Node>(enemyContainerPath);
+
+		if (enemyContainer is null)
 		{
-			GD.PushWarning("EnemyPoolManager: Enemy Container Node not found or invalid. Active enemies will be parented to the Pool Manager.");
-			enemyContainer = this; // Fallback
+			string pathString = enemyContainerPath is not null
+				? enemyContainerPath.ToString()
+				: "NULL";
+			GD.PrintErr($"EnemyPoolManager: Enemy Container Node not found at path '{pathString}'. Active enemies will be parented to the Pool Manager node '{Name}'.");
+			enemyContainer = this;
 		}
 
 		InitializePool(meleeEnemyScene, initialPoolSizeMelee);
 		InitializePool(rangedEnemyScene, initialPoolSizeRanged);
-		InitializePool(explodingEnemyScene, initialPoolSizeExploding); // Initialize pool for exploding enemy
+		InitializePool(explodingEnemyScene, initialPoolSizeExploding);
 	}
 
 	private void InitializePool(PackedScene scene, int count)
 	{
-		if (scene == null)
+		if (scene is null)
 		{
 			GD.PushError($"EnemyPoolManager: PackedScene is null. Cannot initialize pool.");
 			return;
 		}
 
-		Queue<BaseEnemy> queue = new Queue<BaseEnemy>();
+		Queue<BaseEnemy> queue = new();
 		availableEnemies.Add(scene, queue);
 
 		for (int i = 0; i < count; i++)
 		{
 			var enemy = scene.Instantiate<BaseEnemy>();
-			enemy.PoolManager = this; // Give enemy a reference back to the pool
-			enemy.SourceScene = scene; // Store which scene it came from
-			AddChild(enemy); // Add to the PoolManager node initially
-			enemy.ProcessMode = ProcessModeEnum.Disabled; // Disable processing
-			enemy.Visible = false; // Hide
-			if (enemy.Collider != null) enemy.Collider.Disabled = true; // Disable collision
+			enemy.PoolManager = this;
+			enemy.SourceScene = scene;
+			AddChild(enemy);
+			enemy.ProcessMode = ProcessModeEnum.Disabled;
+			enemy.Visible = false;
+			if (enemy.Collider is not null)
+			{
+				enemy.Collider.Disabled = true;
+			}
 			queue.Enqueue(enemy);
 		}
 	}
 
 	public BaseEnemy GetEnemy(PackedScene scene)
 	{
-		if (!availableEnemies.ContainsKey(scene))
+		if (scene is null)
 		{
-			// This case should ideally not happen anymore if initialization is done correctly
-			GD.PushError($"EnemyPoolManager: Attempted to get enemy from uninitialized pool for scene: {scene.ResourcePath}. Instantiating fallback.");
-			// Fallback: Instantiate a new one if pool is somehow missing (shouldn't happen with proper init)
+			GD.PushError("EnemyPoolManager.GetEnemy: Attempted to get enemy with a null scene.");
+			return null;
+		}
+
+		if (enemyContainer is null || !IsInstanceValid(enemyContainer))
+		{
+			string pathString = enemyContainerPath is not null
+				? enemyContainerPath.ToString()
+				: "NULL";
+			GD.PushWarning($"EnemyPoolManager.GetEnemy: enemyContainer '{pathString}' invalid or null. Attempting recovery.");
+			enemyContainer = GetNodeOrNull<Node>(enemyContainerPath);
+			if (enemyContainer is null)
+			{
+				GD.PushError($"EnemyPoolManager.GetEnemy: Recovery failed. Using Pool Manager node '{Name}' as parent.");
+				enemyContainer = this;
+			}
+		}
+
+		if (!availableEnemies.TryGetValue(scene, out Queue<BaseEnemy> queue))
+		{
+			GD.PushError($"EnemyPoolManager: Pool not initialized for scene: {scene.ResourcePath}. Instantiating fallback.");
 			var fallbackEnemy = scene.Instantiate<BaseEnemy>();
 			fallbackEnemy.PoolManager = this;
 			fallbackEnemy.SourceScene = scene;
-			enemyContainer.AddChild(fallbackEnemy); // Add directly to active container
+			enemyContainer.AddChild(fallbackEnemy);
 			return fallbackEnemy;
-			// return null; // Original behavior was to return null after error
 		}
-
-		Queue<BaseEnemy> queue = availableEnemies[scene];
 
 		if (queue.Count > 0)
 		{
 			BaseEnemy enemy = queue.Dequeue();
-			// Reparent to the active container before enabling
+
 			if (enemy.GetParent() != enemyContainer)
 			{
-				enemy.GetParent()?.RemoveChild(enemy); // Remove from PoolManager node
-				enemyContainer.AddChild(enemy); // Add to active container
+				enemy.GetParent()?.RemoveChild(enemy);
+				enemyContainer.AddChild(enemy);
 			}
 			return enemy;
 		}
 		else
 		{
-			// Optional: Instantiate a new one if pool is empty
 			GD.PushWarning($"EnemyPoolManager: Pool empty for {scene.ResourcePath}. Instantiating new enemy.");
 			var enemy = scene.Instantiate<BaseEnemy>();
 			enemy.PoolManager = this;
 			enemy.SourceScene = scene;
-			enemyContainer.AddChild(enemy); // Add directly to active container
+			enemyContainer.AddChild(enemy);
 			return enemy;
 		}
 	}
 
 	public void ReturnEnemy(BaseEnemy enemy)
 	{
-		if (enemy == null || enemy.SourceScene == null || !availableEnemies.ContainsKey(enemy.SourceScene))
+		if (enemy is null || enemy.SourceScene is null || !availableEnemies.ContainsKey(enemy.SourceScene))
 		{
 			GD.PushError("EnemyPoolManager: Cannot return enemy. Invalid enemy or source scene.");
-			if (enemy != null && !enemy.IsQueuedForDeletion())
+			if (enemy is not null && !enemy.IsQueuedForDeletion())
 			{
-				enemy.QueueFree(); // Clean up if it can't be returned
+				enemy.QueueFree();
 			}
 			return;
 		}
 
-		// Disable and hide before reparenting and adding back to queue
 		enemy.ProcessMode = ProcessModeEnum.Disabled;
 		enemy.Visible = false;
-		if (enemy.Collider != null) enemy.Collider.Disabled = true;
-		// Stop particles immediately
-		if (enemy.DamageParticles != null) enemy.DamageParticles.Emitting = false;
-		if (enemy.DeathParticles != null) enemy.DeathParticles.Emitting = false;
+		if (enemy.Collider is not null)
+		{
+			enemy.Collider.Disabled = true;
+		}
+
+		if (enemy.DamageParticles is not null)
+		{
+			enemy.DamageParticles.Emitting = false;
+		}
+		if (enemy.DeathParticles is not null)
+		{
+			enemy.DeathParticles.Emitting = false;
+		}
 
 
-		// Reparent back to the PoolManager node to keep the main scene clean
 		if (enemy.GetParent() != this)
 		{
 			enemy.GetParent()?.RemoveChild(enemy);
 			AddChild(enemy);
 		}
-
 
 		availableEnemies[enemy.SourceScene].Enqueue(enemy);
 	}

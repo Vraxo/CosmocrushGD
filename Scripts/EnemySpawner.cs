@@ -1,6 +1,6 @@
-using System;
 using Godot;
-using CosmocrushGD; // Assuming your enemies are in this namespace
+
+namespace CosmocrushGD;
 
 public partial class EnemySpawner : Node
 {
@@ -10,60 +10,78 @@ public partial class EnemySpawner : Node
 	[Export] private Timer rateIncreaseTimer;
 	[Export] private PackedScene meleeEnemyScene;
 	[Export] private PackedScene rangedEnemyScene;
-	[Export] private PackedScene explodingEnemyScene; // Added export for the new enemy
+	[Export] private PackedScene explodingEnemyScene;
 	[Export] private Vector2 spawnMargin = new(100, 100);
 	[Export] private NodePath playerPath;
-	// Remove enemyContainerPath export here, it's managed by the Pool Manager now
 	[Export] private float baseSpawnRate = 2.0f;
 	[Export] private float minSpawnInterval = 0.5f;
 	[Export] private float timeMultiplier = 0.1f;
 	[Export] private float minPlayerDistance = 500.0f;
 	[Export] private Vector2 worldSize = new(2272, 1208);
-
-	// Add reference to the Pool Manager
 	[Export] private EnemyPoolManager enemyPoolManager;
+	[Export] private int initialSpawnCount = 3;
 
 	private Player player;
-	// private bool spawnMeleeNext = true; // Removed old alternating logic
 	private float timeElapsed;
 	private const int MaxSpawnAttempts = 10;
-	private RandomNumberGenerator rng = new RandomNumberGenerator(); // Added for random selection
+	private readonly RandomNumberGenerator rng = new();
 
 	public override void _Ready()
 	{
-		rng.Randomize(); // Initialize RNG
+		rng.Randomize();
 		player = GetNode<Player>(playerPath);
 
 		if (player is null)
 		{
-			GD.PrintErr("Player node not found!");
-			// Consider disabling spawner if player is missing SetProcess(false);
+			GD.PrintErr("EnemySpawner: Player node not found! Spawner disabled.");
+			SetProcess(false);
+			SetPhysicsProcess(false);
+			return;
 		}
 		if (enemyPoolManager is null)
 		{
-			GD.PrintErr("EnemyPoolManager reference not set in EnemySpawner!");
-			// Consider disabling spawner SetProcess(false);
+			GD.PrintErr("EnemySpawner: EnemyPoolManager reference not set! Spawner disabled.");
+			SetProcess(false);
+			SetPhysicsProcess(false);
+			return;
 		}
 
-
 		SetupTimers();
+		SpawnInitialEnemies();
 	}
 
 	private void SetupTimers()
 	{
 		if (spawnTimer is null || rateIncreaseTimer is null)
 		{
-			GD.PrintErr("Timer references not set!");
+			GD.PrintErr("EnemySpawner: Timer references not set!");
 			return;
 		}
 
-		spawnTimer.Timeout += OnSpawnTimerTimeout; // Renamed to avoid conflict
+		spawnTimer.Timeout += OnSpawnTimerTimeout;
 		rateIncreaseTimer.Timeout += RateIncrease;
+		spawnTimer.WaitTime = CalculateSpawnInterval();
+		spawnTimer.Start();
+		rateIncreaseTimer.Start();
+	}
+
+	private void SpawnInitialEnemies()
+	{
+		if (meleeEnemyScene is null || rangedEnemyScene is null || explodingEnemyScene is null)
+		{
+			GD.PrintErr("EnemySpawner: Cannot perform initial spawn, one or more enemy scenes are not assigned.");
+			return;
+		}
+
+		for (int i = 0; i < initialSpawnCount; i++)
+		{
+			SpawnRandomEnemy();
+		}
 	}
 
 	private void RateIncrease()
 	{
-		timeElapsed += (float)rateIncreaseTimer.WaitTime; // Use timer wait time for accuracy
+		timeElapsed += (float)rateIncreaseTimer.WaitTime;
 		spawnTimer.WaitTime = CalculateSpawnInterval();
 	}
 
@@ -73,38 +91,35 @@ public partial class EnemySpawner : Node
 		return Mathf.Clamp(calculatedInterval, minSpawnInterval, baseSpawnRate);
 	}
 
-	// Renamed from SpawnEnemy to avoid confusion with the old spawning logic
 	private void OnSpawnTimerTimeout()
 	{
-		// Check all three scenes now
+		SpawnRandomEnemy();
+	}
+
+	private void SpawnRandomEnemy()
+	{
 		if (meleeEnemyScene is null || rangedEnemyScene is null || explodingEnemyScene is null || player is null || enemyPoolManager is null)
 		{
-			GD.PrintErr("Missing required references (including ExplodingEnemyScene) in EnemySpawner!");
+			GD.PrintErr("EnemySpawner: Missing required references for spawning!");
 			return;
 		}
 
-		// Randomly select one of the three enemy types
-		PackedScene selectedScene;
-		int enemyType = rng.RandiRange(0, 2); // 0: Melee, 1: Ranged, 2: Exploding
-
-		switch (enemyType)
-		{
-			case 0:
-				selectedScene = meleeEnemyScene;
-				break;
-			case 1:
-				selectedScene = rangedEnemyScene;
-				break;
-			case 2:
-			default: // Default to exploding just in case
-				selectedScene = explodingEnemyScene;
-				break;
-		}
-
+		PackedScene selectedScene = SelectRandomEnemyScene();
 		TrySpawnEnemyFromPool(selectedScene);
 	}
 
-	// Renamed from TrySpawnEnemy
+	private PackedScene SelectRandomEnemyScene()
+	{
+		int enemyType = rng.RandiRange(0, 2);
+
+		return enemyType switch
+		{
+			0 => meleeEnemyScene,
+			1 => rangedEnemyScene,
+			_ => explodingEnemyScene,
+		};
+	}
+
 	private void TrySpawnEnemyFromPool(PackedScene enemyScene)
 	{
 		bool foundValidPosition = false;
@@ -125,69 +140,62 @@ public partial class EnemySpawner : Node
 
 		if (foundValidPosition)
 		{
-			// Get enemy from pool instead of instantiating
 			BaseEnemy enemy = enemyPoolManager.GetEnemy(enemyScene);
 
-			if (enemy != null)
+			if (enemy is not null)
 			{
-				// Reset and position the enemy
 				enemy.ResetState(spawnPosition);
-				// No AddChild needed here, PoolManager handles parenting
 			}
 			else
 			{
-				GD.Print($"Failed to get enemy of type {enemyScene.ResourcePath} from pool.");
+				GD.Print($"EnemySpawner: Failed to get enemy of type {enemyScene.ResourcePath} from pool.");
 			}
-
 		}
 		else
 		{
-			GD.Print("Failed to find valid spawn position after multiple attempts.");
+			GD.Print("EnemySpawner: Failed to find valid spawn position after multiple attempts.");
 		}
 	}
 
 	private bool IsPositionValid(Vector2 position)
 	{
-		if (player == null || !IsInstanceValid(player)) return false; // Check if player is valid
-		return position.DistanceSquaredTo(player.GlobalPosition) >= minPlayerDistance * minPlayerDistance; // Use DistanceSquaredTo for slight optimization
+		if (player is null || !IsInstanceValid(player))
+		{
+			return false;
+		}
+		return position.DistanceSquaredTo(player.GlobalPosition) >= minPlayerDistance * minPlayerDistance;
 	}
 
 	private Vector2 GetRandomEdgePosition()
 	{
-		// Use RandomNumberGenerator for better randomness control if needed
-		// var rng = new RandomNumberGenerator(); rng.Randomize(); rng.RandfRange(...)
-		SpawnEdge edge = (SpawnEdge)(GD.Randi() % 4);
+		SpawnEdge edge = (SpawnEdge)rng.RandiRange(0, 3);
 
-		float x = 0f, y = 0f; // Initialize with default
+		float x = 0f;
+		float y = 0f;
 
 		switch (edge)
 		{
 			case SpawnEdge.Top:
-				x = (float)GD.RandRange(spawnMargin.X, worldSize.X - spawnMargin.X);
-				y = (float)GD.RandRange(0, spawnMargin.Y);
+				x = rng.RandfRange(spawnMargin.X, worldSize.X - spawnMargin.X);
+				y = rng.RandfRange(0, spawnMargin.Y);
 				break;
 			case SpawnEdge.Right:
-				x = (float)GD.RandRange(worldSize.X - spawnMargin.X, worldSize.X);
-				y = (float)GD.RandRange(spawnMargin.Y, worldSize.Y - spawnMargin.Y);
+				x = rng.RandfRange(worldSize.X - spawnMargin.X, worldSize.X);
+				y = rng.RandfRange(spawnMargin.Y, worldSize.Y - spawnMargin.Y);
 				break;
 			case SpawnEdge.Bottom:
-				x = (float)GD.RandRange(spawnMargin.X, worldSize.X - spawnMargin.X);
-				y = (float)GD.RandRange(worldSize.Y - spawnMargin.Y, worldSize.Y);
+				x = rng.RandfRange(spawnMargin.X, worldSize.X - spawnMargin.X);
+				y = rng.RandfRange(worldSize.Y - spawnMargin.Y, worldSize.Y);
 				break;
 			case SpawnEdge.Left:
-				x = (float)GD.RandRange(0, spawnMargin.X);
-				y = (float)GD.RandRange(spawnMargin.Y, worldSize.Y - spawnMargin.Y);
+				x = rng.RandfRange(0, spawnMargin.X);
+				y = rng.RandfRange(spawnMargin.Y, worldSize.Y - spawnMargin.Y);
 				break;
-				// No default needed as SpawnEdge enum covers all Randi % 4 results
 		}
 
-		// Clamp values just in case RandRange behaves unexpectedly at edges or worldSize/margins are zero
 		x = Mathf.Clamp(x, 0, worldSize.X);
 		y = Mathf.Clamp(y, 0, worldSize.Y);
 
 		return new Vector2(x, y);
 	}
-
-	// Remove the old SpawnEnemy(PackedScene scene, Vector2 position) method
-	// private void SpawnEnemy(PackedScene scene, Vector2 position) { ... }
 }

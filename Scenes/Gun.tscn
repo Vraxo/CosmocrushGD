@@ -17,8 +17,9 @@ gunshotAudio = ExtResource("2_ynnvr")
 audioPlayerContainer = NodePath("AudioPlayerContainer")
 
 [node name="RayCast" type="RayCast2D" parent="."]
-exclude_parent = false
 target_position = Vector2(5000, 0)
+collision_mask = 5
+exclude_parent = true
 
 [node name="BulletTrail" type="Line2D" parent="."]
 points = PackedVector2Array(-1039.52, -67.8427)

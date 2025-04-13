@@ -164,13 +164,13 @@ position = Vector2(584, 888)
 process_mode = 3
 script = ExtResource("11_0a8f1")
 
-[node name="EnemySpawner" parent="." node_paths=PackedStringArray("enemyPoolManager") instance=ExtResource("9_ukot3")]
-explodingEnemyScene = ExtResource("11_dqhek")
-enemyPoolManager = NodePath("../EnemyPoolManager")
-
 [node name="EnemyPoolManager" type="Node2D" parent="."]
 script = ExtResource("13_mra1g")
 meleeEnemyScene = ExtResource("5_p3yak")
 rangedEnemyScene = ExtResource("14_qfgrb")
 explodingEnemyScene = ExtResource("11_dqhek")
 enemyContainerPath = NodePath("../EnemySpawner")
+
+[node name="EnemySpawner" parent="." node_paths=PackedStringArray("enemyPoolManager") instance=ExtResource("9_ukot3")]
+explodingEnemyScene = ExtResource("11_dqhek")
+enemyPoolManager = NodePath("../EnemyPoolManager")
