@@ -170,6 +170,7 @@ script = ExtResource("13_mra1g")
 meleeEnemyScene = ExtResource("5_p3yak")
 rangedEnemyScene = ExtResource("14_qfgrb")
 explodingEnemyScene = ExtResource("11_dqhek")
+tankEnemyScene = ExtResource("16_tj1fl")
 enemyContainerPath = NodePath("../EnemySpawner")
 
 [node name="EnemySpawner" parent="." node_paths=PackedStringArray("enemyPoolManager") instance=ExtResource("9_ukot3")]
