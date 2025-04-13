@@ -1,3 +1,5 @@
+// Removed ScoreValue property.
+// Moved score addition from Die() to TakeDamage(). Score added is now equal to the damage dealt.
 using Godot;
 
 namespace CosmocrushGD;
@@ -23,7 +25,6 @@ public abstract partial class BaseEnemy : CharacterBody2D
 	public EnemyPoolManager PoolManager { get; set; }
 	public PackedScene SourceScene { get; set; }
 
-	protected virtual int ScoreValue => 1;
 	protected virtual int MaxHealth => 20;
 	protected virtual int Damage => 1;
 	protected virtual float Speed => 100f;
@@ -31,7 +32,7 @@ public abstract partial class BaseEnemy : CharacterBody2D
 	protected virtual float ProximityThreshold => 32f;
 	protected virtual float KnockbackRecovery => 0.1f;
 	protected virtual float AttackCooldown => 0.5f;
-	protected virtual float KnockbackResistanceMultiplier => 1.0f; // Default: No resistance
+	protected virtual float KnockbackResistanceMultiplier => 1f;
 
 	public override void _Ready()
 	{
@@ -59,6 +60,7 @@ public abstract partial class BaseEnemy : CharacterBody2D
 		{
 			Collider.Disabled = false;
 		}
+
 
 		if (DamageParticles is not null)
 		{
@@ -126,6 +128,7 @@ public abstract partial class BaseEnemy : CharacterBody2D
 		}
 
 		Navigator.TargetPosition = TargetPlayer.GlobalPosition;
+
 		Rid mapRid = NavigationServer2D.AgentGetMap(Navigator.GetRid());
 		if (!mapRid.IsValid)
 		{
@@ -158,6 +161,15 @@ public abstract partial class BaseEnemy : CharacterBody2D
 			DamageParticles.Emitting = true;
 		}
 
+		var worldNode = GetNode<World>("/root/World");
+		if (worldNode is not null)
+		{
+			worldNode.AddScore(damage);
+		}
+		else
+		{
+			GD.PrintErr($"Could not find World node at /root/World to grant score from damage {damage}.");
+		}
 
 		if (Health <= 0)
 		{
@@ -171,9 +183,8 @@ public abstract partial class BaseEnemy : CharacterBody2D
 		{
 			return;
 		}
-		// Apply resistance multiplier here
-		Vector2 resistedForce = force * KnockbackResistanceMultiplier;
-		Knockback += resistedForce;
+
+		Knockback += force * KnockbackResistanceMultiplier;
 	}
 
 	protected virtual void UpdateSpriteDirection()
@@ -203,6 +214,7 @@ public abstract partial class BaseEnemy : CharacterBody2D
 		{
 			Collider.Disabled = true;
 		}
+
 		if (Sprite is not null)
 		{
 			Sprite.Visible = false;
@@ -212,17 +224,7 @@ public abstract partial class BaseEnemy : CharacterBody2D
 			DeathParticles.Emitting = true;
 		}
 
-		var worldNode = GetNode<World>("/root/World");
-		if (worldNode is not null)
-		{
-			worldNode.AddScore(ScoreValue);
-		}
-		else
-		{
-			GD.PrintErr("Could not find World node at /root/World to grant score.");
-		}
-
-		DeathTimer?.Start();
+		DeathTimer.Start();
 	}
 
 	private void ShowDamageIndicator(int damage)
@@ -236,12 +238,14 @@ public abstract partial class BaseEnemy : CharacterBody2D
 		indicator.Text = damage.ToString();
 		indicator.Health = Health;
 		indicator.MaxHealth = MaxHealth;
-
-		float yOffset = (Sprite is not null && Sprite.Texture is not null)
-			? -Sprite.Texture.GetHeight() / 2f
-			: -20f;
-		indicator.Position = new(0, yOffset);
-
+		if (Sprite is not null && Sprite.Texture is not null)
+		{
+			indicator.Position = new(0, -Sprite.Texture.GetHeight() / 2f);
+		}
+		else
+		{
+			indicator.Position = new(0, -20);
+		}
 
 		AddChild(indicator);
 	}
@@ -256,5 +260,6 @@ public abstract partial class BaseEnemy : CharacterBody2D
 		}
 
 		PoolManager.ReturnEnemy(this);
+		return;
 	}
 }

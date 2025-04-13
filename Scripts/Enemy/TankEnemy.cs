@@ -7,7 +7,6 @@ public partial class TankEnemy : BaseEnemy
     protected override int MaxHealth => 100;
     protected override float Speed => 50f;
     protected override int Damage => 1;
-    protected override int ScoreValue => 5;
     protected override float KnockbackRecovery => 0.05f;
     protected override float KnockbackResistanceMultiplier => 0.3f; // Takes only 30% of knockback
 
