@@ -8,7 +8,6 @@ public partial class TankEnemy : BaseEnemy
     protected override int MaxHealth => 80; // More health
     protected override float Speed => 60f; // Slower speed
     protected override int Damage => 2; // Higher damage
-    protected override int ScoreValue => 3; // Higher score reward
 
     // *** This is the important part for the CS0115 fix ***
     // Override the virtual property from BaseEnemy
