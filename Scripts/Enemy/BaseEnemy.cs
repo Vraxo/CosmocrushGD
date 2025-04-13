@@ -24,8 +24,8 @@ public abstract partial class BaseEnemy : CharacterBody2D
 	public EnemyPoolManager PoolManager { get; set; }
 	public PackedScene SourceScene { get; set; }
 
-    protected virtual float KnockbackResistanceMultiplier => 0.1f;
-    protected virtual int MaxHealth => 20;
+	protected virtual float KnockbackResistanceMultiplier => 0.1f;
+	protected virtual int MaxHealth => 20;
 	protected virtual int Damage => 1;
 	protected virtual float Speed => 100f;
 	protected virtual float DamageRadius => 50f;

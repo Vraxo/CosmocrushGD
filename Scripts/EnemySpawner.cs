@@ -4,52 +4,115 @@ namespace CosmocrushGD;
 
 public partial class EnemySpawner : Node
 {
-	private enum SpawnEdge { Top, Right, Bottom, Left }
-
 	[Export] private Timer spawnTimer;
 	[Export] private Timer rateIncreaseTimer;
 	[Export] private PackedScene meleeEnemyScene;
 	[Export] private PackedScene rangedEnemyScene;
 	[Export] private PackedScene explodingEnemyScene;
-	[Export] private Vector2 spawnMargin = new(100, 100);
+	[Export] private Area2D spawnArea;
 	[Export] private NodePath playerPath;
 	[Export] private float baseSpawnRate = 2.0f;
 	[Export] private float minSpawnInterval = 0.5f;
 	[Export] private float timeMultiplier = 0.1f;
-	[Export] private float minPlayerDistance = 500.0f;
-	[Export] private Vector2 worldSize = new(2272, 1208);
+	[Export] private float minPlayerDistance = 500.0f; // Adjust this value if needed!
 	[Export] private EnemyPoolManager enemyPoolManager;
 	[Export] private int initialSpawnCount = 3;
 
 	private Player player;
 	private float timeElapsed;
-	private const int MaxSpawnAttempts = 10;
+	private const int MaxSpawnAttempts = 10; // Increased attempts slightly for debugging
 	private readonly RandomNumberGenerator rng = new();
+	private Rect2 spawnRectGlobal;
+	private EnemyPoolManager _cachedPoolManager;
 
 	public override void _Ready()
 	{
+		GD.Print("--- EnemySpawner _Ready: Start ---");
 		rng.Randomize();
 		player = GetNode<Player>(playerPath);
 
 		if (player is null)
 		{
 			GD.PrintErr("EnemySpawner: Player node not found! Spawner disabled.");
-			SetProcess(false);
-			SetPhysicsProcess(false);
-			return;
+			SetProcess(false); SetPhysicsProcess(false); return;
 		}
-		if (enemyPoolManager is null)
+
+		if (enemyPoolManager is null || !IsInstanceValid(enemyPoolManager))
 		{
-			GD.PrintErr("EnemySpawner: EnemyPoolManager reference not set! Spawner disabled.");
-			SetProcess(false);
-			SetPhysicsProcess(false);
-			return;
+			GD.PrintErr("EnemySpawner: EnemyPoolManager reference not set or invalid in Inspector! Spawner disabled.");
+			SetProcess(false); SetPhysicsProcess(false); return;
+		}
+		_cachedPoolManager = enemyPoolManager;
+		GD.Print($"EnemySpawner: Cached Pool Manager reference: {_cachedPoolManager.GetPath()}");
+
+		if (spawnArea is null)
+		{
+			GD.PrintErr("EnemySpawner: Spawn Area reference not set! Spawner disabled.");
+			SetProcess(false); SetPhysicsProcess(false); return;
+		}
+
+		CalculateSpawnRect();
+
+		if (spawnRectGlobal == default)
+		{
+			GD.PrintErr("EnemySpawner: Spawn Rect calculation failed. Spawner disabled.");
+			SetProcess(false); SetPhysicsProcess(false); return;
 		}
 
 		SetupTimers();
-		// Defer initial spawning to ensure pool manager is ready
-		CallDeferred(MethodName.SpawnInitialEnemies);
+		CallDeferred(nameof(SpawnInitialEnemies));
+		GD.Print("--- EnemySpawner _Ready: End ---");
 	}
+
+	private void CalculateSpawnRect()
+	{
+		if (spawnArea is null || !IsInstanceValid(spawnArea))
+		{
+			GD.PrintErr("EnemySpawner: Cannot calculate spawn rect, spawnArea is null or invalid.");
+			spawnRectGlobal = default;
+			return;
+		}
+
+		// Use CollisionShape child
+		CollisionShape2D shape = null;
+		foreach (Node child in spawnArea.GetChildren())
+		{
+			if (child is CollisionShape2D cs)
+			{
+				shape = cs;
+				break;
+			}
+		}
+
+		if (shape is null)
+		{
+			GD.PrintErr("EnemySpawner: Spawn Area does not have a CollisionShape2D child!");
+			spawnRectGlobal = default;
+			return;
+		}
+
+
+		if (shape.Shape is not RectangleShape2D rectShape)
+		{
+			GD.PrintErr($"EnemySpawner: Spawn Area's CollisionShape2D ('{shape.Name}') does not have a RectangleShape2D!");
+			spawnRectGlobal = default;
+			return;
+		}
+
+		GD.Print($"EnemySpawner: Calculating Spawn Rect (Simplified Method)...");
+		GD.Print($"  CollisionShape GlobalPosition: {shape.GlobalPosition}");
+		GD.Print($"  CollisionShape GlobalScale: {shape.GlobalScale}");
+		GD.Print($"  RectangleShape Size: {rectShape.Size}");
+
+		Vector2 globalShapeCenter = shape.GlobalPosition;
+		Vector2 scaledRectSize = rectShape.Size * shape.GlobalScale;
+		Vector2 topLeft = globalShapeCenter - (scaledRectSize / 2f);
+
+		spawnRectGlobal = new Rect2(topLeft, scaledRectSize);
+
+		GD.Print($"EnemySpawner: Spawn Rect calculated: Position={spawnRectGlobal.Position}, Size={spawnRectGlobal.Size}, End={spawnRectGlobal.End}");
+	}
+
 
 	private void SetupTimers()
 	{
@@ -68,25 +131,22 @@ public partial class EnemySpawner : Node
 
 	private void SpawnInitialEnemies()
 	{
-		GD.Print("EnemySpawner: Starting initial spawn..."); // Added log
+		GD.Print("EnemySpawner: Running Deferred SpawnInitialEnemies.");
+		if (_cachedPoolManager is null)
+		{
+			GD.PrintErr("EnemySpawner: Cached pool manager is null in SpawnInitialEnemies (Deferred). Cannot spawn.");
+			return;
+		}
 		if (meleeEnemyScene is null || rangedEnemyScene is null || explodingEnemyScene is null)
 		{
 			GD.PrintErr("EnemySpawner: Cannot perform initial spawn, one or more enemy scenes are not assigned.");
 			return;
 		}
 
-		if (enemyPoolManager is null)
-		{
-			GD.PrintErr("EnemySpawner: Cannot perform initial spawn, EnemyPoolManager reference is null.");
-			return;
-		}
-
-
 		for (int i = 0; i < initialSpawnCount; i++)
 		{
 			SpawnRandomEnemy();
 		}
-		GD.Print("EnemySpawner: Finished initial spawn."); // Added log
 	}
 
 	private void RateIncrease()
@@ -103,14 +163,19 @@ public partial class EnemySpawner : Node
 
 	private void OnSpawnTimerTimeout()
 	{
+		if (_cachedPoolManager is null)
+		{
+			GD.PrintErr("EnemySpawner: OnSpawnTimerTimeout: Cached pool manager is null. Cannot spawn.");
+			return;
+		}
 		SpawnRandomEnemy();
 	}
 
 	private void SpawnRandomEnemy()
 	{
-		if (meleeEnemyScene is null || rangedEnemyScene is null || explodingEnemyScene is null || player is null || enemyPoolManager is null)
+		if (meleeEnemyScene is null || rangedEnemyScene is null || explodingEnemyScene is null || player is null || _cachedPoolManager is null || spawnArea is null)
 		{
-			GD.PrintErr("EnemySpawner: Missing required references for spawning!");
+			GD.PrintErr($"EnemySpawner: Missing required references for SpawnRandomEnemy! Player: {player}, PoolManager: {_cachedPoolManager}, SpawnArea: {spawnArea}, Melee: {meleeEnemyScene}, Ranged: {rangedEnemyScene}, Exploding: {explodingEnemyScene}");
 			return;
 		}
 
@@ -135,12 +200,31 @@ public partial class EnemySpawner : Node
 		bool foundValidPosition = false;
 		int attempts = 0;
 		Vector2 spawnPosition = Vector2.Zero;
+		float requiredDistSq = minPlayerDistance * minPlayerDistance; // Cache calculation
+
+		if (spawnRectGlobal == default)
+		{
+			GD.PrintErr($"EnemySpawner: TrySpawnEnemyFromPool: spawnRectGlobal is invalid. Cannot generate spawn position.");
+			return;
+		}
+		if (player is null || !IsInstanceValid(player)) // Check player validity early
+		{
+			GD.PrintErr($"EnemySpawner: TrySpawnEnemyFromPool: Player is invalid. Cannot check position validity.");
+			return;
+		}
+
 
 		while (!foundValidPosition && attempts < MaxSpawnAttempts)
 		{
-			spawnPosition = GetRandomEdgePosition();
+			spawnPosition = GetRandomPositionInArea();
+			float distSq = player.GlobalPosition.DistanceSquaredTo(spawnPosition);
+			bool positionOk = distSq >= requiredDistSq;
 
-			if (IsPositionValid(spawnPosition))
+			// --- DETAILED LOGGING INSIDE LOOP ---
+			GD.Print($"  Attempt {attempts + 1}: Pos={spawnPosition}, PlayerPos={player.GlobalPosition}, DistSq={distSq:F2}, RequiredDistSq={requiredDistSq:F2}, Valid={positionOk}");
+			// --- END LOGGING ---
+
+			if (positionOk)
 			{
 				foundValidPosition = true;
 			}
@@ -150,63 +234,41 @@ public partial class EnemySpawner : Node
 
 		if (foundValidPosition)
 		{
-			// GD.Print($"Attempting to get enemy from pool: {enemyScene?.ResourcePath ?? "NULL SCENE"}"); // Added log
-			BaseEnemy enemy = enemyPoolManager.GetEnemy(enemyScene);
+			if (_cachedPoolManager is null)
+			{
+				GD.PrintErr($"EnemySpawner: TrySpawnEnemyFromPool: _cachedPoolManager became null unexpectedly!");
+				return;
+			}
+
+			GD.Print($"EnemySpawner: Attempting to get enemy '{enemyScene.ResourcePath}' from PoolManager: {_cachedPoolManager.GetPath()}");
+			BaseEnemy enemy = _cachedPoolManager.GetEnemy(enemyScene);
 
 			if (enemy is not null)
 			{
+				GD.Print($"EnemySpawner: Spawning {enemy.Name} at {spawnPosition}");
 				enemy.ResetState(spawnPosition);
 			}
 			else
 			{
-				GD.Print($"EnemySpawner: Failed to get enemy of type {enemyScene?.ResourcePath ?? "NULL SCENE"} from pool.");
+				GD.PrintErr($"EnemySpawner: _cachedPoolManager.GetEnemy returned NULL for scene '{enemyScene.ResourcePath}'.");
 			}
 		}
 		else
 		{
-			GD.Print("EnemySpawner: Failed to find valid spawn position after multiple attempts.");
+			GD.PrintErr("EnemySpawner: Failed to find valid spawn position after multiple attempts."); // Changed to Error for visibility
 		}
 	}
 
-	private bool IsPositionValid(Vector2 position)
+	// --- IsPositionValid removed as logic moved into the loop ---
+	// private bool IsPositionValid(Vector2 position) { ... }
+
+
+	private Vector2 GetRandomPositionInArea()
 	{
-		if (player is null || !IsInstanceValid(player))
-		{
-			return false;
-		}
-		return position.DistanceSquaredTo(player.GlobalPosition) >= minPlayerDistance * minPlayerDistance;
-	}
-
-	private Vector2 GetRandomEdgePosition()
-	{
-		SpawnEdge edge = (SpawnEdge)rng.RandiRange(0, 3);
-
-		float x = 0f;
-		float y = 0f;
-
-		switch (edge)
-		{
-			case SpawnEdge.Top:
-				x = rng.RandfRange(spawnMargin.X, worldSize.X - spawnMargin.X);
-				y = rng.RandfRange(0, spawnMargin.Y);
-				break;
-			case SpawnEdge.Right:
-				x = rng.RandfRange(worldSize.X - spawnMargin.X, worldSize.X);
-				y = rng.RandfRange(spawnMargin.Y, worldSize.Y - spawnMargin.Y);
-				break;
-			case SpawnEdge.Bottom:
-				x = rng.RandfRange(spawnMargin.X, worldSize.X - spawnMargin.X);
-				y = rng.RandfRange(worldSize.Y - spawnMargin.Y, worldSize.Y);
-				break;
-			case SpawnEdge.Left:
-				x = rng.RandfRange(0, spawnMargin.X);
-				y = rng.RandfRange(spawnMargin.Y, worldSize.Y - spawnMargin.Y);
-				break;
-		}
-
-		x = Mathf.Clamp(x, 0, worldSize.X);
-		y = Mathf.Clamp(y, 0, worldSize.Y);
-
-		return new Vector2(x, y);
+		// spawnRectGlobal is calculated in _Ready
+		float randomX = rng.RandfRange(spawnRectGlobal.Position.X, spawnRectGlobal.End.X);
+		float randomY = rng.RandfRange(spawnRectGlobal.Position.Y, spawnRectGlobal.End.Y);
+		Vector2 randomPosition = new(randomX, randomY);
+		return randomPosition;
 	}
 }

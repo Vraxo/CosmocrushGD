@@ -1,4 +1,4 @@
-[gd_scene load_steps=23 format=3 uid="uid://rflfyu4apk38"]
+[gd_scene load_steps=24 format=3 uid="uid://rflfyu4apk38"]
 
 [ext_resource type="AudioStream" uid="uid://blvqtb4sj0647" path="res://Audio/Songs/Going Ultimate!.mp3" id="1_4w1vw"]
 [ext_resource type="Script" path="res://Scripts/World.cs" id="1_k2m3n"]
@@ -73,6 +73,9 @@ vertices = PackedVector2Array(1766, 942, -518, 942, -518, -278, 1766, -278)
 polygons = Array[PackedInt32Array]([PackedInt32Array(0, 1, 2, 3)])
 outlines = Array[PackedVector2Array]([PackedVector2Array(-528, -288, -528, 952, 1776, 952, 1776, -288)])
 
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_1vfw6"]
+size = Vector2(77.0962, 90.6006)
+
 [node name="World" type="WorldEnvironment" node_paths=PackedStringArray("pauseButton", "hudLayer", "scoreLabel", "scoreAnimationPlayer")]
 environment = SubResource("Environment_fpnmc")
 script = ExtResource("1_k2m3n")
@@ -86,10 +89,10 @@ scoreAnimationPlayer = NodePath("HUD/ScoreAnimationPlayer")
 metadata/_edit_horizontal_guides_ = [-408.0]
 
 [node name="Background" type="ColorRect" parent="."]
-offset_left = -1128.0
-offset_top = -640.0
-offset_right = 3416.0
-offset_bottom = 1776.0
+offset_left = -1016.0
+offset_top = -664.0
+offset_right = 3528.0
+offset_bottom = 1752.0
 color = Color(0, 0, 0, 1)
 
 [node name="ThemePlayer" type="AudioStreamPlayer" parent="."]
@@ -210,13 +213,23 @@ cameraPath = NodePath("Camera2D2")
 process_mode = 3
 script = ExtResource("11_0a8f1")
 
-[node name="EnemySpawner" parent="." node_paths=PackedStringArray("enemyPoolManager") instance=ExtResource("9_ukot3")]
+[node name="EnemySpawner" parent="." node_paths=PackedStringArray("spawnArea", "enemyPoolManager") instance=ExtResource("9_ukot3")]
 explodingEnemyScene = ExtResource("11_dqhek")
+spawnArea = NodePath("../SpawnZone")
 enemyPoolManager = NodePath("../EnemyPoolManager")
 
 [node name="EnemyPoolManager" type="Node2D" parent="."]
+position = Vector2(360, 160)
 script = ExtResource("13_mra1g")
 meleeEnemyScene = ExtResource("5_p3yak")
 rangedEnemyScene = ExtResource("14_qfgrb")
 explodingEnemyScene = ExtResource("11_dqhek")
 enemyContainerPath = NodePath("../EnemySpawner")
+
+[node name="SpawnZone" type="Area2D" parent="."]
+position = Vector2(1160, 632)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="SpawnZone"]
+rotation = -3.14159
+scale = Vector2(27.3944, -11.5673)
+shape = SubResource("RectangleShape2D_1vfw6")
