@@ -207,10 +207,7 @@ public partial class EnemyPoolManager : Node
 		// Disable and hide before reparenting and adding back to queue
 		enemy.ProcessMode = ProcessModeEnum.Disabled;
 		enemy.Visible = false;
-		if (enemy.Collider is not null)
-		{
-			enemy.Collider.SetDeferred(CollisionShape2D.PropertyName.Disabled, true);
-		}
+		enemy.Collider?.SetDeferred(CollisionShape2D.PropertyName.Disabled, true);
 		// Stop particles immediately
 		if (enemy.DamageParticles is not null)
 		{
