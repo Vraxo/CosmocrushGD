@@ -5,16 +5,18 @@ namespace CosmocrushGD;
 public partial class World : WorldEnvironment
 {
 	[Export] private PackedScene pauseMenuScene;
-	[Export] private PackedScene gameOverMenuScene; // Added export for Game Over Menu
+	[Export] private PackedScene gameOverMenuScene;
 	[Export] private Button pauseButton;
 	[Export] private CanvasLayer hudLayer;
 	[Export] private Label scoreLabel;
 	[Export] private NodePath playerPath;
+	[Export] private AnimationPlayer scoreAnimationPlayer; // Added export for animation player
 
 	public int Score { get; private set; } = 0;
 	private PauseMenu pauseMenu;
-	private GameOverMenu gameOverMenu; // Reference to the instantiated game over menu
+	private GameOverMenu gameOverMenu;
 	private Player player;
+	private const string ScorePunchAnimationName = "ScorePunch";
 
 	public override void _Ready()
 	{
@@ -27,6 +29,15 @@ public partial class World : WorldEnvironment
 		{
 			GD.PrintErr("World._Ready: Score Label reference not set!");
 		}
+		else
+		{
+			// Set pivot for scaling animation
+			scoreLabel.PivotOffset = scoreLabel.Size / 2;
+		}
+		if (scoreAnimationPlayer is null)
+		{
+			GD.PrintErr("World._Ready: Score Animation Player reference not set!");
+		}
 		if (pauseButton is not null)
 		{
 			pauseButton.Pressed += OnPauseButtonPressed;
@@ -35,11 +46,10 @@ public partial class World : WorldEnvironment
 		{
 			GD.PrintErr("World._Ready: Pause Button reference not set!");
 		}
-		if (gameOverMenuScene is null) // Check if Game Over Scene is assigned
+		if (gameOverMenuScene is null)
 		{
 			GD.PrintErr("World._Ready: GameOverMenuScene is not assigned in the inspector!");
 		}
-
 
 		GD.Print($"World._Ready: Attempting to get player from path: {playerPath}");
 		player = GetNode<Player>(playerPath);
@@ -60,7 +70,6 @@ public partial class World : WorldEnvironment
 
 	public override void _Process(double delta)
 	{
-		// Don't allow pausing if the game is already over
 		if (Input.IsActionJustPressed("ui_cancel") && !GetTree().Paused)
 		{
 			Pause();
@@ -83,6 +92,12 @@ public partial class World : WorldEnvironment
 	{
 		Score += amount;
 		UpdateScoreLabel();
+
+		if (scoreAnimationPlayer is not null && scoreAnimationPlayer.HasAnimation(ScorePunchAnimationName))
+		{
+			scoreAnimationPlayer.Stop(); // Stop previous animation if still running
+			scoreAnimationPlayer.Play(ScorePunchAnimationName);
+		}
 	}
 
 	private void UpdateScoreLabel()
@@ -95,7 +110,6 @@ public partial class World : WorldEnvironment
 
 	private void OnPauseButtonPressed()
 	{
-		// Prevent pausing if the game is already over (menu is visible)
 		if (gameOverMenu is not null && gameOverMenu.Visible)
 		{
 			return;
@@ -113,7 +127,7 @@ public partial class World : WorldEnvironment
 
 	private void Pause()
 	{
-		if (GetTree().Paused) // This also covers the Game Over paused state
+		if (GetTree().Paused)
 		{
 			return;
 		}
@@ -144,7 +158,6 @@ public partial class World : WorldEnvironment
 	{
 		GD.Print("World.OnGameOver: Game Over event received!");
 
-		// Prevent showing multiple menus if event somehow fires twice
 		if (gameOverMenu is not null && IsInstanceValid(gameOverMenu))
 		{
 			GD.Print("World.OnGameOver: Game Over menu already exists. Aborting.");
@@ -154,27 +167,23 @@ public partial class World : WorldEnvironment
 		if (gameOverMenuScene is null)
 		{
 			GD.PrintErr("World.OnGameOver: GameOverMenuScene is not set in World script!");
-			return; // Can't proceed without the scene
+			return;
 		}
 
 		if (hudLayer is null)
 		{
 			GD.PrintErr("World.OnGameOver: HUD Layer is not set or found!");
-			return; // Need the HUD to add the menu to
+			return;
 		}
 
-		// Update and Save Statistics
 		GD.Print($"World.OnGameOver: Updating statistics with final score: {Score}");
 		StatisticsManager.Instance.UpdateScores(Score);
-		// Saving now happens within UpdateScores
 
-		// Instantiate and setup the Game Over Menu
 		gameOverMenu = gameOverMenuScene.Instantiate<GameOverMenu>();
 		gameOverMenu.SetScore(Score);
 		hudLayer.AddChild(gameOverMenu);
 		gameOverMenu.Show();
 
-		// Disable the pause button
 		if (pauseButton is not null)
 		{
 			pauseButton.Disabled = true;
