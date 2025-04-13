@@ -11,6 +11,7 @@ public partial class EnemySpawner : Node
 	[Export] private PackedScene meleeEnemyScene;
 	[Export] private PackedScene rangedEnemyScene;
 	[Export] private PackedScene explodingEnemyScene;
+	[Export] private PackedScene tankEnemyScene; // Added export for Tank Enemy
 	[Export] private Vector2 spawnMargin = new(100, 100);
 	[Export] private NodePath playerPath;
 	[Export] private float baseSpawnRate = 2.0f;
@@ -67,7 +68,8 @@ public partial class EnemySpawner : Node
 
 	private void SpawnInitialEnemies()
 	{
-		if (meleeEnemyScene is null || rangedEnemyScene is null || explodingEnemyScene is null)
+		// Updated check to include tankEnemyScene
+		if (meleeEnemyScene is null || rangedEnemyScene is null || explodingEnemyScene is null || tankEnemyScene is null)
 		{
 			GD.PrintErr("EnemySpawner: Cannot perform initial spawn, one or more enemy scenes are not assigned.");
 			return;
@@ -98,7 +100,8 @@ public partial class EnemySpawner : Node
 
 	private void SpawnRandomEnemy()
 	{
-		if (meleeEnemyScene is null || rangedEnemyScene is null || explodingEnemyScene is null || player is null || enemyPoolManager is null)
+		// Updated check to include tankEnemyScene
+		if (meleeEnemyScene is null || rangedEnemyScene is null || explodingEnemyScene is null || tankEnemyScene is null || player is null || enemyPoolManager is null)
 		{
 			GD.PrintErr("EnemySpawner: Missing required references for spawning!");
 			return;
@@ -110,13 +113,15 @@ public partial class EnemySpawner : Node
 
 	private PackedScene SelectRandomEnemyScene()
 	{
-		int enemyType = rng.RandiRange(0, 2);
+		// Updated range to include the new enemy type (0-3)
+		int enemyType = rng.RandiRange(0, 3);
 
 		return enemyType switch
 		{
 			0 => meleeEnemyScene,
 			1 => rangedEnemyScene,
-			_ => explodingEnemyScene,
+			2 => explodingEnemyScene,
+			_ => tankEnemyScene, // Case 3 (and default) is now Tank Enemy
 		};
 	}
 
@@ -148,7 +153,7 @@ public partial class EnemySpawner : Node
 			}
 			else
 			{
-				GD.Print($"EnemySpawner: Failed to get enemy of type {enemyScene.ResourcePath} from pool.");
+				GD.Print($"EnemySpawner: Failed to get enemy of type {enemyScene?.ResourcePath ?? "NULL SCENE"} from pool.");
 			}
 		}
 		else

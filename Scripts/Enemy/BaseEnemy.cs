@@ -20,13 +20,10 @@ public abstract partial class BaseEnemy : CharacterBody2D
 	protected Vector2 Knockback = Vector2.Zero;
 	protected Player TargetPlayer;
 
-	// New properties for pooling
 	public EnemyPoolManager PoolManager { get; set; }
 	public PackedScene SourceScene { get; set; }
 
-	// Score awarded for defeating this enemy
 	protected virtual int ScoreValue => 1;
-
 	protected virtual int MaxHealth => 20;
 	protected virtual int Damage => 1;
 	protected virtual float Speed => 100f;
@@ -34,18 +31,16 @@ public abstract partial class BaseEnemy : CharacterBody2D
 	protected virtual float ProximityThreshold => 32f;
 	protected virtual float KnockbackRecovery => 0.1f;
 	protected virtual float AttackCooldown => 0.5f;
+	protected virtual float KnockbackResistanceMultiplier => 1.0f; // Default: No resistance
 
 	public override void _Ready()
 	{
 		TargetPlayer = GetNode<Player>("/root/World/Player");
-		// Health is reset in ResetState
-		// Connect signals once
-		DeathTimer.Timeout += ReturnToPool; // Changed from OnDeathTimeout
+		DeathTimer.Timeout += ReturnToPool;
 		DamageCooldownTimer.WaitTime = AttackCooldown;
 		DamageCooldownTimer.Timeout += () => CanShoot = true;
 	}
 
-	// New method to reset the enemy state when reused
 	public virtual void ResetState(Vector2 spawnPosition)
 	{
 		GlobalPosition = spawnPosition;
@@ -53,30 +48,37 @@ public abstract partial class BaseEnemy : CharacterBody2D
 		Dead = false;
 		Velocity = Vector2.Zero;
 		Knockback = Vector2.Zero;
-		CanShoot = true; // Reset attack capability
+		CanShoot = true;
 
-		// Re-enable components
-		Visible = true; // Make sure the root node is visible
-		Sprite.Visible = true;
-		Collider.Disabled = false;
-
-		// Reset particles
-		DamageParticles.Emitting = false;
-		DamageParticles.Restart();
-		DeathParticles.Emitting = false;
-		DeathParticles.Restart();
-
-		// Reset timers if needed (stop them if they might be running)
-		DeathTimer.Stop();
-		DamageCooldownTimer.Stop();
-
-		// Ensure animations are stopped or reset if applicable
-		if (HitAnimationPlayer != null && HitAnimationPlayer.IsPlaying())
+		Visible = true;
+		if (Sprite is not null)
 		{
-			HitAnimationPlayer.Stop(true); // Reset animation
+			Sprite.Visible = true;
+		}
+		if (Collider is not null)
+		{
+			Collider.Disabled = false;
 		}
 
-		// Re-enable processing
+		if (DamageParticles is not null)
+		{
+			DamageParticles.Emitting = false;
+			DamageParticles.Restart();
+		}
+		if (DeathParticles is not null)
+		{
+			DeathParticles.Emitting = false;
+			DeathParticles.Restart();
+		}
+
+		DeathTimer?.Stop();
+		DamageCooldownTimer?.Stop();
+
+		if (HitAnimationPlayer is not null && HitAnimationPlayer.IsPlaying())
+		{
+			HitAnimationPlayer.Stop(true);
+		}
+
 		ProcessMode = ProcessModeEnum.Inherit;
 	}
 
@@ -107,7 +109,7 @@ public abstract partial class BaseEnemy : CharacterBody2D
 	{
 		if (TargetPlayer is null || !IsInstanceValid(TargetPlayer))
 		{
-			TargetPlayer = null; // Clear invalid reference
+			TargetPlayer = null;
 			return Vector2.Zero;
 		}
 
@@ -124,20 +126,16 @@ public abstract partial class BaseEnemy : CharacterBody2D
 		}
 
 		Navigator.TargetPosition = TargetPlayer.GlobalPosition;
-
-		// Optimization: Avoid frequent NavigationServer calls if possible or not needed every frame
-		// However, standard use requires checking the map
 		Rid mapRid = NavigationServer2D.AgentGetMap(Navigator.GetRid());
 		if (!mapRid.IsValid)
 		{
 			GD.PrintErr($"Navigator map invalid for {Name} at {GlobalPosition}");
 			return Vector2.Zero;
 		}
-		// Consider if you need iteration ID check every frame
 
 		if (Navigator.IsNavigationFinished())
 		{
-			return Vector2.Zero; // Or maybe direct movement if close enough but not finished?
+			return Vector2.Zero;
 		}
 
 		Vector2 direction = (Navigator.GetNextPathPosition() - GlobalPosition).Normalized();
@@ -155,7 +153,7 @@ public abstract partial class BaseEnemy : CharacterBody2D
 		HitAnimationPlayer?.Play("HitFlash");
 		ShowDamageIndicator(damage);
 
-		if (DamageParticles != null)
+		if (DamageParticles is not null)
 		{
 			DamageParticles.Emitting = true;
 		}
@@ -173,13 +171,14 @@ public abstract partial class BaseEnemy : CharacterBody2D
 		{
 			return;
 		}
-
-		Knockback += force;
+		// Apply resistance multiplier here
+		Vector2 resistedForce = force * KnockbackResistanceMultiplier;
+		Knockback += resistedForce;
 	}
 
 	protected virtual void UpdateSpriteDirection()
 	{
-		if (TargetPlayer is null || !IsInstanceValid(TargetPlayer) || Sprite == null)
+		if (TargetPlayer is null || !IsInstanceValid(TargetPlayer) || Sprite is null)
 		{
 			return;
 		}
@@ -200,17 +199,21 @@ public abstract partial class BaseEnemy : CharacterBody2D
 		Velocity = Vector2.Zero;
 		Knockback = Vector2.Zero;
 
-		if (Collider != null)
+		if (Collider is not null)
 		{
 			Collider.Disabled = true;
 		}
+		if (Sprite is not null)
+		{
+			Sprite.Visible = false;
+		}
+		if (DeathParticles is not null)
+		{
+			DeathParticles.Emitting = true;
+		}
 
-		if (Sprite != null) Sprite.Visible = false;
-		if (DeathParticles != null) DeathParticles.Emitting = true;
-
-		// Grant score
-		var worldNode = GetNode<World>("/root/World"); // Assumes World is direct child of root
-		if (worldNode != null)
+		var worldNode = GetNode<World>("/root/World");
+		if (worldNode is not null)
 		{
 			worldNode.AddScore(ScoreValue);
 		}
@@ -219,8 +222,7 @@ public abstract partial class BaseEnemy : CharacterBody2D
 			GD.PrintErr("Could not find World node at /root/World to grant score.");
 		}
 
-
-		DeathTimer.Start();
+		DeathTimer?.Start();
 	}
 
 	private void ShowDamageIndicator(int damage)
@@ -232,17 +234,14 @@ public abstract partial class BaseEnemy : CharacterBody2D
 
 		var indicator = DamageIndicatorScene.Instantiate<DamageIndicator>();
 		indicator.Text = damage.ToString();
-		// Optional: Check if Health/MaxHealth properties exist before setting
 		indicator.Health = Health;
 		indicator.MaxHealth = MaxHealth;
-		if (Sprite is not null && Sprite.Texture is not null)
-		{
-			indicator.Position = new(0, -Sprite.Texture.GetHeight() / 2f);
-		}
-		else
-		{
-			indicator.Position = new(0, -20);
-		}
+
+		float yOffset = (Sprite is not null && Sprite.Texture is not null)
+			? -Sprite.Texture.GetHeight() / 2f
+			: -20f;
+		indicator.Position = new(0, yOffset);
+
 
 		AddChild(indicator);
 	}
@@ -257,6 +256,5 @@ public abstract partial class BaseEnemy : CharacterBody2D
 		}
 
 		PoolManager.ReturnEnemy(this);
-		return;
 	}
 }
