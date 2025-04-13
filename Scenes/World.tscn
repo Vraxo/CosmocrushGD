@@ -4,7 +4,7 @@
 [ext_resource type="Script" path="res://Scripts/World.cs" id="1_k2m3n"]
 [ext_resource type="Script" path="res://Scripts/Menu/ThemePlayer.cs" id="2_bvcjy"]
 [ext_resource type="PackedScene" uid="uid://druxgxf4hraot" path="res://Scenes/PauseMenu.tscn" id="2_oslhl"]
-[ext_resource type="PackedScene" path="res://Scenes/GameOverMenu.tscn" id="3_kn687"]
+[ext_resource type="PackedScene" uid="uid://40dd12m6jo1n" path="res://Scenes/GameOverMenu.tscn" id="3_kn687"]
 [ext_resource type="PackedScene" uid="uid://b3dwcw52g56vq" path="res://Scenes/Player.tscn" id="3_litg1"]
 [ext_resource type="PackedScene" uid="uid://cglik168uf50p" path="res://Scenes/Enemies/MeleeEnemy.tscn" id="5_p3yak"]
 [ext_resource type="PackedScene" uid="uid://ccgy7bcrdqq1t" path="res://Scenes/Rock.tscn" id="7_suwn8"]

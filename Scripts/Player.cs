@@ -13,6 +13,7 @@ public partial class Player : CharacterBody2D
 	[Export] private AudioStream damageAudio;
 	[Export] private Sprite2D sprite;
 	[Export] private CpuParticles2D damageParticles;
+	[Export] private CpuParticles2D deathParticles; // Added export for death particles
 	[Export] private Node audioPlayerContainer;
 	[Export] private Timer regenerationTimer;
 	[Export] private NodePath cameraPath;
@@ -20,7 +21,7 @@ public partial class Player : CharacterBody2D
 	private ShakeyCamera camera;
 	private Vector2 knockbackVelocity = Vector2.Zero;
 
-	private const int RegenerationRate = 1;
+	private const int RegenerationRate = 0;
 	private const float Speed = 300.0f;
 	private const float KnockbackRecoverySpeed = 0.1f;
 	private const float DamageShakeMinStrength = 0.8f;
@@ -33,6 +34,7 @@ public partial class Player : CharacterBody2D
 	public override void _Ready()
 	{
 		gun = GetNode<Gun>("Gun");
+		sprite = GetNode<Sprite2D>("Sprite"); // Ensure sprite is retrieved if not set via export
 
 		if (cameraPath is not null)
 		{
@@ -85,7 +87,11 @@ public partial class Player : CharacterBody2D
 		Health -= damage;
 		Health = Math.Max(Health, 0);
 
-		damageParticles.Emitting = true;
+		if (damageParticles is not null)
+		{
+			damageParticles.Emitting = true;
+		}
+
 		PlayDamageSound();
 		TriggerDamageShake();
 
@@ -154,6 +160,17 @@ public partial class Player : CharacterBody2D
 		ProcessMode = ProcessModeEnum.Disabled;
 		SetPhysicsProcess(false);
 
+		// Hide sprite and show death particles
+		if (sprite is not null)
+		{
+			sprite.Visible = false;
+		}
+		if (deathParticles is not null)
+		{
+			deathParticles.Emitting = true;
+		}
+
+
 		GD.Print("Player.Die: Pausing tree...");
 		GetTree().Paused = true;
 
@@ -180,10 +197,11 @@ public partial class Player : CharacterBody2D
 	}
 
 	private static void OnSingleAudioPlayerFinished(AudioStreamPlayer player)
-	{
-		if (player is not null && IsInstanceValid(player))
-		{
-			player.QueueFree();
-		}
-	}
+    {
+        if (player is null || !IsInstanceValid(player))
+        {
+            return;
+        }
+        player.QueueFree();
+    }
 }

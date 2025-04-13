@@ -1,4 +1,4 @@
-[gd_scene load_steps=9 format=3 uid="uid://b3dwcw52g56vq"]
+[gd_scene load_steps=10 format=3 uid="uid://b3dwcw52g56vq"]
 
 [ext_resource type="Script" path="res://Scripts/Player.cs" id="2_8tp0t"]
 [ext_resource type="Texture2D" uid="uid://cxr1nj8vjb03m" path="res://Sprites/Player.png" id="3_uj0h6"]
@@ -14,16 +14,21 @@ size = Vector2(32, 31.5)
 _data = [Vector2(0.00433911, 0.993671), 0.0, 0.0, 0, 0, Vector2(0.998999, 0.00219095), 0.0, 0.0, 0, 0]
 point_count = 2
 
-[node name="Player" type="CharacterBody2D" node_paths=PackedStringArray("gun", "damageParticles", "audioPlayerContainer", "regenerationTimer")]
+[sub_resource type="Curve" id="Curve_death_scale"]
+_data = [Vector2(0.00433911, 0.993671), 0.0, 0.0, 0, 0, Vector2(0.998999, 0.00219095), 0.0, 0.0, 0, 0]
+point_count = 2
+
+[node name="Player" type="CharacterBody2D" node_paths=PackedStringArray("gun", "sprite", "damageParticles", "deathParticles", "audioPlayerContainer", "regenerationTimer")]
 collision_mask = 5
 motion_mode = 1
 script = ExtResource("2_8tp0t")
 gun = NodePath("Gun")
 damageAudio = ExtResource("5_42wm7")
+sprite = NodePath("Sprite")
 damageParticles = NodePath("DamageParticles")
+deathParticles = NodePath("DeathParticles")
 audioPlayerContainer = NodePath("AudioPlayerContainer")
 regenerationTimer = NodePath("RegenerationTimer")
-cameraPath = NodePath("Camera2D")
 
 [node name="ActualCollider" type="CollisionShape2D" parent="."]
 position = Vector2(0, 0.25)
@@ -66,6 +71,24 @@ initial_velocity_max = 100.0
 scale_amount_min = 4.0
 scale_amount_max = 4.0
 scale_amount_curve = SubResource("Curve_qvt8o")
+color = Color(0.447059, 1, 0.105882, 1)
+
+[node name="DeathParticles" type="CPUParticles2D" parent="."]
+process_mode = 3
+position = Vector2(0, -1)
+emitting = false
+amount = 25
+one_shot = true
+explosiveness = 1.0
+emission_shape = 3
+emission_rect_extents = Vector2(1, 1)
+spread = 180.0
+gravity = Vector2(0, 0)
+initial_velocity_min = 100.0
+initial_velocity_max = 150.0
+scale_amount_min = 8.0
+scale_amount_max = 8.0
+scale_amount_curve = SubResource("Curve_death_scale")
 color = Color(0.447059, 1, 0.105882, 1)
 
 [node name="AudioPlayerContainer" type="Node" parent="."]

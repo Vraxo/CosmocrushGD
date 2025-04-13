@@ -1,4 +1,3 @@
-using System.Runtime.InteropServices;
 using Godot;
 
 namespace CosmocrushGD;
@@ -27,7 +26,6 @@ public abstract partial class BaseEnemy : CharacterBody2D
 
 	// Score awarded for defeating this enemy
 	protected virtual int ScoreValue => 1;
-
 
 	protected virtual int MaxHealth => 20;
 	protected virtual int Damage => 1;
@@ -202,7 +200,11 @@ public abstract partial class BaseEnemy : CharacterBody2D
 		Velocity = Vector2.Zero;
 		Knockback = Vector2.Zero;
 
-		if (Collider != null) Collider.Disabled = true;
+		if (Collider != null)
+		{
+			Collider.Disabled = true;
+		}
+
 		if (Sprite != null) Sprite.Visible = false;
 		if (DeathParticles != null) DeathParticles.Emitting = true;
 
