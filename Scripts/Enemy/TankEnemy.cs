@@ -4,16 +4,22 @@ namespace CosmocrushGD;
 
 public partial class TankEnemy : BaseEnemy
 {
-    protected override int MaxHealth => 100;
-    protected override float Speed => 50f;
-    protected override int Damage => 1;
-    protected override float KnockbackRecovery => 0.05f;
-    protected override float KnockbackResistanceMultiplier => 0.3f; // Takes only 30% of knockback
+    // Override base properties for Tank behavior
+    protected override int MaxHealth => 80; // More health
+    protected override float Speed => 60f; // Slower speed
+    protected override int Damage => 2; // Higher damage
+    protected override int ScoreValue => 3; // Higher score reward
 
-    private const float MeleeKnockbackForce = 100f;
+    // *** This is the important part for the CS0115 fix ***
+    // Override the virtual property from BaseEnemy
+    // A value less than 1.0 reduces knockback (e.g., 0.1 means 10% knockback)
+    protected override float KnockbackResistanceMultiplier => 0.1f;
+
+    [Export] private float meleeKnockbackForce = 600f; // Can have its own knockback force if desired
 
     protected override void AttemptAttack()
     {
+        // Standard melee attack logic (same as MeleeEnemy for this example)
         if (!CanShoot || TargetPlayer is null || !IsInstanceValid(TargetPlayer))
         {
             return;
@@ -28,10 +34,12 @@ public partial class TankEnemy : BaseEnemy
 
         TargetPlayer.TakeDamage(Damage);
 
-        Vector2 knockbackDirection = (TargetPlayer.GlobalPosition - GlobalPosition).Normalized();
-        TargetPlayer.ApplyKnockback(knockbackDirection * MeleeKnockbackForce);
+        Vector2 knockbackDir = (TargetPlayer.GlobalPosition - GlobalPosition).Normalized();
+        TargetPlayer.ApplyKnockback(knockbackDir * meleeKnockbackForce);
 
         CanShoot = false;
         DamageCooldownTimer.Start();
     }
+
+    // Add any other Tank-specific logic or overrides here
 }

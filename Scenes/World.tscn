@@ -205,6 +205,7 @@ position = Vector2(88, -64)
 [node name="Player" parent="." instance=ExtResource("3_litg1")]
 self_modulate = Color(22, 22, 22, 1)
 position = Vector2(584, 888)
+cameraPath = NodePath("Camera2D2")
 
 [node name="Camera2D2" type="Camera2D" parent="Player"]
 process_mode = 3
