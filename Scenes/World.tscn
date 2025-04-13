@@ -1,4 +1,4 @@
-[gd_scene load_steps=24 format=3 uid="uid://rflfyu4apk38"]
+[gd_scene load_steps=21 format=3 uid="uid://rflfyu4apk38"]
 
 [ext_resource type="AudioStream" uid="uid://blvqtb4sj0647" path="res://Audio/Songs/Going Ultimate!.mp3" id="1_4w1vw"]
 [ext_resource type="Script" path="res://Scripts/World.cs" id="1_k2m3n"]
@@ -15,7 +15,6 @@
 [ext_resource type="PackedScene" uid="uid://kl8icgw5t1ag" path="res://Scenes/Joystick.tscn" id="12_vbg6t"]
 [ext_resource type="Script" path="res://Scripts/Enemy/EnemyPoolManager.cs" id="13_mra1g"]
 [ext_resource type="PackedScene" uid="uid://baoyd4vyuac" path="res://Scenes/Enemies/RangedEnemy.tscn" id="14_qfgrb"]
-[ext_resource type="PackedScene" uid="uid://dga6fhb5rekd7" path="res://Scenes/Enemies/TankEnemy.tscn" id="16_tj1fl"]
 
 [sub_resource type="Environment" id="Environment_fpnmc"]
 background_mode = 3
@@ -31,50 +30,15 @@ bg_color = Color(0.0361791, 0.727803, 0, 1)
 Label/colors/font_color = Color(1, 1, 1, 1)
 Label/font_sizes/font_size = 24
 
-[sub_resource type="Animation" id="Animation_RESET"]
-length = 0.001
-tracks/0/type = "value"
-tracks/0/imported = false
-tracks/0/enabled = true
-tracks/0/path = NodePath("ScoreLabel:scale")
-tracks/0/interp = 1
-tracks/0/loop_wrap = true
-tracks/0/keys = {
-"times": PackedFloat32Array(0),
-"transitions": PackedFloat32Array(1),
-"update": 0,
-"values": [Vector2(1, 1)]
-}
-
-[sub_resource type="Animation" id="Animation_ScorePunch"]
-resource_name = "ScorePunch"
-length = 0.2
-step = 0.05
-tracks/0/type = "value"
-tracks/0/imported = false
-tracks/0/enabled = true
-tracks/0/path = NodePath("ScoreLabel:scale")
-tracks/0/interp = 2
-tracks/0/loop_wrap = true
-tracks/0/keys = {
-"times": PackedFloat32Array(0, 0.1, 0.2),
-"transitions": PackedFloat32Array(1, 1, 1),
-"update": 0,
-"values": [Vector2(1, 1), Vector2(1.3, 1.3), Vector2(1, 1)]
-}
-
-[sub_resource type="AnimationLibrary" id="AnimationLibrary_Score"]
-_data = {
-"RESET": SubResource("Animation_RESET"),
-"ScorePunch": SubResource("Animation_ScorePunch")
-}
-
 [sub_resource type="NavigationPolygon" id="NavigationPolygon_hiflp"]
 vertices = PackedVector2Array(1766, 942, -518, 942, -518, -278, 1766, -278)
 polygons = Array[PackedInt32Array]([PackedInt32Array(0, 1, 2, 3)])
 outlines = Array[PackedVector2Array]([PackedVector2Array(-528, -288, -528, 952, 1776, 952, 1776, -288)])
 
-[node name="World" type="WorldEnvironment" node_paths=PackedStringArray("pauseButton", "hudLayer", "scoreLabel", "scoreAnimationPlayer")]
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_spawn_area"]
+size = Vector2(2272, 1208)
+
+[node name="World" type="WorldEnvironment" node_paths=PackedStringArray("pauseButton", "hudLayer", "scoreLabel")]
 environment = SubResource("Environment_fpnmc")
 script = ExtResource("1_k2m3n")
 pauseMenuScene = ExtResource("2_oslhl")
@@ -82,8 +46,18 @@ gameOverMenuScene = ExtResource("3_kn687")
 pauseButton = NodePath("HUD/PauseButton")
 hudLayer = NodePath("HUD")
 scoreLabel = NodePath("HUD/ScoreLabel")
-playerPath = NodePath("Player")
-scoreAnimationPlayer = NodePath("HUD/ScoreAnimationPlayer")
+playerPath = Object(CharacterBody2D,"_import_path":NodePath(""),"unique_name_in_owner":false,"process_mode":0,"process_priority":0,"process_physics_priority":0,"process_thread_group":0,"physics_interpolation_mode":0,"auto_translate_mode":0,"editor_description":"","visible":true,"modulate":Color(1, 1, 1, 1),"self_modulate":Color(22, 22, 22, 1),"show_behind_parent":false,"top_level":false,"light_mask":1,"visibility_layer":1,"z_index":0,"z_as_relative":true,"y_sort_enabled":false,"texture_filter":0,"texture_repeat":0,"material":null,"use_parent_material":false,"position":Vector2(584, 888),"rotation":0.0,"scale":Vector2(1, 1),"skew":0.0,"disable_mode":0,"collision_layer":1,"collision_mask":5,"collision_priority":1.0,"input_pickable":false,"motion_mode":1,"up_direction":Vector2(0, -1),"velocity":Vector2(0, 0),"slide_on_ceiling":true,"max_slides":4,"wall_min_slide_angle":0.261799,"floor_stop_on_slope":true,"floor_constant_speed":false,"floor_block_on_wall":true,"floor_max_angle":0.785398,"floor_snap_length":1.0,"platform_on_leave":0,"platform_floor_layers":4294967295,"platform_wall_layers":0,"safe_margin":0.08,"script":Resource("res://Scripts/Player.cs"),"gun":Object(Sprite2D,"_import_path":NodePath(""),"unique_name_in_owner":false,"process_mode":0,"process_priority":0,"process_physics_priority":0,"process_thread_group":0,"physics_interpolation_mode":0,"auto_translate_mode":0,"editor_description":"","visible":true,"modulate":Color(1, 1, 1, 1),"self_modulate":Color(2, 2, 2, 1),"show_behind_parent":false,"top_level":false,"clip_children":0,"light_mask":1,"visibility_layer":1,"z_index":0,"z_as_relative":true,"y_sort_enabled":false,"texture_filter":0,"texture_repeat":0,"material":null,"use_parent_material":false,"position":Vector2(0, 0),"rotation":0.0,"scale":Vector2(1, 1),"skew":0.0,"texture":Resource("res://Sprites/Gun.png"),"centered":true,"offset":Vector2(16, 0),"flip_h":false,"flip_v":false,"hframes":1,"vframes":1,"frame":0,"region_enabled":false,"region_rect":Rect2(0, 0, 0, 0),"region_filter_clip_enabled":false,"script":Resource("res://Scripts/Gun.cs"),"rayCast":Object(RayCast2D,"_import_path":NodePath(""),"unique_name_in_owner":false,"process_mode":0,"process_priority":0,"process_physics_priority":0,"process_thread_group":0,"physics_interpolation_mode":0,"auto_translate_mode":0,"editor_description":"","visible":true,"modulate":Color(1, 1, 1, 1),"self_modulate":Color(1, 1, 1, 1),"show_behind_parent":false,"top_level":false,"light_mask":1,"visibility_layer":1,"z_index":0,"z_as_relative":true,"y_sort_enabled":false,"texture_filter":0,"texture_repeat":0,"material":null,"use_parent_material":false,"position":Vector2(0, 0),"rotation":0.0,"scale":Vector2(1, 1),"skew":0.0,"enabled":true,"exclude_parent":true,"target_position":Vector2(5000, 0),"collision_mask":5,"hit_from_inside":false,"collide_with_areas":false,"collide_with_bodies":true,"script":null)
+,"bulletTrail":Object(Line2D,"_import_path":NodePath(""),"unique_name_in_owner":false,"process_mode":0,"process_priority":0,"process_physics_priority":0,"process_thread_group":0,"physics_interpolation_mode":0,"auto_translate_mode":0,"editor_description":"","visible":true,"modulate":Color(1, 1, 1, 1),"self_modulate":Color(1, 1, 1, 1),"show_behind_parent":false,"top_level":false,"clip_children":0,"light_mask":1,"visibility_layer":1,"z_index":0,"z_as_relative":true,"y_sort_enabled":false,"texture_filter":0,"texture_repeat":0,"material":null,"use_parent_material":false,"position":Vector2(0, 0),"rotation":0.0,"scale":Vector2(1, 1),"skew":0.0,"points":PackedVector2Array(-1039.52, -67.8427),"closed":false,"width":2.0,"width_curve":null,"default_color":Color(1.1, 1.1, 1.1, 1),"gradient":null,"texture":null,"texture_mode":0,"joint_mode":0,"begin_cap_mode":0,"end_cap_mode":0,"sharp_limit":2.0,"round_precision":8,"antialiased":true,"script":null)
+,"cooldownTimer":Object(Timer,"_import_path":NodePath(""),"unique_name_in_owner":false,"process_mode":0,"process_priority":0,"process_physics_priority":0,"process_thread_group":0,"physics_interpolation_mode":0,"auto_translate_mode":0,"editor_description":"","process_callback":1,"wait_time":1.0,"one_shot":true,"autostart":false,"script":null)
+,"gunshotAudio":Resource("res://Audio/SFX/Gunshot.mp3"),"audioPlayerContainer":Object(Node,"_import_path":NodePath(""),"unique_name_in_owner":false,"process_mode":0,"process_priority":0,"process_physics_priority":0,"process_thread_group":0,"physics_interpolation_mode":0,"auto_translate_mode":0,"editor_description":"","script":null)
+,"shakeStrength":0.5,"shakeDuration":0.2)
+,"damageAudio":Resource("res://Audio/SFX/PlayerDamage.mp3"),"sprite":Object(Sprite2D,"_import_path":NodePath(""),"unique_name_in_owner":false,"process_mode":0,"process_priority":0,"process_physics_priority":0,"process_thread_group":0,"physics_interpolation_mode":0,"auto_translate_mode":0,"editor_description":"","visible":true,"modulate":Color(1, 1, 1, 1),"self_modulate":Color(1, 1, 1, 1),"show_behind_parent":false,"top_level":false,"clip_children":0,"light_mask":1,"visibility_layer":1,"z_index":0,"z_as_relative":true,"y_sort_enabled":false,"texture_filter":0,"texture_repeat":0,"material":null,"use_parent_material":false,"position":Vector2(0, 0),"rotation":0.0,"scale":Vector2(1, 1),"skew":0.0,"texture":Resource("res://Sprites/Player.png"),"centered":true,"offset":Vector2(0, 0),"flip_h":false,"flip_v":false,"hframes":1,"vframes":1,"frame":0,"region_enabled":false,"region_rect":Rect2(0, 0, 0, 0),"region_filter_clip_enabled":false,"script":null)
+,"damageParticles":Object(CPUParticles2D,"_import_path":NodePath(""),"unique_name_in_owner":false,"process_mode":0,"process_priority":0,"process_physics_priority":0,"process_thread_group":0,"physics_interpolation_mode":0,"auto_translate_mode":0,"editor_description":"","visible":true,"modulate":Color(1, 1, 1, 1),"self_modulate":Color(1, 1, 1, 1),"show_behind_parent":false,"top_level":false,"clip_children":0,"light_mask":1,"visibility_layer":1,"z_index":0,"z_as_relative":true,"y_sort_enabled":false,"texture_filter":0,"texture_repeat":0,"material":null,"use_parent_material":false,"position":Vector2(0, -1),"rotation":0.0,"scale":Vector2(1, 1),"skew":0.0,"emitting":false,"amount":25,"lifetime":0.5,"one_shot":true,"preprocess":0.0,"speed_scale":1.0,"explosiveness":1.0,"randomness":0.0,"lifetime_randomness":0.0,"fixed_fps":0,"fract_delta":true,"local_coords":false,"draw_order":0,"texture":null,"emission_shape":0,"particle_flag_align_y":false,"direction":Vector2(1, 0),"spread":180.0,"gravity":Vector2(0, 0),"initial_velocity_min":50.0,"initial_velocity_max":100.0,"angular_velocity_min":0.0,"angular_velocity_max":0.0,"angular_velocity_curve":null,"orbit_velocity_min":0.0,"orbit_velocity_max":0.0,"orbit_velocity_curve":null,"linear_accel_min":0.0,"linear_accel_max":0.0,"linear_accel_curve":null,"radial_accel_min":0.0,"radial_accel_max":0.0,"radial_accel_curve":null,"tangential_accel_min":0.0,"tangential_accel_max":0.0,"tangential_accel_curve":null,"damping_min":0.0,"damping_max":0.0,"damping_curve":null,"angle_min":0.0,"angle_max":0.0,"angle_curve":null,"scale_amount_min":4.0,"scale_amount_max":4.0,"scale_amount_curve":null,"split_scale":false,"color":Color(0.447059, 1, 0.105882, 1),"color_ramp":null,"color_initial_ramp":null,"hue_variation_min":0.0,"hue_variation_max":0.0,"hue_variation_curve":null,"anim_speed_min":0.0,"anim_speed_max":0.0,"anim_speed_curve":null,"anim_offset_min":0.0,"anim_offset_max":0.0,"anim_offset_curve":null,"script":null)
+,"deathParticles":Object(CPUParticles2D,"_import_path":NodePath(""),"unique_name_in_owner":false,"process_mode":3,"process_priority":0,"process_physics_priority":0,"process_thread_group":0,"physics_interpolation_mode":0,"auto_translate_mode":0,"editor_description":"","visible":true,"modulate":Color(1, 1, 1, 1),"self_modulate":Color(1, 1, 1, 1),"show_behind_parent":false,"top_level":false,"clip_children":0,"light_mask":1,"visibility_layer":1,"z_index":0,"z_as_relative":true,"y_sort_enabled":false,"texture_filter":0,"texture_repeat":0,"material":null,"use_parent_material":false,"position":Vector2(0, -1),"rotation":0.0,"scale":Vector2(1, 1),"skew":0.0,"emitting":false,"amount":25,"lifetime":1.0,"one_shot":true,"preprocess":0.0,"speed_scale":1.0,"explosiveness":1.0,"randomness":0.0,"lifetime_randomness":0.0,"fixed_fps":0,"fract_delta":true,"local_coords":false,"draw_order":0,"texture":null,"emission_shape":3,"emission_rect_extents":Vector2(1, 1),"particle_flag_align_y":false,"direction":Vector2(1, 0),"spread":180.0,"gravity":Vector2(0, 0),"initial_velocity_min":100.0,"initial_velocity_max":150.0,"angular_velocity_min":0.0,"angular_velocity_max":0.0,"angular_velocity_curve":null,"orbit_velocity_min":0.0,"orbit_velocity_max":0.0,"orbit_velocity_curve":null,"linear_accel_min":0.0,"linear_accel_max":0.0,"linear_accel_curve":null,"radial_accel_min":0.0,"radial_accel_max":0.0,"radial_accel_curve":null,"tangential_accel_min":0.0,"tangential_accel_max":0.0,"tangential_accel_curve":null,"damping_min":0.0,"damping_max":0.0,"damping_curve":null,"angle_min":0.0,"angle_max":0.0,"angle_curve":null,"scale_amount_min":8.0,"scale_amount_max":8.0,"scale_amount_curve":null,"split_scale":false,"color":Color(0.447059, 1, 0.105882, 1),"color_ramp":null,"color_initial_ramp":null,"hue_variation_min":0.0,"hue_variation_max":0.0,"hue_variation_curve":null,"anim_speed_min":0.0,"anim_speed_max":0.0,"anim_speed_curve":null,"anim_offset_min":0.0,"anim_offset_max":0.0,"anim_offset_curve":null,"script":null)
+,"audioPlayerContainer":Object(Node,"_import_path":NodePath(""),"unique_name_in_owner":false,"process_mode":0,"process_priority":0,"process_physics_priority":0,"process_thread_group":0,"physics_interpolation_mode":0,"auto_translate_mode":0,"editor_description":"","script":null)
+,"regenerationTimer":Object(Timer,"_import_path":NodePath(""),"unique_name_in_owner":false,"process_mode":0,"process_priority":0,"process_physics_priority":0,"process_thread_group":0,"physics_interpolation_mode":0,"auto_translate_mode":0,"editor_description":"","process_callback":1,"wait_time":1.0,"one_shot":false,"autostart":true,"script":null)
+,"cameraPath":null)
+
 metadata/_edit_horizontal_guides_ = [-408.0]
 
 [node name="Background" type="ColorRect" parent="."]
@@ -160,14 +134,8 @@ offset_left = 40.0
 offset_top = 40.0
 offset_right = 180.0
 offset_bottom = 70.0
-pivot_offset = Vector2(70, 15)
 theme = SubResource("Theme_score")
 text = "Score: 0"
-
-[node name="ScoreAnimationPlayer" type="AnimationPlayer" parent="HUD"]
-libraries = {
-"": SubResource("AnimationLibrary_Score")
-}
 
 [node name="Obstacles" type="Node2D" parent="."]
 
@@ -202,10 +170,20 @@ navigation_polygon = SubResource("NavigationPolygon_hiflp")
 [node name="Rocks" type="Node2D" parent="NavigationRegion2D"]
 position = Vector2(88, -64)
 
+[node name="SpawnArea" type="Area2D" parent="."]
+position = Vector2(620, 320)
+collision_layer = 0
+collision_mask = 0
+monitoring = false
+monitorable = false
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="SpawnArea"]
+position = Vector2(516, 284)
+shape = SubResource("RectangleShape2D_spawn_area")
+
 [node name="Player" parent="." instance=ExtResource("3_litg1")]
 self_modulate = Color(22, 22, 22, 1)
 position = Vector2(584, 888)
-cameraPath = NodePath("Camera2D2")
 
 [node name="Camera2D2" type="Camera2D" parent="Player"]
 process_mode = 3
@@ -213,7 +191,6 @@ script = ExtResource("11_0a8f1")
 
 [node name="EnemySpawner" parent="." node_paths=PackedStringArray("enemyPoolManager") instance=ExtResource("9_ukot3")]
 explodingEnemyScene = ExtResource("11_dqhek")
-tankEnemyScene = ExtResource("16_tj1fl")
 enemyPoolManager = NodePath("../EnemyPoolManager")
 
 [node name="EnemyPoolManager" type="Node2D" parent="."]
@@ -221,5 +198,4 @@ script = ExtResource("13_mra1g")
 meleeEnemyScene = ExtResource("5_p3yak")
 rangedEnemyScene = ExtResource("14_qfgrb")
 explodingEnemyScene = ExtResource("11_dqhek")
-tankEnemyScene = ExtResource("16_tj1fl")
-enemyContainerPath = NodePath("../EnemySpawner")
+enemyContainerPath = NodePath("..")
