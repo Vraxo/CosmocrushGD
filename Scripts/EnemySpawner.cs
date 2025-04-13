@@ -1,4 +1,5 @@
 using Godot;
+using System.Threading.Tasks; // Required for Task and async/await
 
 namespace CosmocrushGD;
 
@@ -11,24 +12,25 @@ public partial class EnemySpawner : Node
 	[Export] private PackedScene meleeEnemyScene;
 	[Export] private PackedScene rangedEnemyScene;
 	[Export] private PackedScene explodingEnemyScene;
+	[Export] private PackedScene tankEnemyScene; // Added Tank Enemy scene
 	[Export] private Vector2 spawnMargin = new(100, 100);
 	[Export] private NodePath playerPath;
-	[Export] private NodePath spawnAreaPath; // Path to the Area2D defining spawn bounds
 	[Export] private float baseSpawnRate = 2.0f;
 	[Export] private float minSpawnInterval = 0.5f;
 	[Export] private float timeMultiplier = 0.1f;
 	[Export] private float minPlayerDistance = 500.0f;
-	// [Export] private Vector2 worldSize = new(2272, 1208); // Removed
+	[Export] private Vector2 worldSize = new(2272, 1208);
 	[Export] private EnemyPoolManager enemyPoolManager;
 	[Export] private int initialSpawnCount = 3;
 
 	private Player player;
-	private Rect2 spawnBounds; // Calculated spawn area
 	private float timeElapsed;
 	private const int MaxSpawnAttempts = 10;
 	private readonly RandomNumberGenerator rng = new();
+	private bool isReadyToSpawn = false; // Flag to prevent spawning before ready
 
-	public override void _Ready()
+	// Make _Ready async
+	public override async void _Ready()
 	{
 		rng.Randomize();
 		player = GetNode<Player>(playerPath);
@@ -47,57 +49,19 @@ public partial class EnemySpawner : Node
 			SetPhysicsProcess(false);
 			return;
 		}
-
-		if (!CalculateSpawnBounds())
+		if (meleeEnemyScene is null || rangedEnemyScene is null || explodingEnemyScene is null || tankEnemyScene is null)
 		{
-			// Error message printed within CalculateSpawnBounds
-			SetProcess(false);
-			SetPhysicsProcess(false);
-			return;
+			GD.PrintErr("EnemySpawner: One or more enemy scenes are not assigned! Spawner may malfunction.");
+			// Decide if you want to disable it completely or just run with missing types
 		}
 
+		// Wait briefly for other nodes (like EnemyPoolManager) to potentially finish their _Ready
+		await ToSignal(GetTree().CreateTimer(0.1f), Timer.SignalName.Timeout);
+
+		isReadyToSpawn = true; // Mark as ready
 		SetupTimers();
 		SpawnInitialEnemies();
 	}
-
-	private bool CalculateSpawnBounds()
-	{
-		if (spawnAreaPath is null)
-		{
-			GD.PrintErr("EnemySpawner: Spawn Area Path not set!");
-			return false;
-		}
-
-		var spawnAreaNode = GetNode<Area2D>(spawnAreaPath);
-		if (spawnAreaNode is null)
-		{
-			GD.PrintErr($"EnemySpawner: Could not find Spawn Area node at path: {spawnAreaPath}");
-			return false;
-		}
-
-		var collisionShape = spawnAreaNode.GetNode<CollisionShape2D>("CollisionShape2D"); // Assumes default name
-		if (collisionShape is null)
-		{
-			GD.PrintErr($"EnemySpawner: Could not find CollisionShape2D child of Spawn Area node: {spawnAreaNode.Name}");
-			return false;
-		}
-
-		if (collisionShape.Shape is not RectangleShape2D rectangleShape)
-		{
-			GD.PrintErr($"EnemySpawner: CollisionShape2D in Spawn Area node does not have a RectangleShape2D.");
-			return false;
-		}
-
-		// Calculate the global Rect based on Area2D position and RectangleShape size
-		// Assumes Area2D origin is top-left and no scaling on Area2D or CollisionShape2D
-		Vector2 areaSize = rectangleShape.Size;
-		Vector2 areaTopLeft = spawnAreaNode.GlobalPosition;
-		spawnBounds = new Rect2(areaTopLeft, areaSize);
-
-		GD.Print($"EnemySpawner: Calculated Spawn Bounds: {spawnBounds}");
-		return true;
-	}
-
 
 	private void SetupTimers()
 	{
@@ -116,9 +80,9 @@ public partial class EnemySpawner : Node
 
 	private void SpawnInitialEnemies()
 	{
-		if (meleeEnemyScene is null || rangedEnemyScene is null || explodingEnemyScene is null)
+		if (!isReadyToSpawn)
 		{
-			GD.PrintErr("EnemySpawner: Cannot perform initial spawn, one or more enemy scenes are not assigned.");
+			GD.Print("EnemySpawner: Deferring initial spawn, not ready yet.");
 			return;
 		}
 
@@ -142,30 +106,43 @@ public partial class EnemySpawner : Node
 
 	private void OnSpawnTimerTimeout()
 	{
+		if (!isReadyToSpawn)
+		{
+			return;
+		}
 		SpawnRandomEnemy();
 	}
 
 	private void SpawnRandomEnemy()
 	{
-		if (meleeEnemyScene is null || rangedEnemyScene is null || explodingEnemyScene is null || player is null || enemyPoolManager is null)
+		if (!isReadyToSpawn || player is null || enemyPoolManager is null)
 		{
-			GD.PrintErr("EnemySpawner: Missing required references for spawning!");
+			GD.PrintErr("EnemySpawner: Cannot spawn, prerequisites missing or not ready!");
 			return;
 		}
 
 		PackedScene selectedScene = SelectRandomEnemyScene();
+		if (selectedScene is null)
+		{
+			GD.PrintErr("EnemySpawner: No valid enemy scene selected to spawn.");
+			return;
+		}
+
 		TrySpawnEnemyFromPool(selectedScene);
 	}
 
 	private PackedScene SelectRandomEnemyScene()
 	{
-		int enemyType = rng.RandiRange(0, 2);
+		// Update range to include the new TankEnemy type
+		int enemyType = rng.RandiRange(0, 3);
 
 		return enemyType switch
 		{
 			0 => meleeEnemyScene,
 			1 => rangedEnemyScene,
-			_ => explodingEnemyScene,
+			2 => explodingEnemyScene,
+			3 => tankEnemyScene, // Add case for TankEnemy
+			_ => meleeEnemyScene, // Default fallback
 		};
 	}
 
@@ -193,11 +170,13 @@ public partial class EnemySpawner : Node
 
 			if (enemy is not null)
 			{
-				enemy.ResetState(spawnPosition);
+				// ResetState should already be called by the PoolManager or the enemy itself upon retrieval
+				// Ensure enemy is properly setup before use
+				enemy.ResetState(spawnPosition); // Call ResetState explicitly after getting from pool
 			}
 			else
 			{
-				GD.Print($"EnemySpawner: Failed to get enemy of type {enemyScene.ResourcePath} from pool.");
+				GD.Print($"EnemySpawner: Failed to get enemy of type {enemyScene.ResourcePath} from pool (returned null).");
 			}
 		}
 		else
@@ -212,31 +191,12 @@ public partial class EnemySpawner : Node
 		{
 			return false;
 		}
-
-		// Check distance from player
-		if (position.DistanceSquaredTo(player.GlobalPosition) < minPlayerDistance * minPlayerDistance)
-		{
-			return false;
-		}
-
-		// Check if position is within the calculated bounds (sanity check)
-		if (!spawnBounds.HasPoint(position))
-		{
-			GD.Print($"EnemySpawner: Proposed spawn position {position} is outside spawn bounds {spawnBounds}.");
-			return false; // Should ideally not happen if GetRandomEdgePosition is correct
-		}
-
-		return true;
+		return position.DistanceSquaredTo(player.GlobalPosition) >= minPlayerDistance * minPlayerDistance;
 	}
 
 	private Vector2 GetRandomEdgePosition()
 	{
 		SpawnEdge edge = (SpawnEdge)rng.RandiRange(0, 3);
-
-		float minX = spawnBounds.Position.X;
-		float maxX = spawnBounds.End.X;
-		float minY = spawnBounds.Position.Y;
-		float maxY = spawnBounds.End.Y;
 
 		float x = 0f;
 		float y = 0f;
@@ -244,30 +204,25 @@ public partial class EnemySpawner : Node
 		switch (edge)
 		{
 			case SpawnEdge.Top:
-				// Spawn along the top edge, inset by margin horizontally, within margin vertically
-				x = rng.RandfRange(minX + spawnMargin.X, maxX - spawnMargin.X);
-				y = rng.RandfRange(minY, minY + spawnMargin.Y);
+				x = rng.RandfRange(spawnMargin.X, worldSize.X - spawnMargin.X);
+				y = rng.RandfRange(0, spawnMargin.Y);
 				break;
 			case SpawnEdge.Right:
-				// Spawn along the right edge, within margin horizontally, inset by margin vertically
-				x = rng.RandfRange(maxX - spawnMargin.X, maxX);
-				y = rng.RandfRange(minY + spawnMargin.Y, maxY - spawnMargin.Y);
+				x = rng.RandfRange(worldSize.X - spawnMargin.X, worldSize.X);
+				y = rng.RandfRange(spawnMargin.Y, worldSize.Y - spawnMargin.Y);
 				break;
 			case SpawnEdge.Bottom:
-				// Spawn along the bottom edge, inset by margin horizontally, within margin vertically
-				x = rng.RandfRange(minX + spawnMargin.X, maxX - spawnMargin.X);
-				y = rng.RandfRange(maxY - spawnMargin.Y, maxY);
+				x = rng.RandfRange(spawnMargin.X, worldSize.X - spawnMargin.X);
+				y = rng.RandfRange(worldSize.Y - spawnMargin.Y, worldSize.Y);
 				break;
 			case SpawnEdge.Left:
-				// Spawn along the left edge, within margin horizontally, inset by margin vertically
-				x = rng.RandfRange(minX, minX + spawnMargin.X);
-				y = rng.RandfRange(minY + spawnMargin.Y, maxY - spawnMargin.Y);
+				x = rng.RandfRange(0, spawnMargin.X);
+				y = rng.RandfRange(spawnMargin.Y, worldSize.Y - spawnMargin.Y);
 				break;
 		}
 
-		// Clamp values to ensure they stay strictly within the spawnBounds, even with margins.
-		x = Mathf.Clamp(x, minX, maxX);
-		y = Mathf.Clamp(y, minY, maxY);
+		x = Mathf.Clamp(x, 0, worldSize.X);
+		y = Mathf.Clamp(y, 0, worldSize.Y);
 
 		return new Vector2(x, y);
 	}
