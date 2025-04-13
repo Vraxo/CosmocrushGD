@@ -1,4 +1,4 @@
-[gd_scene load_steps=24 format=3 uid="uid://rflfyu4apk38"]
+[gd_scene load_steps=23 format=3 uid="uid://rflfyu4apk38"]
 
 [ext_resource type="AudioStream" uid="uid://blvqtb4sj0647" path="res://Audio/Songs/Going Ultimate!.mp3" id="1_4w1vw"]
 [ext_resource type="Script" path="res://Scripts/World.cs" id="1_k2m3n"]
@@ -15,7 +15,6 @@
 [ext_resource type="PackedScene" uid="uid://kl8icgw5t1ag" path="res://Scenes/Joystick.tscn" id="12_vbg6t"]
 [ext_resource type="Script" path="res://Scripts/Enemy/EnemyPoolManager.cs" id="13_mra1g"]
 [ext_resource type="PackedScene" uid="uid://baoyd4vyuac" path="res://Scenes/Enemies/RangedEnemy.tscn" id="14_qfgrb"]
-[ext_resource type="PackedScene" uid="uid://dga6fhb5rekd7" path="res://Scenes/Enemies/TankEnemy.tscn" id="16_tj1fl"]
 
 [sub_resource type="Environment" id="Environment_fpnmc"]
 background_mode = 3
@@ -213,7 +212,6 @@ script = ExtResource("11_0a8f1")
 
 [node name="EnemySpawner" parent="." node_paths=PackedStringArray("enemyPoolManager") instance=ExtResource("9_ukot3")]
 explodingEnemyScene = ExtResource("11_dqhek")
-tankEnemyScene = ExtResource("16_tj1fl")
 enemyPoolManager = NodePath("../EnemyPoolManager")
 
 [node name="EnemyPoolManager" type="Node2D" parent="."]
@@ -221,5 +219,4 @@ script = ExtResource("13_mra1g")
 meleeEnemyScene = ExtResource("5_p3yak")
 rangedEnemyScene = ExtResource("14_qfgrb")
 explodingEnemyScene = ExtResource("11_dqhek")
-tankEnemyScene = ExtResource("16_tj1fl")
 enemyContainerPath = NodePath("../EnemySpawner")

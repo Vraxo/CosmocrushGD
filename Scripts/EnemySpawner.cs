@@ -1,5 +1,4 @@
 using Godot;
-using System.Threading.Tasks; // Required for Task and async/await
 
 namespace CosmocrushGD;
 
@@ -12,7 +11,6 @@ public partial class EnemySpawner : Node
 	[Export] private PackedScene meleeEnemyScene;
 	[Export] private PackedScene rangedEnemyScene;
 	[Export] private PackedScene explodingEnemyScene;
-	[Export] private PackedScene tankEnemyScene; // Added Tank Enemy scene
 	[Export] private Vector2 spawnMargin = new(100, 100);
 	[Export] private NodePath playerPath;
 	[Export] private float baseSpawnRate = 2.0f;
@@ -27,10 +25,8 @@ public partial class EnemySpawner : Node
 	private float timeElapsed;
 	private const int MaxSpawnAttempts = 10;
 	private readonly RandomNumberGenerator rng = new();
-	private bool isReadyToSpawn = false; // Flag to prevent spawning before ready
 
-	// Make _Ready async
-	public override async void _Ready()
+	public override void _Ready()
 	{
 		rng.Randomize();
 		player = GetNode<Player>(playerPath);
@@ -49,18 +45,10 @@ public partial class EnemySpawner : Node
 			SetPhysicsProcess(false);
 			return;
 		}
-		if (meleeEnemyScene is null || rangedEnemyScene is null || explodingEnemyScene is null || tankEnemyScene is null)
-		{
-			GD.PrintErr("EnemySpawner: One or more enemy scenes are not assigned! Spawner may malfunction.");
-			// Decide if you want to disable it completely or just run with missing types
-		}
 
-		// Wait briefly for other nodes (like EnemyPoolManager) to potentially finish their _Ready
-		await ToSignal(GetTree().CreateTimer(0.1f), Timer.SignalName.Timeout);
-
-		isReadyToSpawn = true; // Mark as ready
 		SetupTimers();
-		SpawnInitialEnemies();
+		// Defer initial spawning to ensure pool manager is ready
+		CallDeferred(MethodName.SpawnInitialEnemies);
 	}
 
 	private void SetupTimers()
@@ -80,16 +68,25 @@ public partial class EnemySpawner : Node
 
 	private void SpawnInitialEnemies()
 	{
-		if (!isReadyToSpawn)
+		GD.Print("EnemySpawner: Starting initial spawn..."); // Added log
+		if (meleeEnemyScene is null || rangedEnemyScene is null || explodingEnemyScene is null)
 		{
-			GD.Print("EnemySpawner: Deferring initial spawn, not ready yet.");
+			GD.PrintErr("EnemySpawner: Cannot perform initial spawn, one or more enemy scenes are not assigned.");
 			return;
 		}
+
+		if (enemyPoolManager is null)
+		{
+			GD.PrintErr("EnemySpawner: Cannot perform initial spawn, EnemyPoolManager reference is null.");
+			return;
+		}
+
 
 		for (int i = 0; i < initialSpawnCount; i++)
 		{
 			SpawnRandomEnemy();
 		}
+		GD.Print("EnemySpawner: Finished initial spawn."); // Added log
 	}
 
 	private void RateIncrease()
@@ -106,43 +103,30 @@ public partial class EnemySpawner : Node
 
 	private void OnSpawnTimerTimeout()
 	{
-		if (!isReadyToSpawn)
-		{
-			return;
-		}
 		SpawnRandomEnemy();
 	}
 
 	private void SpawnRandomEnemy()
 	{
-		if (!isReadyToSpawn || player is null || enemyPoolManager is null)
+		if (meleeEnemyScene is null || rangedEnemyScene is null || explodingEnemyScene is null || player is null || enemyPoolManager is null)
 		{
-			GD.PrintErr("EnemySpawner: Cannot spawn, prerequisites missing or not ready!");
+			GD.PrintErr("EnemySpawner: Missing required references for spawning!");
 			return;
 		}
 
 		PackedScene selectedScene = SelectRandomEnemyScene();
-		if (selectedScene is null)
-		{
-			GD.PrintErr("EnemySpawner: No valid enemy scene selected to spawn.");
-			return;
-		}
-
 		TrySpawnEnemyFromPool(selectedScene);
 	}
 
 	private PackedScene SelectRandomEnemyScene()
 	{
-		// Update range to include the new TankEnemy type
-		int enemyType = rng.RandiRange(0, 3);
+		int enemyType = rng.RandiRange(0, 2);
 
 		return enemyType switch
 		{
 			0 => meleeEnemyScene,
 			1 => rangedEnemyScene,
-			2 => explodingEnemyScene,
-			3 => tankEnemyScene, // Add case for TankEnemy
-			_ => meleeEnemyScene, // Default fallback
+			_ => explodingEnemyScene,
 		};
 	}
 
@@ -166,17 +150,16 @@ public partial class EnemySpawner : Node
 
 		if (foundValidPosition)
 		{
+			// GD.Print($"Attempting to get enemy from pool: {enemyScene?.ResourcePath ?? "NULL SCENE"}"); // Added log
 			BaseEnemy enemy = enemyPoolManager.GetEnemy(enemyScene);
 
 			if (enemy is not null)
 			{
-				// ResetState should already be called by the PoolManager or the enemy itself upon retrieval
-				// Ensure enemy is properly setup before use
-				enemy.ResetState(spawnPosition); // Call ResetState explicitly after getting from pool
+				enemy.ResetState(spawnPosition);
 			}
 			else
 			{
-				GD.Print($"EnemySpawner: Failed to get enemy of type {enemyScene.ResourcePath} from pool (returned null).");
+				GD.Print($"EnemySpawner: Failed to get enemy of type {enemyScene?.ResourcePath ?? "NULL SCENE"} from pool.");
 			}
 		}
 		else

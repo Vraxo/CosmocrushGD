@@ -12,7 +12,7 @@ public partial class TankEnemy : BaseEnemy
     // *** This is the important part for the CS0115 fix ***
     // Override the virtual property from BaseEnemy
     // A value less than 1.0 reduces knockback (e.g., 0.1 means 10% knockback)
-    protected override float KnockbackResistanceMultiplier => 0.1f;
+    //protected override float KnockbackResistanceMultiplier => 0.1f;
 
     [Export] private float meleeKnockbackForce = 600f; // Can have its own knockback force if desired
 

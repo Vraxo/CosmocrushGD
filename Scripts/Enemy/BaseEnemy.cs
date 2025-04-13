@@ -19,15 +19,13 @@ public abstract partial class BaseEnemy : CharacterBody2D
 	protected bool CanShoot = true;
 	protected Vector2 Knockback = Vector2.Zero;
 	protected Player TargetPlayer;
+	private bool _navigationMapNeedsUpdate = true; // Flag to control map setting
 
 	public EnemyPoolManager PoolManager { get; set; }
 	public PackedScene SourceScene { get; set; }
 
-	// ScoreValue is no longer used directly for awarding score on death
-	// protected virtual int ScoreValue => 1; // Keep or remove as needed for other potential uses
-	protected virtual float KnockbackResistanceMultiplier => 0.1f;
-
-	protected virtual int MaxHealth => 20;
+    protected virtual float KnockbackResistanceMultiplier => 0.1f;
+    protected virtual int MaxHealth => 20;
 	protected virtual int Damage => 1;
 	protected virtual float Speed => 100f;
 	protected virtual float DamageRadius => 50f;
@@ -43,6 +41,7 @@ public abstract partial class BaseEnemy : CharacterBody2D
 		DamageCooldownTimer.Timeout += () => CanShoot = true;
 	}
 
+	// Modified ResetState to remove navigation map RID parameter
 	public virtual void ResetState(Vector2 spawnPosition)
 	{
 		GlobalPosition = spawnPosition;
@@ -51,6 +50,7 @@ public abstract partial class BaseEnemy : CharacterBody2D
 		Velocity = Vector2.Zero;
 		Knockback = Vector2.Zero;
 		CanShoot = true;
+		_navigationMapNeedsUpdate = true; // Signal that map needs to be set
 
 		Visible = true;
 		if (Sprite is not null)
@@ -81,6 +81,13 @@ public abstract partial class BaseEnemy : CharacterBody2D
 			HitAnimationPlayer.Stop(true);
 		}
 
+		// Clear any previous navigation path
+		if (Navigator is not null)
+		{
+			Navigator.TargetPosition = GlobalPosition;
+		}
+
+
 		ProcessMode = ProcessModeEnum.Inherit;
 	}
 
@@ -102,44 +109,83 @@ public abstract partial class BaseEnemy : CharacterBody2D
 			return;
 		}
 
+		// Attempt to set the navigation map if needed
+		if (_navigationMapNeedsUpdate)
+		{
+			if (Navigator is not null && IsInsideTree())
+			{
+				Rid currentWorldMap = GetWorld2D().NavigationMap;
+				if (currentWorldMap.IsValid)
+				{
+					Navigator.SetNavigationMap(currentWorldMap);
+					// GD.Print($"{Name} successfully set navigation map: {currentWorldMap}"); // Optional debug log
+					_navigationMapNeedsUpdate = false; // Map is set, don't try again until reset
+				}
+				else
+				{
+					// Map not ready yet, will retry next physics frame
+					// GD.Print($"{Name} waiting for valid navigation map..."); // Optional debug log
+				}
+			}
+			else
+			{
+				// Navigator null or not in tree, cannot set map yet
+				_navigationMapNeedsUpdate = true;
+			}
+		}
+
+
+		// Only calculate movement if the map has been successfully set
+		Vector2 movement = Vector2.Zero;
+		if (!_navigationMapNeedsUpdate)
+		{
+			movement = CalculateMovement();
+		}
+
 		Knockback = Knockback.Lerp(Vector2.Zero, KnockbackRecovery);
-		Velocity = CalculateMovement() + Knockback;
+		Velocity = movement + Knockback;
 		MoveAndSlide();
 	}
 
 	protected virtual Vector2 CalculateMovement()
 	{
-		if (TargetPlayer is null || !IsInstanceValid(TargetPlayer))
+		// Basic checks first
+		if (_navigationMapNeedsUpdate || TargetPlayer is null || !IsInstanceValid(TargetPlayer) || Navigator is null)
 		{
-			TargetPlayer = null;
 			return Vector2.Zero;
 		}
 
 		float distanceToPlayer = GlobalPosition.DistanceTo(TargetPlayer.GlobalPosition);
-
 		if (distanceToPlayer <= ProximityThreshold)
 		{
+			Navigator.TargetPosition = GlobalPosition; // Stop moving
 			return Vector2.Zero;
 		}
 
-		if (Navigator is null)
+		// Check if the map assigned to the agent is valid and active
+		Rid currentMap = Navigator.GetNavigationMap();
+		if (!currentMap.IsValid || !NavigationServer2D.MapIsActive(currentMap))
 		{
+			// GD.Print($"Navigation map invalid or inactive for {Name}. RID: {currentMap}"); // Optional: Debug log
+			_navigationMapNeedsUpdate = true; // Attempt to re-acquire map next frame
 			return Vector2.Zero;
 		}
 
 		Navigator.TargetPosition = TargetPlayer.GlobalPosition;
 
-		Rid mapRid = NavigationServer2D.AgentGetMap(Navigator.GetRid());
-		if (!mapRid.IsValid)
+		if (Navigator.IsNavigationFinished() || Navigator.IsTargetReached())
 		{
-			GD.PrintErr($"Navigator map invalid for {Name} at {GlobalPosition}");
 			return Vector2.Zero;
 		}
 
-		if (Navigator.IsNavigationFinished())
+		// Check reachability *after* setting target position
+		if (!Navigator.IsTargetReachable())
 		{
+			// Target might be outside the navmesh, maybe stop or use direct path?
+			// For now, just stop movement calculated via navigation.
 			return Vector2.Zero;
 		}
+
 
 		Vector2 direction = (Navigator.GetNextPathPosition() - GlobalPosition).Normalized();
 		return direction * Speed;
@@ -152,26 +198,14 @@ public abstract partial class BaseEnemy : CharacterBody2D
 			return;
 		}
 
-		// Store health before taking damage to calculate actual damage taken if needed
-		// int healthBeforeDamage = Health;
-
 		Health -= damage;
 		HitAnimationPlayer?.Play("HitFlash");
 		ShowDamageIndicator(damage);
 
-		// Grant score based on the damage dealt
 		var worldNode = GetNode<World>("/root/World");
 		if (worldNode is not null)
 		{
-			// Option 1: Grant score equal to the incoming damage value
 			worldNode.AddScore(damage);
-
-			// Option 2: Grant score only for actual health lost (prevents score for overkill)
-			// int actualDamage = healthBeforeDamage - Mathf.Max(Health, 0);
-			// if (actualDamage > 0)
-			// {
-			//     worldNode.AddScore(actualDamage);
-			// }
 		}
 		else
 		{
@@ -236,17 +270,6 @@ public abstract partial class BaseEnemy : CharacterBody2D
 			DeathParticles.Emitting = true;
 		}
 
-		// Score is no longer granted here
-		// var worldNode = GetNode<World>("/root/World");
-		// if (worldNode != null)
-		// {
-		// 	worldNode.AddScore(ScoreValue);
-		// }
-		// else
-		// {
-		// 	GD.PrintErr("Could not find World node at /root/World to grant score.");
-		// }
-
 		DeathTimer.Start();
 	}
 
@@ -259,14 +282,13 @@ public abstract partial class BaseEnemy : CharacterBody2D
 
 		var indicator = DamageIndicatorScene.Instantiate<DamageIndicator>();
 		indicator.Text = damage.ToString();
-		indicator.Health = Health; // Current health after damage
-		indicator.MaxHealth = MaxHealth; // Max health for color calculation
+		indicator.Health = Health;
+		indicator.MaxHealth = MaxHealth;
 
-		float verticalOffset = -20f; // Default offset
+		float verticalOffset = -20f;
 		if (Sprite is not null && Sprite.Texture is not null)
 		{
-			// Use half the texture height as offset if available
-			verticalOffset = -Sprite.Texture.GetHeight() / 2f * Scale.Y; // Consider sprite scale
+			verticalOffset = -Sprite.Texture.GetHeight() / 2f * Scale.Y;
 		}
 
 		indicator.Position = new(0, verticalOffset);
@@ -280,7 +302,7 @@ public abstract partial class BaseEnemy : CharacterBody2D
 		if (PoolManager is null)
 		{
 			GD.PushError("Enemy cannot return to pool: PoolManager reference missing!");
-			QueueFree(); // Fallback: just delete if no pool manager
+			QueueFree();
 			return;
 		}
 
