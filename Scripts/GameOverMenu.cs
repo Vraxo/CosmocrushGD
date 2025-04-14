@@ -4,32 +4,35 @@ namespace CosmocrushGD;
 
 public partial class GameOverMenu : ColorRect
 {
+    [Export] private Label gameOverLabel;
     [Export] private Label scoreLabel;
     [Export] private Button playAgainButton;
     [Export] private Button returnButton;
 
     private const string MainMenuScenePath = "res://Scenes/Menu/NewMainMenu.tscn";
-    private const string GameScenePath = "res://Scenes/World.tscn"; // Assumes this is your main game scene
+    private const string GameScenePath = "res://Scenes/World.tscn";
+
+    private const float FadeInDuration = 0.3f;
+    private const float StaggerDelay = 0.15f;
 
     public override void _Ready()
     {
+        if (gameOverLabel is null) GD.PrintErr("GameOverMenu: Game Over Label not assigned!");
+        if (scoreLabel is null) GD.PrintErr("GameOverMenu: Score Label not assigned!");
+        if (playAgainButton is null) GD.PrintErr("GameOverMenu: Play Again Button not assigned!");
+        if (returnButton is null) GD.PrintErr("GameOverMenu: Return Button not assigned!");
+
         if (playAgainButton is not null)
         {
             playAgainButton.Pressed += OnPlayAgainButtonPressed;
         }
-        else
-        {
-            GD.PrintErr("GameOverMenu: Play Again Button not assigned!");
-        }
-
         if (returnButton is not null)
         {
             returnButton.Pressed += OnReturnButtonPressed;
         }
-        else
-        {
-            GD.PrintErr("GameOverMenu: Return Button not assigned!");
-        }
+
+        SetInitialAlphas();
+        CallDeferred(nameof(StartFadeInAnimation));
     }
 
     public void SetScore(int score)
@@ -38,11 +41,50 @@ public partial class GameOverMenu : ColorRect
         {
             scoreLabel.Text = $"Final Score: {score}";
         }
-        else
-        {
-            GD.PrintErr("GameOverMenu: Score Label not assigned!");
-        }
     }
+
+    private void SetInitialAlphas()
+    {
+        if (gameOverLabel is not null) gameOverLabel.Modulate = Colors.Transparent;
+        if (scoreLabel is not null) scoreLabel.Modulate = Colors.Transparent;
+        if (playAgainButton is not null) playAgainButton.Modulate = Colors.Transparent;
+        if (returnButton is not null) returnButton.Modulate = Colors.Transparent;
+    }
+
+    private void StartFadeInAnimation()
+    {
+        Tween tween = CreateTween();
+        tween.SetParallel(false); // Run animations sequentially with delays
+
+        tween.TweenInterval(StaggerDelay); // Initial delay before first element
+
+        if (gameOverLabel is not null)
+        {
+            tween.TweenProperty(gameOverLabel, "modulate:a", 1.0f, FadeInDuration)
+                 .SetEase(Tween.EaseType.Out);
+            tween.TweenInterval(StaggerDelay);
+        }
+        if (scoreLabel is not null)
+        {
+            tween.TweenProperty(scoreLabel, "modulate:a", 1.0f, FadeInDuration)
+                 .SetEase(Tween.EaseType.Out);
+            tween.TweenInterval(StaggerDelay);
+        }
+        if (playAgainButton is not null)
+        {
+            tween.TweenProperty(playAgainButton, "modulate:a", 1.0f, FadeInDuration)
+                 .SetEase(Tween.EaseType.Out);
+            tween.TweenInterval(StaggerDelay);
+        }
+        if (returnButton is not null)
+        {
+            tween.TweenProperty(returnButton, "modulate:a", 1.0f, FadeInDuration)
+                 .SetEase(Tween.EaseType.Out);
+        }
+
+        tween.Play();
+    }
+
 
     private void OnPlayAgainButtonPressed()
     {
@@ -57,7 +99,6 @@ public partial class GameOverMenu : ColorRect
     private void OnReturnButtonPressed()
     {
         GlobalAudioPlayer.Instance.PlaySound(GlobalAudioPlayer.Instance.UiSound);
-        // Stats should have been saved in World.OnGameOver, but save again just in case.
         StatisticsManager.Instance.Save();
 
         if (GetTree() is SceneTree tree)
@@ -69,7 +110,6 @@ public partial class GameOverMenu : ColorRect
 
     public override void _ExitTree()
     {
-        // Ensure game is unpaused if the menu is removed unexpectedly
         if (GetTree()?.Paused ?? false)
         {
             GetTree().Paused = false;
