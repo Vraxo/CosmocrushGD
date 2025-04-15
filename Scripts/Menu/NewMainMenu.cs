@@ -11,8 +11,10 @@ public partial class NewMainMenu : ColorRect
 	[Export] private Button statisticsButton;
 	[Export] private Button quitButton;
 
-	private const float FadeInDuration = 0.15f;
-	private const float StaggerDelay = 0.075f;
+	private const float FadeInDuration = 0.3f;
+	private const float StaggerDelay = 0.12f;
+	private readonly Vector2 InitialScale = new(1.3f, 1.3f);
+	private readonly Vector2 TargetScale = Vector2.One;
 
 	private MenuShell menuShell;
 
@@ -34,11 +36,13 @@ public partial class NewMainMenu : ColorRect
 			GD.PrintErr($"Error accessing Singletons (Settings/Statistics): {e.Message}");
 		}
 
-		titleLabel ??= GetNode<Label>("CenterContainer/VBoxContainer/TitleLabel");
-		startButton ??= GetNode<Button>("CenterContainer/VBoxContainer/StartButton");
-		settingsButton ??= GetNode<Button>("CenterContainer/VBoxContainer/SettingsButton");
-		statisticsButton ??= GetNode<Button>("CenterContainer/VBoxContainer/StatisticsButton");
-		quitButton ??= GetNode<Button>("CenterContainer/VBoxContainer/QuitButton");
+		// Updated Node Paths
+		titleLabel ??= GetNode<Label>("CenterContainer/VBoxContainer/TitleContainer/TitleLabel");
+		startButton ??= GetNode<Button>("CenterContainer/VBoxContainer/StartButtonContainer/StartButton");
+		settingsButton ??= GetNode<Button>("CenterContainer/VBoxContainer/SettingsButtonContainer/SettingsButton");
+		statisticsButton ??= GetNode<Button>("CenterContainer/VBoxContainer/StatisticsButtonContainer/StatisticsButton");
+		quitButton ??= GetNode<Button>("CenterContainer/VBoxContainer/QuitButtonContainer/QuitButton");
+
 
 		if (titleLabel is null) GD.PrintErr("NewMainMenu: Title Label Null!");
 		if (startButton is null) GD.PrintErr("NewMainMenu: Start Button Null!");
@@ -51,58 +55,64 @@ public partial class NewMainMenu : ColorRect
 		if (statisticsButton is not null) statisticsButton.Pressed += OnStatisticsButtonPressed;
 		if (quitButton is not null) quitButton.Pressed += OnQuitButtonPressed;
 
-		SetInitialAlphas();
+		SetInitialVisuals();
 		CallDeferred(nameof(StartFadeInAnimation));
 	}
 
-	private void SetInitialAlphas()
+	private void SetInitialVisuals()
 	{
-		if (titleLabel is not null) titleLabel.Modulate = Colors.Transparent;
-		if (startButton is not null) startButton.Modulate = Colors.Transparent;
-		if (settingsButton is not null) settingsButton.Modulate = Colors.Transparent;
-		if (statisticsButton is not null) statisticsButton.Modulate = Colors.Transparent;
-		if (quitButton is not null) quitButton.Modulate = Colors.Transparent;
+		SetElementVisuals(titleLabel);
+		SetElementVisuals(startButton);
+		SetElementVisuals(settingsButton);
+		SetElementVisuals(statisticsButton);
+		SetElementVisuals(quitButton);
 	}
+
+	// Apply modulate and scale to the actual element (Label/Button)
+	private void SetElementVisuals(Control element)
+	{
+		if (element is not null)
+		{
+			element.Modulate = Colors.Transparent;
+			element.Scale = InitialScale;
+		}
+	}
+
 
 	private void StartFadeInAnimation()
 	{
 		Tween tween = CreateTween();
 		tween.SetParallel(false);
+		tween.SetEase(Tween.EaseType.Out);
+		tween.SetTrans(Tween.TransitionType.Back);
 
 		tween.TweenInterval(StaggerDelay);
 
-		if (titleLabel is not null)
-		{
-			tween.TweenProperty(titleLabel, "modulate:a", 1.0f, FadeInDuration)
-				 .SetEase(Tween.EaseType.Out);
-			tween.TweenInterval(StaggerDelay);
-		}
-		if (startButton is not null)
-		{
-			tween.TweenProperty(startButton, "modulate:a", 1.0f, FadeInDuration)
-				 .SetEase(Tween.EaseType.Out);
-			tween.TweenInterval(StaggerDelay);
-		}
-		if (settingsButton is not null)
-		{
-			tween.TweenProperty(settingsButton, "modulate:a", 1.0f, FadeInDuration)
-				 .SetEase(Tween.EaseType.Out);
-			tween.TweenInterval(StaggerDelay);
-		}
-		if (statisticsButton is not null)
-		{
-			tween.TweenProperty(statisticsButton, "modulate:a", 1.0f, FadeInDuration)
-				 .SetEase(Tween.EaseType.Out);
-			tween.TweenInterval(StaggerDelay);
-		}
-		if (quitButton is not null)
-		{
-			tween.TweenProperty(quitButton, "modulate:a", 1.0f, FadeInDuration)
-				 .SetEase(Tween.EaseType.Out);
-		}
+		AnimateElement(tween, titleLabel);
+		AnimateElement(tween, startButton);
+		AnimateElement(tween, settingsButton);
+		AnimateElement(tween, statisticsButton);
+		AnimateElement(tween, quitButton);
 
 		tween.Play();
 	}
+
+	// Animate the actual element (Label/Button)
+	private void AnimateElement(Tween tween, Control element)
+	{
+		if (element is not null)
+		{
+			// Set PivotOffset on the element being scaled, using its own size
+			element.PivotOffset = element.Size / 2.0f;
+
+			tween.SetParallel(true);
+			tween.TweenProperty(element, "modulate:a", 1.0f, FadeInDuration);
+			tween.TweenProperty(element, "scale", TargetScale, FadeInDuration);
+			tween.SetParallel(false);
+			tween.TweenInterval(StaggerDelay);
+		}
+	}
+
 
 	private void OnStartButtonPressed()
 	{
