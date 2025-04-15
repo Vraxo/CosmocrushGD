@@ -17,8 +17,8 @@ public partial class NewMainMenu : ColorRect
 	private const string GameScenePath = "res://Scenes/World.tscn";
 	private const string SettingsScenePath = "res://Scenes/Menu/SettingsMenu.tscn";
 
-	private const float FadeInDuration = 0.3f;
-	private const float StaggerDelay = 0.15f;
+	private const float FadeInDuration = 0.15f; // Speed up fade
+	private const float StaggerDelay = 0.075f; // Reduce delay
 
 	public override void _Ready()
 	{
