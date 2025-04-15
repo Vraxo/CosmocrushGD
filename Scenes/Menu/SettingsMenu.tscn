@@ -30,14 +30,15 @@ Button/styles/hover_pressed = SubResource("StyleBoxFlat_wrfhg")
 Button/styles/normal = SubResource("StyleBoxFlat_73cej")
 Button/styles/pressed = SubResource("StyleBoxFlat_75km2")
 
-[node name="SettingsMenu" type="ColorRect" node_paths=PackedStringArray("musicSlider", "sfxSlider", "musicLabel", "sfxLabel", "applyButton", "returnButton")]
+[node name="SettingsMenu" type="ColorRect" node_paths=PackedStringArray("titleLabel", "musicSlider", "sfxSlider", "musicLabel", "sfxLabel", "applyButton", "returnButton")]
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-color = Color(0, 0, 0, 1)
+color = Color(0, 0, 0, 0)
 script = ExtResource("1_t30ri")
+titleLabel = NodePath("CenterContainer/VBoxContainer/TitleLabel")
 musicSlider = NodePath("CenterContainer/VBoxContainer/MusicHBox/Slider")
 sfxSlider = NodePath("CenterContainer/VBoxContainer/SfxHBox/Slider")
 musicLabel = NodePath("CenterContainer/VBoxContainer/MusicHBox/MusicLabel")

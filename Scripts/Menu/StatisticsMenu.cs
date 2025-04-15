@@ -4,7 +4,7 @@ namespace CosmocrushGD
 {
 	public partial class StatisticsMenu : ColorRect
 	{
-		[Export] private Label titleLabel; // Added export
+		[Export] private Label titleLabel;
 		[Export] private RichTextLabel gamesPlayedLabel;
 		[Export] private RichTextLabel totalScoreLabel;
 		[Export] private RichTextLabel topScoreLabel;
@@ -12,8 +12,6 @@ namespace CosmocrushGD
 		[Export] private Button clearButton;
 		[Export] private Button returnButton;
 		[Export] private ConfirmationDialog confirmationDialog;
-
-		private const string MainMenuScenePath = "res://Scenes/Menu/NewMainMenu.tscn";
 
 		private const string GamesPlayedDescColor = "#FFE000";
 		private const string TotalScoreDescColor = "#87CEEB";
@@ -24,8 +22,16 @@ namespace CosmocrushGD
 		private const float FadeInDuration = 0.15f;
 		private const float StaggerDelay = 0.075f;
 
+		private MenuShell menuShell;
+
 		public override void _Ready()
 		{
+			menuShell = GetParent()?.GetParent<MenuShell>();
+			if (menuShell is null)
+			{
+				GD.PrintErr("StatisticsMenu: Could not find MenuShell parent!");
+			}
+
 			bool initializationFailed = false;
 			if (titleLabel == null) { GD.PrintErr("StatisticsMenu: titleLabel is NULL!"); initializationFailed = true; }
 			if (gamesPlayedLabel == null) { GD.PrintErr("StatisticsMenu: gamesPlayedLabel is NULL!"); initializationFailed = true; }
@@ -39,23 +45,12 @@ namespace CosmocrushGD
 			if (initializationFailed)
 			{
 				GD.PrintErr("StatisticsMenu: Initialization failed due to missing UI node references.");
-				return; // Stop execution if nodes are missing
+				return;
 			}
 
-			if (!clearButton.IsConnected(Button.SignalName.Pressed, Callable.From(OnClearButtonPressed)))
-			{
-				clearButton.Pressed += OnClearButtonPressed;
-			}
-
-			if (!returnButton.IsConnected(Button.SignalName.Pressed, Callable.From(OnReturnButtonPressed)))
-			{
-				returnButton.Pressed += OnReturnButtonPressed;
-			}
-
-			if (!confirmationDialog.IsConnected(ConfirmationDialog.SignalName.Confirmed, Callable.From(OnResetConfirmed)))
-			{
-				confirmationDialog.Confirmed += OnResetConfirmed;
-			}
+			clearButton.Pressed += OnClearButtonPressed;
+			returnButton.Pressed += OnReturnButtonPressed;
+			confirmationDialog.Confirmed += OnResetConfirmed;
 
 
 			if (gamesPlayedLabel != null) gamesPlayedLabel.AutowrapMode = TextServer.AutowrapMode.Off;
@@ -82,12 +77,10 @@ namespace CosmocrushGD
 
 		private void StartFadeInAnimation()
 		{
-			// Extra check before starting animation
 			if (titleLabel is null || gamesPlayedLabel is null || totalScoreLabel is null ||
 				topScoreLabel is null || averageScoreLabel is null || clearButton is null ||
 				returnButton is null)
 			{
-				GD.PrintErr("StatisticsMenu: Cannot start animation, one or more UI nodes are null.");
 				return;
 			}
 
@@ -96,12 +89,10 @@ namespace CosmocrushGD
 
 			tween.TweenInterval(StaggerDelay);
 
-			// Animate Title
 			tween.TweenProperty(titleLabel, "modulate:a", 1.0f, FadeInDuration)
 				 .SetEase(Tween.EaseType.Out);
 			tween.TweenInterval(StaggerDelay);
 
-			// Animate Stat Labels sequentially
 			tween.TweenProperty(gamesPlayedLabel, "modulate:a", 1.0f, FadeInDuration)
 				 .SetEase(Tween.EaseType.Out);
 			tween.TweenInterval(StaggerDelay);
@@ -118,7 +109,6 @@ namespace CosmocrushGD
 				 .SetEase(Tween.EaseType.Out);
 			tween.TweenInterval(StaggerDelay);
 
-			// Animate Buttons together
 			tween.SetParallel(true);
 			tween.TweenProperty(clearButton, "modulate:a", 1.0f, FadeInDuration)
 				 .SetEase(Tween.EaseType.Out);
@@ -145,7 +135,6 @@ namespace CosmocrushGD
 
 		private void OnClearButtonPressed()
 		{
-			GD.Print("Clear Stats button pressed.");
 			if (confirmationDialog != null)
 			{
 				confirmationDialog.PopupCentered();
@@ -159,7 +148,6 @@ namespace CosmocrushGD
 
 		private void OnResetConfirmed()
 		{
-			GD.Print("Reset Confirmed.");
 			StatisticsManager.Instance.ResetStats();
 			StatisticsManager.Instance.Save();
 			LoadAndDisplayStats();
@@ -168,9 +156,8 @@ namespace CosmocrushGD
 
 		private void OnReturnButtonPressed()
 		{
-			GD.Print("Return button pressed.");
 			GlobalAudioPlayer.Instance.PlaySound(GlobalAudioPlayer.Instance.UiSound);
-			GetTree().ChangeSceneToFile(MainMenuScenePath);
+			menuShell?.ShowMainMenu();
 		}
 
 		public override void _Input(InputEvent @event)
@@ -191,26 +178,17 @@ namespace CosmocrushGD
 		{
 			if (clearButton != null && IsInstanceValid(clearButton))
 			{
-				if (clearButton.IsConnected(Button.SignalName.Pressed, Callable.From(OnClearButtonPressed)))
-				{
-					clearButton.Pressed -= OnClearButtonPressed;
-				}
+				clearButton.Pressed -= OnClearButtonPressed;
 			}
 			if (returnButton != null && IsInstanceValid(returnButton))
 			{
-				if (returnButton.IsConnected(Button.SignalName.Pressed, Callable.From(OnReturnButtonPressed)))
-				{
-					returnButton.Pressed -= OnReturnButtonPressed;
-				}
+				returnButton.Pressed -= OnReturnButtonPressed;
 			}
-
 			if (confirmationDialog != null && IsInstanceValid(confirmationDialog))
 			{
-				if (confirmationDialog.IsConnected(ConfirmationDialog.SignalName.Confirmed, Callable.From(OnResetConfirmed)))
-				{
-					confirmationDialog.Disconnect(ConfirmationDialog.SignalName.Confirmed, Callable.From(OnResetConfirmed));
-				}
+				confirmationDialog.Confirmed -= OnResetConfirmed;
 			}
+
 			base._ExitTree();
 		}
 	}

@@ -31,15 +31,16 @@ Button/styles/pressed = SubResource("StyleBoxFlat_75km2")
 RichTextLabel/font_sizes/normal_font_size = 24
 RichTextLabel/fonts/normal_font = ExtResource("2_venite_font")
 
-[node name="StatisticsMenu" type="ColorRect" node_paths=PackedStringArray("gamesPlayedLabel", "totalScoreLabel", "topScoreLabel", "averageScoreLabel", "clearButton", "returnButton", "confirmationDialog", "titleLabel")]
+[node name="StatisticsMenu" type="ColorRect" node_paths=PackedStringArray("titleLabel", "gamesPlayedLabel", "totalScoreLabel", "topScoreLabel", "averageScoreLabel", "clearButton", "returnButton", "confirmationDialog")]
 process_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-color = Color(0, 0, 0, 1)
+color = Color(0, 0, 0, 0)
 script = ExtResource("1_statmenu_script")
+titleLabel = NodePath("CenterContainer/VBoxContainer/TitleLabel")
 gamesPlayedLabel = NodePath("CenterContainer/VBoxContainer/StatsGrid/GamesPlayedLabel")
 totalScoreLabel = NodePath("CenterContainer/VBoxContainer/StatsGrid/TotalScoreLabel")
 topScoreLabel = NodePath("CenterContainer/VBoxContainer/StatsGrid/TopScoreLabel")
@@ -47,7 +48,6 @@ averageScoreLabel = NodePath("CenterContainer/VBoxContainer/StatsGrid/AverageSco
 clearButton = NodePath("CenterContainer/VBoxContainer/ButtonContainer/ClearButton")
 returnButton = NodePath("CenterContainer/VBoxContainer/ButtonContainer/ReturnButton")
 confirmationDialog = NodePath("ConfirmationDialog")
-titleLabel = NodePath("CenterContainer/VBoxContainer/TitleLabel")
 
 [node name="CenterContainer" type="CenterContainer" parent="."]
 layout_mode = 1

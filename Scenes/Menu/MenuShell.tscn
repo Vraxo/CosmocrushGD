@@ -1,0 +1,60 @@
+[gd_scene load_steps=6 format=3 uid="uid://bnriyn8s8leyf"]
+
+[ext_resource type="Script" path="res://Scripts/Menu/MenuShell.cs" id="1_5j0cf"]
+[ext_resource type="PackedScene" uid="uid://b7q8x6y5f4g3h" path="res://Scenes/Menu/NewMainMenu.tscn" id="2_main_menu"]
+[ext_resource type="PackedScene" uid="uid://bcw31k4rumk06" path="res://Scenes/Menu/SettingsMenu.tscn" id="3_settings_menu"]
+[ext_resource type="PackedScene" uid="uid://c4x7wvf8j8k6m" path="res://Scenes/Menu/StatisticsMenu.tscn" id="4_stats_menu"]
+
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_stars"]
+particle_flag_disable_z = true
+emission_shape = 1
+emission_sphere_radius = 1.0
+spread = 0.0
+initial_velocity_min = 40.0
+initial_velocity_max = 70.0
+gravity = Vector3(980, 0, 0)
+linear_accel_min = 15.0
+linear_accel_max = 30.0
+scale_max = 2.0
+
+[node name="MenuShell" type="Control" node_paths=PackedStringArray("menuContainer", "starParticles")]
+process_mode = 3
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_5j0cf")
+menuContainer = NodePath("MenuContainer")
+starParticles = NodePath("StarParticles")
+mainMenuScene = ExtResource("2_main_menu")
+settingsMenuScene = ExtResource("3_settings_menu")
+statisticsMenuScene = ExtResource("4_stats_menu")
+
+[node name="Background" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 0, 1)
+
+[node name="StarParticles" type="CPUParticles2D" parent="."]
+z_index = 1
+material = SubResource("ParticleProcessMaterial_stars")
+amount = 150
+lifetime = 4.0
+preprocess = 0.5
+emission_shape = 3
+emission_rect_extents = Vector2(1, 1)
+gravity = Vector2(980, 0)
+
+[node name="MenuContainer" type="Control" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
