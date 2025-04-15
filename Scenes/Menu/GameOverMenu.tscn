@@ -29,7 +29,7 @@ Button/styles/pressed = SubResource("StyleBoxFlat_75km2")
 Label/font_sizes/font_size = 32
 Label/fonts/font = ExtResource("3_venite_font")
 
-[node name="GameOverMenu" type="ColorRect" node_paths=PackedStringArray("scoreLabel", "playAgainButton", "returnButton")]
+[node name="GameOverMenu" type="ColorRect" node_paths=PackedStringArray("gameOverLabel", "scoreLabel", "playAgainButton", "returnButton")]
 process_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -38,6 +38,7 @@ grow_horizontal = 2
 grow_vertical = 2
 color = Color(0, 0, 0, 0.65)
 script = ExtResource("1_gameover_script")
+gameOverLabel = NodePath("CenterContainer/VBoxContainer/GameOverLabel")
 scoreLabel = NodePath("CenterContainer/VBoxContainer/ScoreLabel")
 playAgainButton = NodePath("CenterContainer/VBoxContainer/PlayAgainButton")
 returnButton = NodePath("CenterContainer/VBoxContainer/ReturnButton")

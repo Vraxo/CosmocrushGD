@@ -17,6 +17,7 @@ public partial class Player : CharacterBody2D
 	[Export] private Node audioPlayerContainer;
 	[Export] private Timer regenerationTimer;
 	[Export] private NodePath cameraPath;
+	[Export] private Timer deathPauseTimer;
 
 	private ShakeyCamera camera;
 	private Vector2 knockbackVelocity = Vector2.Zero;
@@ -27,6 +28,8 @@ public partial class Player : CharacterBody2D
 	private const float DamageShakeMinStrength = 0.8f;
 	private const float DamageShakeMaxStrength = 2.5f;
 	private const float DamageShakeDuration = 0.3f;
+	private const float DeathZoomAmount = 2.0f;
+	private const float DeathZoomDuration = 1.5f; // Increased duration
 	private const string SfxBusName = "SFX";
 
 	public event Action AudioPlayerFinished;
@@ -40,6 +43,16 @@ public partial class Player : CharacterBody2D
 		if (cameraPath is not null)
 		{
 			camera = GetNode<ShakeyCamera>(cameraPath);
+			if (IsInstanceValid(camera))
+			{
+				GD.Print("Player._Ready: Camera found and zoom reset.");
+				camera.ResetZoom();
+			}
+			else
+			{
+				GD.PrintErr("Player._Ready: Camera node found at path, but instance is invalid!");
+				camera = null;
+			}
 		}
 		else
 		{
@@ -56,11 +69,20 @@ public partial class Player : CharacterBody2D
 		{
 			GD.PrintErr("Player: RegenTimer not assigned!");
 		}
+
+		if (deathPauseTimer is not null)
+		{
+			deathPauseTimer.Timeout += OnDeathPauseTimerTimeout;
+		}
+		else
+		{
+			GD.PrintErr("Player: DeathPauseTimer not assigned in the scene tree or path!");
+		}
 	}
 
 	public override void _PhysicsProcess(double delta)
 	{
-		if (GetTree().Paused)
+		if (GetTree().Paused || (deathPauseTimer is not null && !deathPauseTimer.IsStopped()))
 		{
 			return;
 		}
@@ -79,12 +101,18 @@ public partial class Player : CharacterBody2D
 		{
 			regenerationTimer.Timeout -= OnRegenTimerTimeout;
 		}
+		if (deathPauseTimer is not null && deathPauseTimer.IsConnected(Timer.SignalName.Timeout, Callable.From(OnDeathPauseTimerTimeout)))
+		{
+			deathPauseTimer.Timeout -= OnDeathPauseTimerTimeout;
+		}
 
 		base._ExitTree();
 	}
 
 	public void TakeDamage(int damage)
 	{
+		if (Health <= 0) return;
+
 		Health -= damage;
 		Health = Math.Max(Health, 0);
 
@@ -104,7 +132,7 @@ public partial class Player : CharacterBody2D
 
 	private void TriggerDamageShake()
 	{
-		if (camera is null)
+		if (camera is null || !IsInstanceValid(camera))
 		{
 			return;
 		}
@@ -153,13 +181,13 @@ public partial class Player : CharacterBody2D
 
 	private void Die()
 	{
-		if (GetTree().Paused)
+		if ((deathPauseTimer is not null && !deathPauseTimer.IsStopped()) || GetTree().Paused)
 		{
-			GD.Print("Player.Die: Already paused, aborting Die logic.");
+			GD.Print("Player.Die: Death sequence already in progress or game paused. Aborting.");
 			return;
 		}
 
-		GD.Print("Player.Die: Player has died.");
+		GD.Print("Player.Die: Player has died. Starting death sequence.");
 		regenerationTimer?.Stop();
 		ProcessMode = ProcessModeEnum.Disabled;
 		SetPhysicsProcess(false);
@@ -173,14 +201,43 @@ public partial class Player : CharacterBody2D
 			deathParticles.Emitting = true;
 		}
 
+		GD.Print($"Player.Die: Checking camera instance validity before zoom...");
+		if (camera is not null && IsInstanceValid(camera))
+		{
+			GD.Print($"Player.Die: Camera instance is valid. Starting camera zoom to {DeathZoomAmount}x over {DeathZoomDuration}s.");
+			camera.ZoomToPoint(DeathZoomAmount, DeathZoomDuration);
+		}
+		else
+		{
+			GD.PrintErr("Player.Die: Camera reference is null or invalid, cannot perform death zoom.");
+		}
 
-		GD.Print("Player.Die: Pausing tree...");
-		GetTree().Paused = true;
-
-		GD.Print("Player.Die: Invoking GameOver event...");
-		GameOver?.Invoke();
-		GD.Print("Player.Die: GameOver event invoked (if any listeners).");
+		if (deathPauseTimer is not null)
+		{
+			GD.Print($"Player.Die: Starting DeathPauseTimer ({deathPauseTimer.WaitTime}s).");
+			deathPauseTimer.Start();
+		}
+		else
+		{
+			GD.PrintErr("Player.Die: DeathPauseTimer is null. Cannot delay pause. Pausing immediately and invoking GameOver.");
+			GetTree().Paused = true;
+			GameOver?.Invoke();
+		}
 	}
+
+	private void OnDeathPauseTimerTimeout()
+	{
+		GD.Print("Player.OnDeathPauseTimerTimeout: Timer finished. Pausing tree and invoking GameOver.");
+
+		if (!GetTree().Paused)
+		{
+			GetTree().Paused = true;
+		}
+
+		GameOver?.Invoke();
+		GD.Print("Player.OnDeathPauseTimerTimeout: GameOver event invoked.");
+	}
+
 
 	public void ApplyKnockback(Vector2 knockback)
 	{

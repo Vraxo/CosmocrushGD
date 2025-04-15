@@ -18,7 +18,7 @@ point_count = 2
 _data = [Vector2(0.00433911, 0.993671), 0.0, 0.0, 0, 0, Vector2(0.998999, 0.00219095), 0.0, 0.0, 0, 0]
 point_count = 2
 
-[node name="Player" type="CharacterBody2D" node_paths=PackedStringArray("gun", "sprite", "damageParticles", "deathParticles", "audioPlayerContainer", "regenerationTimer")]
+[node name="Player" type="CharacterBody2D" node_paths=PackedStringArray("gun", "sprite", "damageParticles", "deathParticles", "audioPlayerContainer", "regenerationTimer", "deathPauseTimer")]
 collision_mask = 5
 motion_mode = 1
 script = ExtResource("2_8tp0t")
@@ -29,6 +29,8 @@ damageParticles = NodePath("DamageParticles")
 deathParticles = NodePath("DeathParticles")
 audioPlayerContainer = NodePath("AudioPlayerContainer")
 regenerationTimer = NodePath("RegenerationTimer")
+cameraPath = NodePath("Camera2D2")
+deathPauseTimer = NodePath("DeathPauseTimer")
 
 [node name="ActualCollider" type="CollisionShape2D" parent="."]
 position = Vector2(0, 0.25)
@@ -96,6 +98,11 @@ color = Color(0.447059, 1, 0.105882, 1)
 [node name="RegenerationTimer" type="Timer" parent="."]
 autostart = true
 
-[node name="Camera2D" type="Camera2D" parent="."]
+[node name="Camera2D2" type="Camera2D" parent="."]
 process_mode = 3
 script = ExtResource("7_camera")
+
+[node name="DeathPauseTimer" type="Timer" parent="."]
+process_mode = 1
+wait_time = 1.6
+one_shot = true
