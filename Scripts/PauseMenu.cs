@@ -1,5 +1,5 @@
 using Godot;
-using CosmocrushGD; // Needed for StatisticsManager
+using CosmocrushGD;
 
 namespace CosmocrushGD;
 
@@ -9,7 +9,7 @@ public partial class PauseMenu : ColorRect
 	[Export] private Button returnButton;
 	[Export] private Button quitButton;
 
-	private const string MainMenuScenePath = "res://Scenes/Menu/NewMainMenu.tscn";
+	private const string MainMenuScenePath = "res://Scenes/Menu/MenuShell.tscn";
 
 	public override void _Ready()
 	{
@@ -46,9 +46,8 @@ public partial class PauseMenu : ColorRect
 
 	private void OnReturnButtonPressed()
 	{
-		// Update statistics before returning to menu
-		var worldNode = GetNode<World>("/root/World"); // Assumes World node path
-		if (worldNode != null)
+		var worldNode = GetNode<World>("/root/World");
+		if (worldNode is not null)
 		{
 			StatisticsManager.Instance.UpdateScores(worldNode.Score);
 			GD.Print($"Returning to menu. Recorded Score: {worldNode.Score}");
@@ -56,7 +55,6 @@ public partial class PauseMenu : ColorRect
 		else
 		{
 			GD.PrintErr("PauseMenu: Could not find World node at /root/World to update scores.");
-			// Still save whatever might be dirty
 			StatisticsManager.Instance.Save();
 		}
 
@@ -69,9 +67,8 @@ public partial class PauseMenu : ColorRect
 
 	private void OnQuitButtonPressed()
 	{
-		// Update statistics before quitting
-		var worldNode = GetNode<World>("/root/World"); // Assumes World node path
-		if (worldNode != null)
+		var worldNode = GetNode<World>("/root/World");
+		if (worldNode is not null)
 		{
 			StatisticsManager.Instance.UpdateScores(worldNode.Score);
 			GD.Print($"Quitting game. Recorded Score: {worldNode.Score}");
@@ -79,7 +76,6 @@ public partial class PauseMenu : ColorRect
 		else
 		{
 			GD.PrintErr("PauseMenu: Could not find World node at /root/World to update scores.");
-			// Still save whatever might be dirty
 			StatisticsManager.Instance.Save();
 		}
 
@@ -102,7 +98,6 @@ public partial class PauseMenu : ColorRect
 
 	public override void _ExitTree()
 	{
-		// Ensure game is unpaused if the menu is removed unexpectedly
 		if (GetTree()?.Paused ?? false)
 		{
 			GetTree().Paused = false;

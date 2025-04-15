@@ -3,7 +3,7 @@ using System;
 
 namespace CosmocrushGD;
 
-public partial class NewMainMenu : ColorRect
+public partial class NewMainMenu : CenterContainer
 {
 	[Export] private Label titleLabel;
 	[Export] private Button startButton;
@@ -11,7 +11,7 @@ public partial class NewMainMenu : ColorRect
 	[Export] private Button statisticsButton;
 	[Export] private Button quitButton;
 
-	private const float FadeInDuration = 0.15f;
+	private const float FadeInDuration = 0.2f;
 	private const float StaggerDelay = 0.075f;
 
 	private MenuShell menuShell;
@@ -33,18 +33,6 @@ public partial class NewMainMenu : ColorRect
 		{
 			GD.PrintErr($"Error accessing Singletons (Settings/Statistics): {e.Message}");
 		}
-
-		titleLabel ??= GetNode<Label>("CenterContainer/VBoxContainer/TitleLabel");
-		startButton ??= GetNode<Button>("CenterContainer/VBoxContainer/StartButton");
-		settingsButton ??= GetNode<Button>("CenterContainer/VBoxContainer/SettingsButton");
-		statisticsButton ??= GetNode<Button>("CenterContainer/VBoxContainer/StatisticsButton");
-		quitButton ??= GetNode<Button>("CenterContainer/VBoxContainer/QuitButton");
-
-		if (titleLabel is null) GD.PrintErr("NewMainMenu: Title Label Null!");
-		if (startButton is null) GD.PrintErr("NewMainMenu: Start Button Null!");
-		if (settingsButton is null) GD.PrintErr("NewMainMenu: Settings Button Null!");
-		if (statisticsButton is null) GD.PrintErr("NewMainMenu: Statistics Button Null!");
-		if (quitButton is null) GD.PrintErr("NewMainMenu: Quit Button Null!");
 
 		if (startButton is not null) startButton.Pressed += OnStartButtonPressed;
 		if (settingsButton is not null) settingsButton.Pressed += OnSettingsButtonPressed;

@@ -30,42 +30,27 @@ Button/styles/hover_pressed = SubResource("StyleBoxFlat_wrfhg")
 Button/styles/normal = SubResource("StyleBoxFlat_73cej")
 Button/styles/pressed = SubResource("StyleBoxFlat_75km2")
 
-[node name="SettingsMenu" type="ColorRect" node_paths=PackedStringArray("titleLabel", "musicSlider", "sfxSlider", "musicLabel", "sfxLabel", "applyButton", "returnButton")]
+[node name="SettingsMenu" type="CenterContainer" node_paths=PackedStringArray("titleLabel", "musicSlider", "sfxSlider", "musicLabel", "sfxLabel", "applyButton", "returnButton")]
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-color = Color(0, 0, 0, 0)
 script = ExtResource("1_t30ri")
-titleLabel = NodePath("CenterContainer/VBoxContainer/TitleLabel")
-musicSlider = NodePath("CenterContainer/VBoxContainer/MusicHBox/Slider")
-sfxSlider = NodePath("CenterContainer/VBoxContainer/SfxHBox/Slider")
-musicLabel = NodePath("CenterContainer/VBoxContainer/MusicHBox/MusicLabel")
-sfxLabel = NodePath("CenterContainer/VBoxContainer/SfxHBox/SfxLabel")
-applyButton = NodePath("CenterContainer/VBoxContainer/ButtonHBox/ApplyButton")
-returnButton = NodePath("CenterContainer/VBoxContainer/ButtonHBox/ReturnButton")
+titleLabel = NodePath("VBoxContainer/TitleLabel")
+musicSlider = NodePath("VBoxContainer/MusicHBox/Slider")
+sfxSlider = NodePath("VBoxContainer/SfxHBox/Slider")
+musicLabel = NodePath("VBoxContainer/MusicHBox/MusicLabel")
+sfxLabel = NodePath("VBoxContainer/SfxHBox/SfxLabel")
+applyButton = NodePath("VBoxContainer/ButtonHBox/ApplyButton")
+returnButton = NodePath("VBoxContainer/ButtonHBox/ReturnButton")
 
-[node name="CenterContainer" type="CenterContainer" parent="."]
-layout_mode = 1
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -300.0
-offset_top = -150.0
-offset_right = 300.0
-offset_bottom = 150.0
-grow_horizontal = 2
-grow_vertical = 2
-
-[node name="VBoxContainer" type="VBoxContainer" parent="CenterContainer"]
+[node name="VBoxContainer" type="VBoxContainer" parent="."]
 layout_mode = 2
 theme_override_constants/separation = 30
 alignment = 1
 
-[node name="TitleLabel" type="Label" parent="CenterContainer/VBoxContainer"]
+[node name="TitleLabel" type="Label" parent="VBoxContainer"]
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_fonts/font = ExtResource("3_venite_font")
@@ -73,12 +58,12 @@ theme_override_font_sizes/font_size = 36
 text = "Settings"
 horizontal_alignment = 1
 
-[node name="MusicHBox" type="HBoxContainer" parent="CenterContainer/VBoxContainer"]
+[node name="MusicHBox" type="HBoxContainer" parent="VBoxContainer"]
 layout_mode = 2
 theme_override_constants/separation = 20
 alignment = 1
 
-[node name="MusicLabel" type="Label" parent="CenterContainer/VBoxContainer/MusicHBox"]
+[node name="MusicLabel" type="Label" parent="VBoxContainer/MusicHBox"]
 custom_minimum_size = Vector2(80, 0)
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 1, 1, 1)
@@ -87,7 +72,7 @@ theme_override_font_sizes/font_size = 20
 text = "Music"
 vertical_alignment = 1
 
-[node name="Slider" type="HSlider" parent="CenterContainer/VBoxContainer/MusicHBox"]
+[node name="Slider" type="HSlider" parent="VBoxContainer/MusicHBox"]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 4
@@ -97,12 +82,12 @@ step = 0.05
 value = 0.5
 script = ExtResource("4_5v8m5")
 
-[node name="SfxHBox" type="HBoxContainer" parent="CenterContainer/VBoxContainer"]
+[node name="SfxHBox" type="HBoxContainer" parent="VBoxContainer"]
 layout_mode = 2
 theme_override_constants/separation = 20
 alignment = 1
 
-[node name="SfxLabel" type="Label" parent="CenterContainer/VBoxContainer/SfxHBox"]
+[node name="SfxLabel" type="Label" parent="VBoxContainer/SfxHBox"]
 custom_minimum_size = Vector2(80, 0)
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 1, 1, 1)
@@ -111,7 +96,7 @@ theme_override_font_sizes/font_size = 20
 text = "SFX"
 vertical_alignment = 1
 
-[node name="Slider" type="HSlider" parent="CenterContainer/VBoxContainer/SfxHBox"]
+[node name="Slider" type="HSlider" parent="VBoxContainer/SfxHBox"]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 4
@@ -121,12 +106,12 @@ step = 0.05
 value = 0.5
 script = ExtResource("4_5v8m5")
 
-[node name="ButtonHBox" type="HBoxContainer" parent="CenterContainer/VBoxContainer"]
+[node name="ButtonHBox" type="HBoxContainer" parent="VBoxContainer"]
 layout_mode = 2
 theme_override_constants/separation = 30
 alignment = 1
 
-[node name="ApplyButton" type="Button" parent="CenterContainer/VBoxContainer/ButtonHBox"]
+[node name="ApplyButton" type="Button" parent="VBoxContainer/ButtonHBox"]
 custom_minimum_size = Vector2(180, 50)
 layout_mode = 2
 theme = SubResource("Theme_ilgyb")
@@ -135,7 +120,7 @@ theme_override_font_sizes/font_size = 22
 text = "Apply"
 script = ExtResource("2_button_script")
 
-[node name="ReturnButton" type="Button" parent="CenterContainer/VBoxContainer/ButtonHBox"]
+[node name="ReturnButton" type="Button" parent="VBoxContainer/ButtonHBox"]
 custom_minimum_size = Vector2(180, 50)
 layout_mode = 2
 theme = SubResource("Theme_ilgyb")

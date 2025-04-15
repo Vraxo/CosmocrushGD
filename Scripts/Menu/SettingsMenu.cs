@@ -2,7 +2,7 @@ using Godot;
 
 namespace CosmocrushGD;
 
-public partial class SettingsMenu : ColorRect
+public partial class SettingsMenu : CenterContainer
 {
 	[Export] private Label titleLabel;
 	[Export] private HSlider musicSlider;
