@@ -31,7 +31,7 @@ Button/styles/pressed = SubResource("StyleBoxFlat_75km2")
 RichTextLabel/font_sizes/normal_font_size = 24
 RichTextLabel/fonts/normal_font = ExtResource("2_venite_font")
 
-[node name="StatisticsMenu" type="ColorRect" node_paths=PackedStringArray("gamesPlayedLabel", "totalScoreLabel", "topScoreLabel", "averageScoreLabel", "clearButton", "returnButton", "confirmationDialog")]
+[node name="StatisticsMenu" type="ColorRect" node_paths=PackedStringArray("gamesPlayedLabel", "totalScoreLabel", "topScoreLabel", "averageScoreLabel", "clearButton", "returnButton", "confirmationDialog", "titleLabel")]
 process_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -47,6 +47,7 @@ averageScoreLabel = NodePath("CenterContainer/VBoxContainer/StatsGrid/AverageSco
 clearButton = NodePath("CenterContainer/VBoxContainer/ButtonContainer/ClearButton")
 returnButton = NodePath("CenterContainer/VBoxContainer/ButtonContainer/ReturnButton")
 confirmationDialog = NodePath("ConfirmationDialog")
+titleLabel = NodePath("CenterContainer/VBoxContainer/TitleLabel")
 
 [node name="CenterContainer" type="CenterContainer" parent="."]
 layout_mode = 1
@@ -65,6 +66,7 @@ grow_vertical = 2
 [node name="VBoxContainer" type="VBoxContainer" parent="CenterContainer"]
 layout_mode = 2
 theme_override_constants/separation = 30
+alignment = 1
 
 [node name="TitleLabel" type="Label" parent="CenterContainer/VBoxContainer"]
 layout_mode = 2
@@ -77,6 +79,7 @@ horizontal_alignment = 1
 [node name="StatsGrid" type="GridContainer" parent="CenterContainer/VBoxContainer"]
 layout_mode = 2
 theme = SubResource("Theme_labels")
+theme_override_constants/v_separation = 10
 columns = 1
 
 [node name="GamesPlayedLabel" type="RichTextLabel" parent="CenterContainer/VBoxContainer/StatsGrid"]
