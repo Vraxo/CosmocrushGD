@@ -11,9 +11,8 @@ public partial class NewMainMenu : ColorRect
 	[Export] private Button statisticsButton;
 	[Export] private Button quitButton;
 
-	private const float InitialScaleFactor = 10f;
-	private const float FadeInDuration = 1f;   // Slightly longer duration for elastic
-	private const float StaggerDelay = 0.15f;   // Slightly longer delay for elastic
+	private const float FadeInDuration = 0.15f;
+	private const float StaggerDelay = 0.075f;
 
 	private MenuShell menuShell;
 
@@ -41,100 +40,69 @@ public partial class NewMainMenu : ColorRect
 		statisticsButton ??= GetNode<Button>("CenterContainer/VBoxContainer/StatisticsButton");
 		quitButton ??= GetNode<Button>("CenterContainer/VBoxContainer/QuitButton");
 
-		// Error checking... (omitted for brevity, same as before)
 		if (titleLabel is null) GD.PrintErr("NewMainMenu: Title Label Null!");
 		if (startButton is null) GD.PrintErr("NewMainMenu: Start Button Null!");
 		if (settingsButton is null) GD.PrintErr("NewMainMenu: Settings Button Null!");
 		if (statisticsButton is null) GD.PrintErr("NewMainMenu: Statistics Button Null!");
 		if (quitButton is null) GD.PrintErr("NewMainMenu: Quit Button Null!");
 
-
 		if (startButton is not null) startButton.Pressed += OnStartButtonPressed;
 		if (settingsButton is not null) settingsButton.Pressed += OnSettingsButtonPressed;
 		if (statisticsButton is not null) statisticsButton.Pressed += OnStatisticsButtonPressed;
 		if (quitButton is not null) quitButton.Pressed += OnQuitButtonPressed;
 
-		SetInitialState();
+		SetInitialAlphas();
 		CallDeferred(nameof(StartFadeInAnimation));
 	}
 
-	private void SetInitialState()
+	private void SetInitialAlphas()
 	{
-		Vector2 initialScale = Vector2.One * InitialScaleFactor;
-
-		if (titleLabel is not null)
-		{
-			titleLabel.Modulate = Colors.Transparent;
-			titleLabel.Scale = initialScale;
-			titleLabel.PivotOffset = titleLabel.Size / 2;
-		}
-		if (startButton is not null)
-		{
-			startButton.Modulate = Colors.Transparent;
-			startButton.Scale = initialScale;
-			// UIButton script should handle PivotOffset
-		}
-		if (settingsButton is not null)
-		{
-			settingsButton.Modulate = Colors.Transparent;
-			settingsButton.Scale = initialScale;
-		}
-		if (statisticsButton is not null)
-		{
-			statisticsButton.Modulate = Colors.Transparent;
-			statisticsButton.Scale = initialScale;
-		}
-		if (quitButton is not null)
-		{
-			quitButton.Modulate = Colors.Transparent;
-			quitButton.Scale = initialScale;
-		}
+		if (titleLabel is not null) titleLabel.Modulate = Colors.Transparent;
+		if (startButton is not null) startButton.Modulate = Colors.Transparent;
+		if (settingsButton is not null) settingsButton.Modulate = Colors.Transparent;
+		if (statisticsButton is not null) statisticsButton.Modulate = Colors.Transparent;
+		if (quitButton is not null) quitButton.Modulate = Colors.Transparent;
 	}
 
 	private void StartFadeInAnimation()
 	{
 		Tween tween = CreateTween();
 		tween.SetParallel(false);
-		tween.SetEase(Tween.EaseType.Out);         // Ease for the overall motion
-		tween.SetTrans(Tween.TransitionType.Elastic); // Changed transition for a bounce effect
 
 		tween.TweenInterval(StaggerDelay);
 
-		AnimateElement(tween, titleLabel);
-		AnimateElement(tween, startButton);
-		AnimateElement(tween, settingsButton);
-		AnimateElement(tween, statisticsButton);
-		AnimateElement(tween, quitButton, true);
+		if (titleLabel is not null)
+		{
+			tween.TweenProperty(titleLabel, "modulate:a", 1.0f, FadeInDuration)
+				 .SetEase(Tween.EaseType.Out);
+			tween.TweenInterval(StaggerDelay);
+		}
+		if (startButton is not null)
+		{
+			tween.TweenProperty(startButton, "modulate:a", 1.0f, FadeInDuration)
+				 .SetEase(Tween.EaseType.Out);
+			tween.TweenInterval(StaggerDelay);
+		}
+		if (settingsButton is not null)
+		{
+			tween.TweenProperty(settingsButton, "modulate:a", 1.0f, FadeInDuration)
+				 .SetEase(Tween.EaseType.Out);
+			tween.TweenInterval(StaggerDelay);
+		}
+		if (statisticsButton is not null)
+		{
+			tween.TweenProperty(statisticsButton, "modulate:a", 1.0f, FadeInDuration)
+				 .SetEase(Tween.EaseType.Out);
+			tween.TweenInterval(StaggerDelay);
+		}
+		if (quitButton is not null)
+		{
+			tween.TweenProperty(quitButton, "modulate:a", 1.0f, FadeInDuration)
+				 .SetEase(Tween.EaseType.Out);
+		}
 
 		tween.Play();
 	}
-
-	private void AnimateElement(Tween tween, Control element, bool isLast = false)
-	{
-		if (element is null)
-		{
-			return;
-		}
-
-		// Ensure pivot is set just before animation for buttons too, in case _Ready wasn't enough
-		if (element is Button button)
-		{
-			button.PivotOffset = button.Size / 2;
-		}
-
-
-		tween.SetParallel(true);
-		// Use a slightly faster alpha fade to emphasize the scale bounce
-		tween.TweenProperty(element, "modulate:a", 1.0f, FadeInDuration * 0.8f);
-		tween.TweenProperty(element, "scale", Vector2.One, FadeInDuration);
-		tween.SetParallel(false);
-
-		if (!isLast)
-		{
-			tween.TweenInterval(StaggerDelay);
-		}
-	}
-
 
 	private void OnStartButtonPressed()
 	{
