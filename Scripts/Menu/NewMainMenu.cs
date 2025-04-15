@@ -11,10 +11,8 @@ public partial class NewMainMenu : ColorRect
 	[Export] private Button statisticsButton;
 	[Export] private Button quitButton;
 
-	private const float AnimationDuration = 0.25f; // Slightly longer for effect
+	private const float FadeInDuration = 0.15f;
 	private const float StaggerDelay = 0.075f;
-	private readonly Vector2 InitialScale = new(1.2f, 1.2f);
-	private readonly Vector2 FinalScale = Vector2.One;
 
 	private MenuShell menuShell;
 
@@ -42,13 +40,6 @@ public partial class NewMainMenu : ColorRect
 		statisticsButton ??= GetNode<Button>("CenterContainer/VBoxContainer/StatisticsButton");
 		quitButton ??= GetNode<Button>("CenterContainer/VBoxContainer/QuitButton");
 
-		// Ensure Pivot Offset is set for the Title Label *after* it's ready
-		if (titleLabel is not null)
-		{
-			titleLabel.Ready += SetTitlePivot;
-		}
-
-
 		if (titleLabel is null) GD.PrintErr("NewMainMenu: Title Label Null!");
 		if (startButton is null) GD.PrintErr("NewMainMenu: Start Button Null!");
 		if (settingsButton is null) GD.PrintErr("NewMainMenu: Settings Button Null!");
@@ -60,125 +51,76 @@ public partial class NewMainMenu : ColorRect
 		if (statisticsButton is not null) statisticsButton.Pressed += OnStatisticsButtonPressed;
 		if (quitButton is not null) quitButton.Pressed += OnQuitButtonPressed;
 
-		SetInitialState();
-		CallDeferred(nameof(StartEntranceAnimation));
+		SetInitialAlphas();
+		CallDeferred(nameof(StartFadeInAnimation));
 	}
 
-	private void SetTitlePivot()
+	private void SetInitialAlphas()
 	{
-		if (titleLabel is not null)
-		{
-			titleLabel.PivotOffset = titleLabel.Size / 2;
-		}
+		if (titleLabel is not null) titleLabel.Modulate = Colors.Transparent;
+		if (startButton is not null) startButton.Modulate = Colors.Transparent;
+		if (settingsButton is not null) settingsButton.Modulate = Colors.Transparent;
+		if (statisticsButton is not null) statisticsButton.Modulate = Colors.Transparent;
+		if (quitButton is not null) quitButton.Modulate = Colors.Transparent;
 	}
 
-
-	private void SetInitialState()
-	{
-		SetControlState(titleLabel, InitialScale, Colors.Transparent);
-		SetControlState(startButton, InitialScale, Colors.Transparent);
-		SetControlState(settingsButton, InitialScale, Colors.Transparent);
-		SetControlState(statisticsButton, InitialScale, Colors.Transparent);
-		SetControlState(quitButton, InitialScale, Colors.Transparent);
-	}
-
-	private void SetControlState(Control control, Vector2 scale, Color modulate)
-	{
-		if (control is not null)
-		{
-			// Ensure pivot is centered for scaling (Buttons handle this in their script)
-			if (control is not Button)
-			{
-				control.PivotOffset = control.Size / 2;
-			}
-			control.Scale = scale;
-			control.Modulate = modulate;
-		}
-	}
-
-	private void StartEntranceAnimation()
+	private void StartFadeInAnimation()
 	{
 		Tween tween = CreateTween();
 		tween.SetParallel(false);
-		tween.SetEase(Tween.EaseType.Out);
-		tween.SetTrans(Tween.TransitionType.Back); // Use Back transition for a nice overshoot effect
 
-		tween.TweenInterval(StaggerDelay); // Initial delay
+		tween.TweenInterval(StaggerDelay);
 
-		// Animate Title
 		if (titleLabel is not null)
 		{
-			tween.SetParallel(true); // Scale and Fade happen at the same time
-			tween.TweenProperty(titleLabel, CanvasItem.PropertyName.Modulate.ToString() + ":a", 1.0f, AnimationDuration);
-			tween.TweenProperty(titleLabel, Node2D.PropertyName.Scale.ToString(), FinalScale, AnimationDuration);
-			tween.SetParallel(false); // Back to sequential for the next delay
+			tween.TweenProperty(titleLabel, "modulate:a", 1.0f, FadeInDuration)
+				 .SetEase(Tween.EaseType.Out);
 			tween.TweenInterval(StaggerDelay);
 		}
-
-		// Animate Start Button
 		if (startButton is not null)
 		{
-			tween.SetParallel(true);
-			tween.TweenProperty(startButton, CanvasItem.PropertyName.Modulate.ToString() + ":a", 1.0f, AnimationDuration);
-			tween.TweenProperty(startButton, Node2D.PropertyName.Scale.ToString(), FinalScale, AnimationDuration);
-			tween.SetParallel(false);
+			tween.TweenProperty(startButton, "modulate:a", 1.0f, FadeInDuration)
+				 .SetEase(Tween.EaseType.Out);
 			tween.TweenInterval(StaggerDelay);
 		}
-
-		// Animate Settings Button
 		if (settingsButton is not null)
 		{
-			tween.SetParallel(true);
-			tween.TweenProperty(settingsButton, CanvasItem.PropertyName.Modulate.ToString() + ":a", 1.0f, AnimationDuration);
-			tween.TweenProperty(settingsButton, Node2D.PropertyName.Scale.ToString(), FinalScale, AnimationDuration);
-			tween.SetParallel(false);
+			tween.TweenProperty(settingsButton, "modulate:a", 1.0f, FadeInDuration)
+				 .SetEase(Tween.EaseType.Out);
 			tween.TweenInterval(StaggerDelay);
 		}
-
-		// Animate Statistics Button
 		if (statisticsButton is not null)
 		{
-			tween.SetParallel(true);
-			tween.TweenProperty(statisticsButton, CanvasItem.PropertyName.Modulate.ToString() + ":a", 1.0f, AnimationDuration);
-			tween.TweenProperty(statisticsButton, Node2D.PropertyName.Scale.ToString(), FinalScale, AnimationDuration);
-			tween.SetParallel(false);
+			tween.TweenProperty(statisticsButton, "modulate:a", 1.0f, FadeInDuration)
+				 .SetEase(Tween.EaseType.Out);
 			tween.TweenInterval(StaggerDelay);
 		}
-
-		// Animate Quit Button
 		if (quitButton is not null)
 		{
-			tween.SetParallel(true);
-			tween.TweenProperty(quitButton, CanvasItem.PropertyName.Modulate.ToString() + ":a", 1.0f, AnimationDuration);
-			tween.TweenProperty(quitButton, Node2D.PropertyName.Scale.ToString(), FinalScale, AnimationDuration);
-			// No SetParallel(false) needed after the last element
+			tween.TweenProperty(quitButton, "modulate:a", 1.0f, FadeInDuration)
+				 .SetEase(Tween.EaseType.Out);
 		}
 
 		tween.Play();
 	}
 
-
 	private void OnStartButtonPressed()
 	{
-		GlobalAudioPlayer.Instance.PlaySound(GlobalAudioPlayer.Instance.UiSound);
 		menuShell?.StartGame();
 	}
 
 	private void OnSettingsButtonPressed()
 	{
-		GlobalAudioPlayer.Instance.PlaySound(GlobalAudioPlayer.Instance.UiSound);
 		menuShell?.ShowSettingsMenu();
 	}
 
 	private void OnStatisticsButtonPressed()
 	{
-		GlobalAudioPlayer.Instance.PlaySound(GlobalAudioPlayer.Instance.UiSound);
 		menuShell?.ShowStatisticsMenu();
 	}
 
 	private void OnQuitButtonPressed()
 	{
-		GlobalAudioPlayer.Instance.PlaySound(GlobalAudioPlayer.Instance.UiSound);
 		menuShell?.QuitGame();
 	}
 
@@ -188,16 +130,6 @@ public partial class NewMainMenu : ColorRect
 		if (IsInstanceValid(settingsButton)) settingsButton.Pressed -= OnSettingsButtonPressed;
 		if (IsInstanceValid(statisticsButton)) statisticsButton.Pressed -= OnStatisticsButtonPressed;
 		if (IsInstanceValid(quitButton)) quitButton.Pressed -= OnQuitButtonPressed;
-
-		if (titleLabel is not null && IsInstanceValid(titleLabel))
-		{
-			var callable = Callable.From(SetTitlePivot);
-			if (titleLabel.IsConnected(Node.SignalName.Ready, callable))
-			{
-				titleLabel.Ready -= SetTitlePivot;
-			}
-		}
-
 
 		base._ExitTree();
 	}
