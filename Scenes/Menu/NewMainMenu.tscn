@@ -36,11 +36,11 @@ grow_horizontal = 2
 grow_vertical = 2
 color = Color(0, 0, 0, 0)
 script = ExtResource("1_newmenu_script")
-titleLabel = NodePath("CenterContainer/VBoxContainer/TitleContainer/TitleLabel")
-startButton = NodePath("CenterContainer/VBoxContainer/StartButtonContainer/StartButton")
-settingsButton = NodePath("CenterContainer/VBoxContainer/SettingsButtonContainer/SettingsButton")
-statisticsButton = NodePath("CenterContainer/VBoxContainer/StatisticsButtonContainer/StatisticsButton")
-quitButton = NodePath("CenterContainer/VBoxContainer/QuitButtonContainer/QuitButton")
+titleLabel = NodePath("CenterContainer/VBoxContainer/TitleLabel")
+startButton = NodePath("CenterContainer/VBoxContainer/StartButton")
+settingsButton = NodePath("CenterContainer/VBoxContainer/SettingsButton")
+statisticsButton = NodePath("CenterContainer/VBoxContainer/StatisticsButton")
+quitButton = NodePath("CenterContainer/VBoxContainer/QuitButton")
 
 [node name="CenterContainer" type="CenterContainer" parent="."]
 layout_mode = 1
@@ -55,118 +55,45 @@ grow_vertical = 2
 [node name="VBoxContainer" type="VBoxContainer" parent="CenterContainer"]
 layout_mode = 2
 theme_override_constants/separation = 15
-alignment = 1
 
-[node name="TitleContainer" type="Control" parent="CenterContainer/VBoxContainer"]
-custom_minimum_size = Vector2(0, 60)
+[node name="TitleLabel" type="Label" parent="CenterContainer/VBoxContainer"]
 layout_mode = 2
-
-[node name="TitleLabel" type="Label" parent="CenterContainer/VBoxContainer/TitleContainer"]
-layout_mode = 1
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -160.5
-offset_top = -30.0
-offset_right = 160.5
-offset_bottom = 30.0
-grow_horizontal = 2
-grow_vertical = 2
 theme_override_colors/font_color = Color(0, 1, 1, 1)
 theme_override_fonts/font = ExtResource("4_venite_font")
 theme_override_font_sizes/font_size = 48
 text = "COSMOCRUSH"
 horizontal_alignment = 1
-vertical_alignment = 1
 
-[node name="StartButtonContainer" type="Control" parent="CenterContainer/VBoxContainer"]
+[node name="StartButton" type="Button" parent="CenterContainer/VBoxContainer"]
 custom_minimum_size = Vector2(250, 100)
 layout_mode = 2
-
-[node name="StartButton" type="Button" parent="CenterContainer/VBoxContainer/StartButtonContainer"]
-layout_mode = 1
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -125.0
-offset_top = -50.0
-offset_right = 125.0
-offset_bottom = 50.0
-grow_horizontal = 2
-grow_vertical = 2
 theme = SubResource("Theme_ilgyb")
 theme_override_fonts/font = ExtResource("4_venite_font")
 theme_override_font_sizes/font_size = 25
 text = "Start"
 script = ExtResource("2_button_script")
 
-[node name="SettingsButtonContainer" type="Control" parent="CenterContainer/VBoxContainer"]
+[node name="SettingsButton" type="Button" parent="CenterContainer/VBoxContainer"]
 custom_minimum_size = Vector2(250, 100)
 layout_mode = 2
-
-[node name="SettingsButton" type="Button" parent="CenterContainer/VBoxContainer/SettingsButtonContainer"]
-layout_mode = 1
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -125.0
-offset_top = -50.0
-offset_right = 125.0
-offset_bottom = 50.0
-grow_horizontal = 2
-grow_vertical = 2
 theme = SubResource("Theme_ilgyb")
 theme_override_fonts/font = ExtResource("4_venite_font")
 theme_override_font_sizes/font_size = 25
 text = "Settings"
 script = ExtResource("2_button_script")
 
-[node name="StatisticsButtonContainer" type="Control" parent="CenterContainer/VBoxContainer"]
+[node name="StatisticsButton" type="Button" parent="CenterContainer/VBoxContainer"]
 custom_minimum_size = Vector2(250, 100)
 layout_mode = 2
-
-[node name="StatisticsButton" type="Button" parent="CenterContainer/VBoxContainer/StatisticsButtonContainer"]
-layout_mode = 1
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -125.0
-offset_top = -50.0
-offset_right = 125.0
-offset_bottom = 50.0
-grow_horizontal = 2
-grow_vertical = 2
 theme = SubResource("Theme_ilgyb")
 theme_override_fonts/font = ExtResource("4_venite_font")
 theme_override_font_sizes/font_size = 25
 text = "Statistics"
 script = ExtResource("2_button_script")
 
-[node name="QuitButtonContainer" type="Control" parent="CenterContainer/VBoxContainer"]
+[node name="QuitButton" type="Button" parent="CenterContainer/VBoxContainer"]
 custom_minimum_size = Vector2(250, 100)
 layout_mode = 2
-
-[node name="QuitButton" type="Button" parent="CenterContainer/VBoxContainer/QuitButtonContainer"]
-layout_mode = 1
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -125.0
-offset_top = -50.0
-offset_right = 125.0
-offset_bottom = 50.0
-grow_horizontal = 2
-grow_vertical = 2
 theme = SubResource("Theme_ilgyb")
 theme_override_fonts/font = ExtResource("4_venite_font")
 theme_override_font_sizes/font_size = 25
