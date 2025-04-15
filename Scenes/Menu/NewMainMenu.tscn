@@ -63,6 +63,7 @@ theme_override_fonts/font = ExtResource("4_venite_font")
 theme_override_font_sizes/font_size = 48
 text = "COSMOCRUSH"
 horizontal_alignment = 1
+metadata/_edit_use_custom_anchors = true
 
 [node name="StartButton" type="Button" parent="CenterContainer/VBoxContainer"]
 custom_minimum_size = Vector2(250, 100)
