@@ -13,9 +13,22 @@ public partial class UIButton : Button
 
         MouseEntered += OnMouseEntered;
         MouseExited += OnMouseExited;
+        Pressed += OnButtonPressed;
         Resized += OnResized;
 
         UpdatePivot();
+    }
+
+    public override void _ExitTree()
+    {
+        if (IsInstanceValid(this))
+        {
+            MouseEntered -= OnMouseEntered;
+            MouseExited -= OnMouseExited;
+            Pressed -= OnButtonPressed;
+            Resized -= OnResized;
+        }
+        base._ExitTree();
     }
 
     private void OnResized()
@@ -30,13 +43,13 @@ public partial class UIButton : Button
 
     private void OnMouseEntered()
     {
-        activeTween?.Stop();
+        activeTween?.Kill();
         AnimateHover(1.5f);
     }
 
     private void OnMouseExited()
     {
-        activeTween?.Stop();
+        activeTween?.Kill();
         AnimateHover(1.0f);
     }
 
@@ -48,8 +61,13 @@ public partial class UIButton : Button
 
         activeTween.TweenProperty(
             this,
-            "scale",
+            PropertyName.Scale.ToString(),
             originalScale * targetScale,
             0.2f);
+    }
+
+    private void OnButtonPressed()
+    {
+        GlobalAudioPlayer.Instance.PlaySound(GlobalAudioPlayer.Instance.UiSound);
     }
 }

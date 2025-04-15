@@ -9,7 +9,8 @@ public partial class GameOverMenu : ColorRect
     [Export] private Button playAgainButton;
     [Export] private Button returnButton;
 
-    private const string MainMenuScenePath = "res://Scenes/Menu/NewMainMenu.tscn";
+    // Ensure this path points to the MenuShell scene
+    private const string MainMenuScenePath = "res://Scenes/Menu/MenuShell.tscn";
     private const string GameScenePath = "res://Scenes/World.tscn";
 
     private const float FadeInDuration = 0.3f;
@@ -54,9 +55,9 @@ public partial class GameOverMenu : ColorRect
     private void StartFadeInAnimation()
     {
         Tween tween = CreateTween();
-        tween.SetParallel(false); // Run animations sequentially with delays
+        tween.SetParallel(false);
 
-        tween.TweenInterval(StaggerDelay); // Initial delay before first element
+        tween.TweenInterval(StaggerDelay);
 
         if (gameOverLabel is not null)
         {
@@ -88,7 +89,6 @@ public partial class GameOverMenu : ColorRect
 
     private void OnPlayAgainButtonPressed()
     {
-        GlobalAudioPlayer.Instance.PlaySound(GlobalAudioPlayer.Instance.UiSound);
         if (GetTree() is SceneTree tree)
         {
             tree.Paused = false;
@@ -98,12 +98,12 @@ public partial class GameOverMenu : ColorRect
 
     private void OnReturnButtonPressed()
     {
-        GlobalAudioPlayer.Instance.PlaySound(GlobalAudioPlayer.Instance.UiSound);
         StatisticsManager.Instance.Save();
 
         if (GetTree() is SceneTree tree)
         {
             tree.Paused = false;
+            // This line uses the MainMenuScenePath constant defined above
             tree.ChangeSceneToFile(MainMenuScenePath);
         }
     }
@@ -114,5 +114,15 @@ public partial class GameOverMenu : ColorRect
         {
             GetTree().Paused = false;
         }
+
+        if (playAgainButton is not null && IsInstanceValid(playAgainButton))
+        {
+            playAgainButton.Pressed -= OnPlayAgainButtonPressed;
+        }
+        if (returnButton is not null && IsInstanceValid(returnButton))
+        {
+            returnButton.Pressed -= OnReturnButtonPressed;
+        }
+        base._ExitTree();
     }
 }

@@ -52,7 +52,6 @@ public partial class SettingsMenu : CenterContainer
 		applyButton.Pressed += OnApplyButtonPressed;
 		returnButton.Pressed += OnReturnButtonPressed;
 
-		// Connect slider signals to update Apply button availability in real-time
 		musicSlider.ValueChanged += OnSliderValueChanged;
 		sfxSlider.ValueChanged += OnSliderValueChanged;
 
@@ -126,12 +125,10 @@ public partial class SettingsMenu : CenterContainer
 			CapturePreviousVolumes();
 			UpdateApplyAvailability();
 		}
-		GlobalAudioPlayer.Instance.PlaySound(GlobalAudioPlayer.Instance.UiSound);
 	}
 
 	private void OnReturnButtonPressed()
 	{
-		GlobalAudioPlayer.Instance.PlaySound(GlobalAudioPlayer.Instance.UiSound);
 		menuShell?.ShowMainMenu();
 	}
 

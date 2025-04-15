@@ -9,6 +9,7 @@ public partial class PauseMenu : ColorRect
 	[Export] private Button returnButton;
 	[Export] private Button quitButton;
 
+	// Ensure this path points to the MenuShell scene
 	private const string MainMenuScenePath = "res://Scenes/Menu/MenuShell.tscn";
 
 	public override void _Ready()
@@ -61,6 +62,7 @@ public partial class PauseMenu : ColorRect
 		if (GetTree() is SceneTree tree)
 		{
 			tree.Paused = false;
+			// This line uses the MainMenuScenePath constant defined above
 			tree.ChangeSceneToFile(MainMenuScenePath);
 		}
 	}

@@ -143,7 +143,6 @@ namespace CosmocrushGD
 			{
 				GD.PrintErr("Cannot show confirmation dialog because confirmationDialog reference is NULL!");
 			}
-			GlobalAudioPlayer.Instance.PlaySound(GlobalAudioPlayer.Instance.UiSound);
 		}
 
 		private void OnResetConfirmed()
@@ -156,7 +155,6 @@ namespace CosmocrushGD
 
 		private void OnReturnButtonPressed()
 		{
-			GlobalAudioPlayer.Instance.PlaySound(GlobalAudioPlayer.Instance.UiSound);
 			menuShell?.ShowMainMenu();
 		}
 
