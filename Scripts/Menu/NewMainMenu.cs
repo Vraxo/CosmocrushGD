@@ -1,3 +1,4 @@
+// Summary: No changes needed in this file. It remains as it was before the KillTweensOf attempts.
 using Godot;
 using System;
 
@@ -11,7 +12,9 @@ public partial class NewMainMenu : ColorRect
 	[Export] private Button statisticsButton;
 	[Export] private Button quitButton;
 
-	private const float FadeInDuration = 0.15f;
+	private const float InitialScaleFactor = 2.0f;
+	private const float ScaleInDuration = 0.35f;
+	private const float FadeInDuration = 0.25f;
 	private const float StaggerDelay = 0.075f;
 
 	private MenuShell menuShell;
@@ -51,17 +54,40 @@ public partial class NewMainMenu : ColorRect
 		if (statisticsButton is not null) statisticsButton.Pressed += OnStatisticsButtonPressed;
 		if (quitButton is not null) quitButton.Pressed += OnQuitButtonPressed;
 
-		SetInitialAlphas();
+		SetInitialState();
 		CallDeferred(nameof(StartFadeInAnimation));
 	}
 
-	private void SetInitialAlphas()
+	private void SetInitialState()
 	{
-		if (titleLabel is not null) titleLabel.Modulate = Colors.Transparent;
-		if (startButton is not null) startButton.Modulate = Colors.Transparent;
-		if (settingsButton is not null) settingsButton.Modulate = Colors.Transparent;
-		if (statisticsButton is not null) statisticsButton.Modulate = Colors.Transparent;
-		if (quitButton is not null) quitButton.Modulate = Colors.Transparent;
+		var initialScale = Vector2.One * InitialScaleFactor;
+
+		if (titleLabel is not null)
+		{
+			titleLabel.Modulate = Colors.Transparent;
+			titleLabel.Scale = initialScale;
+			titleLabel.PivotOffset = titleLabel.Size / 2.0f;
+		}
+		if (startButton is not null)
+		{
+			startButton.Modulate = Colors.Transparent;
+			startButton.Scale = initialScale;
+		}
+		if (settingsButton is not null)
+		{
+			settingsButton.Modulate = Colors.Transparent;
+			settingsButton.Scale = initialScale;
+		}
+		if (statisticsButton is not null)
+		{
+			statisticsButton.Modulate = Colors.Transparent;
+			statisticsButton.Scale = initialScale;
+		}
+		if (quitButton is not null)
+		{
+			quitButton.Modulate = Colors.Transparent;
+			quitButton.Scale = initialScale;
+		}
 	}
 
 	private void StartFadeInAnimation()
@@ -71,38 +97,73 @@ public partial class NewMainMenu : ColorRect
 
 		tween.TweenInterval(StaggerDelay);
 
+		// Title Label
 		if (titleLabel is not null)
 		{
+			tween.SetParallel(true);
 			tween.TweenProperty(titleLabel, "modulate:a", 1.0f, FadeInDuration)
 				 .SetEase(Tween.EaseType.Out);
+			tween.TweenProperty(titleLabel, "scale", Vector2.One, ScaleInDuration)
+				 .SetTrans(Tween.TransitionType.Back)
+				 .SetEase(Tween.EaseType.Out);
+			tween.SetParallel(false);
 			tween.TweenInterval(StaggerDelay);
 		}
+
+		// Start Button
 		if (startButton is not null)
 		{
+			tween.SetParallel(true);
 			tween.TweenProperty(startButton, "modulate:a", 1.0f, FadeInDuration)
 				 .SetEase(Tween.EaseType.Out);
+			tween.TweenProperty(startButton, "scale", Vector2.One, ScaleInDuration)
+				 .SetTrans(Tween.TransitionType.Back)
+				 .SetEase(Tween.EaseType.Out);
+			tween.SetParallel(false);
 			tween.TweenInterval(StaggerDelay);
 		}
+
+		// Settings Button
 		if (settingsButton is not null)
 		{
+			tween.SetParallel(true);
 			tween.TweenProperty(settingsButton, "modulate:a", 1.0f, FadeInDuration)
 				 .SetEase(Tween.EaseType.Out);
+			tween.TweenProperty(settingsButton, "scale", Vector2.One, ScaleInDuration)
+				 .SetTrans(Tween.TransitionType.Back)
+				 .SetEase(Tween.EaseType.Out);
+			tween.SetParallel(false);
 			tween.TweenInterval(StaggerDelay);
 		}
+
+		// Statistics Button
 		if (statisticsButton is not null)
 		{
+			tween.SetParallel(true);
 			tween.TweenProperty(statisticsButton, "modulate:a", 1.0f, FadeInDuration)
 				 .SetEase(Tween.EaseType.Out);
+			tween.TweenProperty(statisticsButton, "scale", Vector2.One, ScaleInDuration)
+				 .SetTrans(Tween.TransitionType.Back)
+				 .SetEase(Tween.EaseType.Out);
+			tween.SetParallel(false);
 			tween.TweenInterval(StaggerDelay);
 		}
+
+		// Quit Button
 		if (quitButton is not null)
 		{
+			tween.SetParallel(true);
 			tween.TweenProperty(quitButton, "modulate:a", 1.0f, FadeInDuration)
 				 .SetEase(Tween.EaseType.Out);
+			tween.TweenProperty(quitButton, "scale", Vector2.One, ScaleInDuration)
+				 .SetTrans(Tween.TransitionType.Back)
+				 .SetEase(Tween.EaseType.Out);
+			tween.SetParallel(false);
 		}
 
 		tween.Play();
 	}
+
 
 	private void OnStartButtonPressed()
 	{
