@@ -1,7 +1,8 @@
-[gd_scene load_steps=9 format=3 uid="uid://druxgxf4hraot"]
+[gd_scene load_steps=10 format=3 uid="uid://druxgxf4hraot"]
 
 [ext_resource type="Script" path="res://Scripts/PauseMenu.cs" id="1_d6sgd"]
 [ext_resource type="Script" path="res://Scripts/UIButton.cs" id="2_co7yi"]
+[ext_resource type="FontFile" uid="uid://0q2lkim75hwr" path="res://Fonts/VeniteAdoremus-rgRBA.ttf" id="3_font"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_1mlyd"]
 bg_color = Color(0.6, 0.6, 0.6, 0)
@@ -19,59 +20,65 @@ bg_color = Color(0.811765, 0.6, 0.6, 0)
 bg_color = Color(0.6, 0.6, 0.6, 0)
 border_color = Color(0.8, 0.8, 0.8, 0)
 
-[sub_resource type="Theme" id="Theme_ilgyb"]
+[sub_resource type="Theme" id="Theme_pause_buttons"]
+Button/colors/font_color = Color(1, 1, 1, 1)
+Button/colors/font_disabled_color = Color(0.875, 0.875, 0.875, 0.5)
+Button/colors/font_hover_color = Color(1, 1, 0.8, 1)
+Button/styles/disabled = SubResource("StyleBoxFlat_1mlyd")
 Button/styles/focus = SubResource("StyleBoxFlat_1mlyd")
 Button/styles/hover = SubResource("StyleBoxFlat_n8g20")
 Button/styles/hover_pressed = SubResource("StyleBoxFlat_wrfhg")
 Button/styles/normal = SubResource("StyleBoxFlat_73cej")
 Button/styles/pressed = SubResource("StyleBoxFlat_75km2")
 
-[node name="PauseMenu" type="ColorRect" node_paths=PackedStringArray("continueButton", "returnButton", "quitButton")]
+[node name="PauseMenu" type="CenterContainer" node_paths=PackedStringArray("titleLabel", "continueButton", "returnButton", "quitButton")]
 process_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-color = Color(0, 0, 0, 0.501961)
 script = ExtResource("1_d6sgd")
-continueButton = NodePath("CenterContainer/Container/ContinueButton")
-returnButton = NodePath("CenterContainer/Container/ReturnButton")
-quitButton = NodePath("CenterContainer/Container/QuitButton")
+titleLabel = NodePath("Container/TitleLabel")
+continueButton = NodePath("Container/ContinueButton")
+returnButton = NodePath("Container/ReturnButton")
+quitButton = NodePath("Container/QuitButton")
 
-[node name="CenterContainer" type="CenterContainer" parent="."]
-layout_mode = 1
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-grow_horizontal = 2
-grow_vertical = 2
-
-[node name="Container" type="VBoxContainer" parent="CenterContainer"]
+[node name="Container" type="VBoxContainer" parent="."]
 layout_mode = 2
+theme_override_constants/separation = 20
 
-[node name="ContinueButton" type="Button" parent="CenterContainer/Container"]
+[node name="TitleLabel" type="Label" parent="Container"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_fonts/font = ExtResource("3_font")
+theme_override_font_sizes/font_size = 48
+text = "Paused"
+horizontal_alignment = 1
+
+[node name="ContinueButton" type="Button" parent="Container"]
 custom_minimum_size = Vector2(350, 100)
 layout_mode = 2
-theme = SubResource("Theme_ilgyb")
+theme = SubResource("Theme_pause_buttons")
+theme_override_fonts/font = ExtResource("3_font")
 theme_override_font_sizes/font_size = 25
 text = "Continue"
 script = ExtResource("2_co7yi")
 
-[node name="ReturnButton" type="Button" parent="CenterContainer/Container"]
+[node name="ReturnButton" type="Button" parent="Container"]
 custom_minimum_size = Vector2(350, 100)
 layout_mode = 2
-theme = SubResource("Theme_ilgyb")
+theme = SubResource("Theme_pause_buttons")
+theme_override_fonts/font = ExtResource("3_font")
 theme_override_font_sizes/font_size = 25
 text = "Return to Main Menu"
 script = ExtResource("2_co7yi")
 
-[node name="QuitButton" type="Button" parent="CenterContainer/Container"]
+[node name="QuitButton" type="Button" parent="Container"]
 custom_minimum_size = Vector2(350, 100)
 layout_mode = 2
-theme = SubResource("Theme_ilgyb")
+theme = SubResource("Theme_pause_buttons")
+theme_override_fonts/font = ExtResource("3_font")
 theme_override_font_sizes/font_size = 25
 text = "Quit Game"
 script = ExtResource("2_co7yi")
