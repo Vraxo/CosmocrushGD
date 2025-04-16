@@ -13,6 +13,9 @@ public partial class MenuShell : Control
 	private Node currentMenuInstance;
 
 	private const string GameScenePath = "res://Scenes/World.tscn";
+	// Reverted to 2.0 multiplier as a balanced default, can be increased if needed
+	private const float ParticleVerticalPaddingMultiplier = 2.0f;
+	// BaselineHeight, BaselineAmount, MinimumParticleAmount are no longer needed here
 
 	public override void _Ready()
 	{
@@ -40,7 +43,6 @@ public partial class MenuShell : Control
 			GD.PrintErr("MenuShell: Statistics Menu Scene not assigned!");
 			return;
 		}
-
 
 		ProcessMode = ProcessModeEnum.Always;
 
@@ -86,12 +88,7 @@ public partial class MenuShell : Control
 
 	private void UpdateParticleEmitterBounds()
 	{
-		if (starParticles is null)
-		{
-			return;
-		}
-
-		if (!IsInsideTree())
+		if (starParticles is null || !IsInsideTree())
 		{
 			return;
 		}
@@ -102,13 +99,21 @@ public partial class MenuShell : Control
 			return;
 		}
 
-		var viewportHeight = GetViewportRect().Size.Y;
+		var viewportSize = viewport.GetVisibleRect().Size;
+		var viewportHeight = viewportSize.Y;
+
+		// No height threshold check needed if we aren't changing amount
+		// No amount calculation needed
 
 		const float spawnOffsetX = -10.0f;
+		float totalEmissionHeight = viewportHeight * ParticleVerticalPaddingMultiplier;
+		float emissionExtentsY = totalEmissionHeight / 2.0f;
+
 		starParticles.Position = new Vector2(spawnOffsetX, viewportHeight / 2.0f);
-		starParticles.EmissionRectExtents = new Vector2(1.0f, viewportHeight / 2.0f);
+		starParticles.EmissionRectExtents = new Vector2(1.0f, emissionExtentsY);
 		starParticles.EmissionShape = CpuParticles2D.EmissionShapeEnum.Rectangle;
 	}
+
 
 	private void ClearMenuContainer()
 	{

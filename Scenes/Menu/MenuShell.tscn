@@ -44,9 +44,9 @@ color = Color(0, 0, 0, 1)
 [node name="StarParticles" type="CPUParticles2D" parent="."]
 z_index = 1
 material = SubResource("ParticleProcessMaterial_stars")
-amount = 150
+amount = 300
 lifetime = 4.0
-preprocess = 0.5
+preprocess = 1.0
 emission_shape = 3
 emission_rect_extents = Vector2(1, 1)
 gravity = Vector2(980, 0)
