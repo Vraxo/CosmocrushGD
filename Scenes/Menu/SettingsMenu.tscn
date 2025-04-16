@@ -23,6 +23,9 @@ bg_color = Color(0.6, 0.6, 0.6, 0)
 border_color = Color(0.8, 0.8, 0.8, 0)
 
 [sub_resource type="Theme" id="Theme_ilgyb"]
+Button/colors/font_color = Color(1, 1, 1, 1)
+Button/colors/font_disabled_color = Color(0.875, 0.875, 0.875, 0.5)
+Button/colors/font_hover_color = Color(1, 1, 0.8, 1)
 Button/styles/disabled = SubResource("StyleBoxFlat_1mlyd")
 Button/styles/focus = SubResource("StyleBoxFlat_1mlyd")
 Button/styles/hover = SubResource("StyleBoxFlat_n8g20")
@@ -117,6 +120,7 @@ layout_mode = 2
 theme = SubResource("Theme_ilgyb")
 theme_override_fonts/font = ExtResource("3_venite_font")
 theme_override_font_sizes/font_size = 22
+disabled = true
 text = "Apply"
 script = ExtResource("2_button_script")
 
