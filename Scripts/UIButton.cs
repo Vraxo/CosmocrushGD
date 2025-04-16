@@ -4,6 +4,8 @@ namespace CosmocrushGD;
 
 public partial class UIButton : Button
 {
+    [Export] public bool TweenScale { get; set; } = false;
+
     private Tween activeTween;
     private Vector2 originalScale;
 
@@ -43,18 +45,33 @@ public partial class UIButton : Button
 
     private void OnMouseEntered()
     {
+        if (!TweenScale)
+        {
+            return;
+        }
+
         activeTween?.Kill();
         AnimateHover(1.5f);
     }
 
     private void OnMouseExited()
     {
+        if (!TweenScale)
+        {
+            return;
+        }
+
         activeTween?.Kill();
         AnimateHover(1.0f);
     }
 
     private void AnimateHover(float targetScale)
     {
+        if (!TweenScale)
+        {
+            return;
+        }
+
         activeTween = CreateTween()
             .SetTrans(Tween.TransitionType.Back)
             .SetEase(Tween.EaseType.Out);
