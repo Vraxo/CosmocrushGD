@@ -21,6 +21,10 @@ bg_color = Color(0.6, 0.6, 0.6, 0)
 border_color = Color(0.8, 0.8, 0.8, 0)
 
 [sub_resource type="Theme" id="Theme_buttons"]
+Button/colors/font_color = Color(1, 1, 1, 1)
+Button/colors/font_disabled_color = Color(0.875, 0.875, 0.875, 0.5)
+Button/colors/font_hover_color = Color(1, 1, 0.8, 1)
+Button/styles/disabled = SubResource("StyleBoxFlat_1mlyd")
 Button/styles/focus = SubResource("StyleBoxFlat_1mlyd")
 Button/styles/hover = SubResource("StyleBoxFlat_n8g20")
 Button/styles/hover_pressed = SubResource("StyleBoxFlat_wrfhg")
@@ -127,6 +131,7 @@ theme_override_fonts/font = ExtResource("2_venite_font")
 theme_override_font_sizes/font_size = 20
 text = "Clear Stats"
 script = ExtResource("3_button_script")
+TweenScale = false
 
 [node name="ReturnButton" type="Button" parent="CenterContainer/VBoxContainer/ButtonContainer"]
 custom_minimum_size = Vector2(150, 50)
@@ -136,6 +141,7 @@ theme_override_fonts/font = ExtResource("2_venite_font")
 theme_override_font_sizes/font_size = 20
 text = "Return"
 script = ExtResource("3_button_script")
+TweenScale = false
 
 [node name="ConfirmationDialog" type="ConfirmationDialog" parent="."]
 title = "Confirm Reset"
