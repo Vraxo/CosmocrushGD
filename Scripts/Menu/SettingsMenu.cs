@@ -9,15 +9,14 @@ public partial class SettingsMenu : CenterContainer
 	[Export] private HSlider sfxSlider;
 	[Export] private Label musicLabel;
 	[Export] private Label sfxLabel;
-	[Export] private UIButton applyButton;
-	[Export] private UIButton returnButton;
+	[Export] private Button applyButton;
+	[Export] private Button returnButton;
 
 	private float previousMusicVolume;
 	private float previousSfxVolume;
 
-	private const float FadeInDuration = 0.2f;
+	private const float FadeInDuration = 0.15f;
 	private const float StaggerDelay = 0.075f;
-	private const float InitialScaleMultiplier = 1.5f;
 
 	private MenuShell menuShell;
 
@@ -56,60 +55,20 @@ public partial class SettingsMenu : CenterContainer
 		musicSlider.ValueChanged += OnSliderValueChanged;
 		sfxSlider.ValueChanged += OnSliderValueChanged;
 
-		CallDeferred(nameof(CenterPivots));
-		SetInitialState();
+		SetInitialAlphas();
 		CallDeferred(nameof(StartFadeInAnimation));
 		UpdateApplyAvailability();
 	}
 
-	private void CenterPivots()
+	private void SetInitialAlphas()
 	{
-		if (titleLabel is not null) titleLabel.PivotOffset = titleLabel.Size / 2;
-		if (musicLabel is not null) musicLabel.PivotOffset = musicLabel.Size / 2;
-		if (musicSlider is not null) musicSlider.PivotOffset = musicSlider.Size / 2;
-		if (sfxLabel is not null) sfxLabel.PivotOffset = sfxLabel.Size / 2;
-		if (sfxSlider is not null) sfxSlider.PivotOffset = sfxSlider.Size / 2;
-	}
-
-	private void SetInitialState()
-	{
-		if (titleLabel is not null)
-		{
-			titleLabel.Modulate = Colors.Transparent;
-			titleLabel.Scale = Vector2.One;
-		}
-		if (musicLabel is not null)
-		{
-			musicLabel.Modulate = Colors.Transparent;
-			musicLabel.Scale = Vector2.One;
-		}
-		if (musicSlider is not null)
-		{
-			musicSlider.Modulate = Colors.Transparent;
-			musicSlider.Scale = Vector2.One;
-		}
-		if (sfxLabel is not null)
-		{
-			sfxLabel.Modulate = Colors.Transparent;
-			sfxLabel.Scale = Vector2.One;
-		}
-		if (sfxSlider is not null)
-		{
-			sfxSlider.Modulate = Colors.Transparent;
-			sfxSlider.Scale = Vector2.One;
-		}
-		if (applyButton is not null)
-		{
-			applyButton.Modulate = Colors.Transparent;
-			applyButton.Scale = Vector2.One;
-			applyButton.TweenScale = false;
-		}
-		if (returnButton is not null)
-		{
-			returnButton.Modulate = Colors.Transparent;
-			returnButton.Scale = Vector2.One;
-			returnButton.TweenScale = false;
-		}
+		if (titleLabel is not null) titleLabel.Modulate = Colors.Transparent;
+		if (musicLabel is not null) musicLabel.Modulate = Colors.Transparent;
+		if (musicSlider is not null) musicSlider.Modulate = Colors.Transparent;
+		if (sfxLabel is not null) sfxLabel.Modulate = Colors.Transparent;
+		if (sfxSlider is not null) sfxSlider.Modulate = Colors.Transparent;
+		if (applyButton is not null) applyButton.Modulate = Colors.Transparent;
+		if (returnButton is not null) returnButton.Modulate = Colors.Transparent;
 	}
 
 	private void StartFadeInAnimation()
@@ -122,48 +81,34 @@ public partial class SettingsMenu : CenterContainer
 
 		Tween tween = CreateTween();
 		tween.SetParallel(false);
-		tween.SetEase(Tween.EaseType.Out);
-		tween.SetTrans(Tween.TransitionType.Back);
-
-		Vector2 initialScale = Vector2.One * InitialScaleMultiplier;
-		Vector2 finalScale = Vector2.One;
 
 		tween.TweenInterval(StaggerDelay);
 
+		tween.TweenProperty(titleLabel, "modulate:a", 1.0f, FadeInDuration)
+			 .SetEase(Tween.EaseType.Out);
+		tween.TweenInterval(StaggerDelay);
+
 		tween.SetParallel(true);
-		tween.TweenProperty(titleLabel, "modulate:a", 1.0f, FadeInDuration);
-		tween.TweenProperty(titleLabel, "scale", finalScale, FadeInDuration).From(initialScale);
+		tween.TweenProperty(musicLabel, "modulate:a", 1.0f, FadeInDuration)
+			 .SetEase(Tween.EaseType.Out);
+		tween.TweenProperty(musicSlider, "modulate:a", 1.0f, FadeInDuration)
+			 .SetEase(Tween.EaseType.Out);
 		tween.SetParallel(false);
 		tween.TweenInterval(StaggerDelay);
 
 		tween.SetParallel(true);
-		tween.TweenProperty(musicLabel, "modulate:a", 1.0f, FadeInDuration);
-		tween.TweenProperty(musicLabel, "scale", finalScale, FadeInDuration).From(initialScale);
-		tween.TweenProperty(musicSlider, "modulate:a", 1.0f, FadeInDuration);
-		tween.TweenProperty(musicSlider, "scale", finalScale, FadeInDuration).From(initialScale);
+		tween.TweenProperty(sfxLabel, "modulate:a", 1.0f, FadeInDuration)
+			 .SetEase(Tween.EaseType.Out);
+		tween.TweenProperty(sfxSlider, "modulate:a", 1.0f, FadeInDuration)
+			 .SetEase(Tween.EaseType.Out);
 		tween.SetParallel(false);
 		tween.TweenInterval(StaggerDelay);
 
 		tween.SetParallel(true);
-		tween.TweenProperty(sfxLabel, "modulate:a", 1.0f, FadeInDuration);
-		tween.TweenProperty(sfxLabel, "scale", finalScale, FadeInDuration).From(initialScale);
-		tween.TweenProperty(sfxSlider, "modulate:a", 1.0f, FadeInDuration);
-		tween.TweenProperty(sfxSlider, "scale", finalScale, FadeInDuration).From(initialScale);
-		tween.SetParallel(false);
-		tween.TweenInterval(StaggerDelay);
-
-		tween.SetParallel(true);
-		tween.TweenProperty(applyButton, "modulate:a", 1.0f, FadeInDuration);
-		tween.TweenProperty(applyButton, "scale", finalScale, FadeInDuration).From(initialScale);
-		tween.TweenProperty(returnButton, "modulate:a", 1.0f, FadeInDuration);
-		tween.TweenProperty(returnButton, "scale", finalScale, FadeInDuration).From(initialScale);
-		tween.SetParallel(false);
-
-		tween.TweenCallback(Callable.From(() =>
-		{
-			if (applyButton is not null) applyButton.TweenScale = true;
-			if (returnButton is not null) returnButton.TweenScale = true;
-		}));
+		tween.TweenProperty(applyButton, "modulate:a", 1.0f, FadeInDuration)
+			 .SetEase(Tween.EaseType.Out);
+		tween.TweenProperty(returnButton, "modulate:a", 1.0f, FadeInDuration)
+			 .SetEase(Tween.EaseType.Out);
 
 		tween.Play();
 	}

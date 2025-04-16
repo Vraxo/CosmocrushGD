@@ -1,19 +1,8 @@
-[gd_scene load_steps=13 format=3 uid="uid://b7q8x6y5f4g3h"]
+[gd_scene load_steps=10 format=3 uid="uid://b7q8x6y5f4g3h"]
 
-[ext_resource type="Script" path="res://Scripts/Menu/SettingsMenu.cs" id="1_t30ri"]
+[ext_resource type="Script" path="res://Scripts/Menu/NewMainMenu.cs" id="1_newmenu_script"]
 [ext_resource type="Script" path="res://Scripts/UIButton.cs" id="2_button_script"]
-[ext_resource type="FontFile" uid="uid://0q2lkim75hwr" path="res://Fonts/VeniteAdoremus-rgRBA.ttf" id="3_venite_font"]
-[ext_resource type="Script" path="res://Scripts/UI/DefaultHSlider.cs" id="4_5v8m5"]
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_slider_fill_yellow"]
-bg_color = Color(1, 1, 0.8, 1)
-corner_radius_top_left = 3
-corner_radius_top_right = 3
-corner_radius_bottom_right = 3
-corner_radius_bottom_left = 3
-
-[sub_resource type="Theme" id="Theme_slider_override"]
-HSlider/styles/fill = SubResource("StyleBoxFlat_slider_fill_yellow")
+[ext_resource type="FontFile" uid="uid://0q2lkim75hwr" path="res://Fonts/VeniteAdoremus-rgRBA.ttf" id="4_venite_font"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_1mlyd"]
 bg_color = Color(0.6, 0.6, 0.6, 0)
@@ -31,112 +20,73 @@ bg_color = Color(0.811765, 0.6, 0.6, 0)
 bg_color = Color(0.6, 0.6, 0.6, 0)
 border_color = Color(0.8, 0.8, 0.8, 0)
 
-[sub_resource type="Theme" id="Theme_buttons"]
+[sub_resource type="Theme" id="Theme_ilgyb"]
 Button/colors/font_color = Color(1, 1, 1, 1)
-Button/colors/font_disabled_color = Color(0.8, 0.8, 0.8, 0.5)
 Button/colors/font_hover_color = Color(1, 1, 0.8, 1)
-Button/styles/disabled = SubResource("StyleBoxFlat_1mlyd")
 Button/styles/focus = SubResource("StyleBoxFlat_1mlyd")
 Button/styles/hover = SubResource("StyleBoxFlat_n8g20")
 Button/styles/hover_pressed = SubResource("StyleBoxFlat_wrfhg")
 Button/styles/normal = SubResource("StyleBoxFlat_73cej")
 Button/styles/pressed = SubResource("StyleBoxFlat_75km2")
 
-[node name="SettingsMenu" type="CenterContainer" node_paths=PackedStringArray("titleLabel", "musicSlider", "sfxSlider", "musicLabel", "sfxLabel", "applyButton", "returnButton")]
+[node name="NewMainMenu" type="CenterContainer" node_paths=PackedStringArray("titleLabel", "startButton", "settingsButton", "statisticsButton", "quitButton")]
+process_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-script = ExtResource("1_t30ri")
+script = ExtResource("1_newmenu_script")
 titleLabel = NodePath("VBoxContainer/TitleLabel")
-musicSlider = NodePath("VBoxContainer/MusicHBox/Slider")
-sfxSlider = NodePath("VBoxContainer/SfxHBox/Slider")
-musicLabel = NodePath("VBoxContainer/MusicHBox/MusicLabel")
-sfxLabel = NodePath("VBoxContainer/SfxHBox/SfxLabel")
-applyButton = NodePath("VBoxContainer/ButtonHBox/ApplyButton")
-returnButton = NodePath("VBoxContainer/ButtonHBox/ReturnButton")
+startButton = NodePath("VBoxContainer/StartButton")
+settingsButton = NodePath("VBoxContainer/SettingsButton")
+statisticsButton = NodePath("VBoxContainer/StatisticsButton")
+quitButton = NodePath("VBoxContainer/QuitButton")
 
 [node name="VBoxContainer" type="VBoxContainer" parent="."]
 layout_mode = 2
-theme_override_constants/separation = 30
-alignment = 1
+theme_override_constants/separation = 15
 
 [node name="TitleLabel" type="Label" parent="VBoxContainer"]
 layout_mode = 2
-theme_override_colors/font_color = Color(1, 1, 1, 1)
-theme_override_fonts/font = ExtResource("3_venite_font")
-theme_override_font_sizes/font_size = 36
-text = "Settings"
+theme_override_colors/font_color = Color(0, 1, 1, 1)
+theme_override_fonts/font = ExtResource("4_venite_font")
+theme_override_font_sizes/font_size = 48
+text = "COSMOCRUSH"
 horizontal_alignment = 1
 
-[node name="MusicHBox" type="HBoxContainer" parent="VBoxContainer"]
+[node name="StartButton" type="Button" parent="VBoxContainer"]
+custom_minimum_size = Vector2(250, 100)
 layout_mode = 2
-theme_override_constants/separation = 20
-alignment = 1
-
-[node name="MusicLabel" type="Label" parent="VBoxContainer/MusicHBox"]
-custom_minimum_size = Vector2(80, 0)
-layout_mode = 2
-theme_override_colors/font_color = Color(1, 1, 1, 1)
-theme_override_fonts/font = ExtResource("3_venite_font")
-theme_override_font_sizes/font_size = 20
-text = "Music"
-vertical_alignment = 1
-
-[node name="Slider" type="HSlider" parent="VBoxContainer/MusicHBox"]
-layout_mode = 2
-size_flags_horizontal = 3
-size_flags_vertical = 4
-theme = SubResource("Theme_slider_override")
-max_value = 1.0
-step = 0.05
-value = 0.5
-script = ExtResource("4_5v8m5")
-
-[node name="SfxHBox" type="HBoxContainer" parent="VBoxContainer"]
-layout_mode = 2
-theme_override_constants/separation = 20
-alignment = 1
-
-[node name="SfxLabel" type="Label" parent="VBoxContainer/SfxHBox"]
-custom_minimum_size = Vector2(80, 0)
-layout_mode = 2
-theme_override_colors/font_color = Color(1, 1, 1, 1)
-theme_override_fonts/font = ExtResource("3_venite_font")
-theme_override_font_sizes/font_size = 20
-text = "SFX"
-vertical_alignment = 1
-
-[node name="Slider" type="HSlider" parent="VBoxContainer/SfxHBox"]
-layout_mode = 2
-size_flags_horizontal = 3
-size_flags_vertical = 4
-theme = SubResource("Theme_slider_override")
-max_value = 1.0
-step = 0.05
-value = 0.5
-script = ExtResource("4_5v8m5")
-
-[node name="ButtonHBox" type="HBoxContainer" parent="VBoxContainer"]
-layout_mode = 2
-theme_override_constants/separation = 30
-alignment = 1
-
-[node name="ApplyButton" type="Button" parent="VBoxContainer/ButtonHBox"]
-custom_minimum_size = Vector2(180, 50)
-layout_mode = 2
-theme = SubResource("Theme_buttons")
-theme_override_fonts/font = ExtResource("3_venite_font")
-theme_override_font_sizes/font_size = 22
-text = "Apply"
+theme = SubResource("Theme_ilgyb")
+theme_override_fonts/font = ExtResource("4_venite_font")
+theme_override_font_sizes/font_size = 25
+text = "Start"
 script = ExtResource("2_button_script")
 
-[node name="ReturnButton" type="Button" parent="VBoxContainer/ButtonHBox"]
-custom_minimum_size = Vector2(180, 50)
+[node name="SettingsButton" type="Button" parent="VBoxContainer"]
+custom_minimum_size = Vector2(250, 100)
 layout_mode = 2
-theme = SubResource("Theme_buttons")
-theme_override_fonts/font = ExtResource("3_venite_font")
-theme_override_font_sizes/font_size = 22
-text = "Return"
+theme = SubResource("Theme_ilgyb")
+theme_override_fonts/font = ExtResource("4_venite_font")
+theme_override_font_sizes/font_size = 25
+text = "Settings"
+script = ExtResource("2_button_script")
+
+[node name="StatisticsButton" type="Button" parent="VBoxContainer"]
+custom_minimum_size = Vector2(250, 100)
+layout_mode = 2
+theme = SubResource("Theme_ilgyb")
+theme_override_fonts/font = ExtResource("4_venite_font")
+theme_override_font_sizes/font_size = 25
+text = "Statistics"
+script = ExtResource("2_button_script")
+
+[node name="QuitButton" type="Button" parent="VBoxContainer"]
+custom_minimum_size = Vector2(250, 100)
+layout_mode = 2
+theme = SubResource("Theme_ilgyb")
+theme_override_fonts/font = ExtResource("4_venite_font")
+theme_override_font_sizes/font_size = 25
+text = "Quit"
 script = ExtResource("2_button_script")
