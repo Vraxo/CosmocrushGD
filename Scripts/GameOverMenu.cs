@@ -15,6 +15,21 @@ public partial class GameOverMenu : ColorRect
     private const float FadeInDuration = 0.3f;
     private const float StaggerDelay = 0.1f;
     private const float InitialScaleMultiplier = 2.0f;
+    private const float ScoreCountDuration = 0.8f; // Duration for score animation
+
+    private int _targetScore = 0;
+    private float _animatedScoreValue = 0f; // Use float for tweening
+
+    // Property to tween, updates label in setter
+    private float AnimatedScoreValue
+    {
+        get => _animatedScoreValue;
+        set
+        {
+            _animatedScoreValue = value;
+            UpdateScoreLabelText();
+        }
+    }
 
 
     public override void _Ready()
@@ -33,9 +48,13 @@ public partial class GameOverMenu : ColorRect
             returnButton.Pressed += OnReturnButtonPressed;
         }
 
+        if (scoreLabel is not null)
+        {
+            scoreLabel.Text = "Final Score: 0";
+        }
+
         CallDeferred(nameof(SetupPivots));
         SetInitialState();
-        CallDeferred(nameof(StartFadeInAnimation));
     }
 
     private void SetupPivots()
@@ -58,11 +77,23 @@ public partial class GameOverMenu : ColorRect
 
     public void SetScore(int score)
     {
+        _targetScore = score;
+        _animatedScoreValue = 0f;
+
         if (scoreLabel is not null)
         {
-            scoreLabel.Text = $"Final Score: {score}";
-            // Recalculate pivot if text changes size significantly after _Ready
-            CallDeferred(nameof(SetupPivots));
+            scoreLabel.Text = "Final Score: 0";
+        }
+
+        CallDeferred(nameof(SetupPivots));
+        CallDeferred(nameof(StartFadeInAnimation));
+    }
+
+    private void UpdateScoreLabelText()
+    {
+        if (scoreLabel is not null)
+        {
+            scoreLabel.Text = $"Final Score: {Mathf.RoundToInt(AnimatedScoreValue)}";
         }
     }
 
@@ -74,7 +105,6 @@ public partial class GameOverMenu : ColorRect
             return;
         }
 
-        // Ensure pivots are set before animating
         SetupPivots();
 
         Tween tween = CreateTween();
@@ -85,9 +115,8 @@ public partial class GameOverMenu : ColorRect
         Vector2 initialScaleValue = Vector2.One * InitialScaleMultiplier;
         Vector2 finalScale = Vector2.One;
 
-        tween.TweenInterval(StaggerDelay); // Initial delay
+        tween.TweenInterval(StaggerDelay);
 
-        // Game Over Label
         if (gameOverLabel is not null)
         {
             tween.SetParallel(true);
@@ -97,17 +126,21 @@ public partial class GameOverMenu : ColorRect
             tween.TweenInterval(StaggerDelay);
         }
 
-        // Score Label
         if (scoreLabel is not null)
         {
             tween.SetParallel(true);
             tween.TweenProperty(scoreLabel, "modulate:a", 1.0f, FadeInDuration);
             tween.TweenProperty(scoreLabel, "scale", finalScale, FadeInDuration).From(initialScaleValue);
             tween.SetParallel(false);
-            tween.TweenInterval(StaggerDelay);
         }
 
-        // Play Again Button
+        // *** Corrected Line Here ***
+        tween.TweenProperty(this, "AnimatedScoreValue", _targetScore, ScoreCountDuration)
+             .SetTrans(Tween.TransitionType.Cubic)
+             .SetEase(Tween.EaseType.Out);
+
+        tween.TweenInterval(ScoreCountDuration * 0.5);
+
         if (playAgainButton is not null)
         {
             tween.SetParallel(true);
@@ -117,14 +150,12 @@ public partial class GameOverMenu : ColorRect
             tween.TweenInterval(StaggerDelay);
         }
 
-        // Return Button
         if (returnButton is not null)
         {
             tween.SetParallel(true);
             tween.TweenProperty(returnButton, "modulate:a", 1.0f, FadeInDuration);
             tween.TweenProperty(returnButton, "scale", finalScale, FadeInDuration).From(initialScaleValue);
             tween.SetParallel(false);
-            // Enable tweening after the last button animates
             tween.TweenCallback(Callable.From(() =>
             {
                 if (playAgainButton is not null) { playAgainButton.TweenScale = true; }
@@ -146,7 +177,7 @@ public partial class GameOverMenu : ColorRect
 
     private void OnReturnButtonPressed()
     {
-        StatisticsManager.Instance.Save(); // Save stats when returning to menu
+        StatisticsManager.Instance.Save();
 
         if (GetTree() is SceneTree tree)
         {
@@ -162,7 +193,6 @@ public partial class GameOverMenu : ColorRect
             GetTree().Paused = false;
         }
 
-        // Unsubscribe from events
         if (playAgainButton is not null && IsInstanceValid(playAgainButton))
         {
             playAgainButton.Pressed -= OnPlayAgainButtonPressed;
