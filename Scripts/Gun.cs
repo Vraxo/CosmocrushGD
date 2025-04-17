@@ -41,7 +41,11 @@ public partial class Gun : Sprite2D
 	public override void _Process(double delta)
 	{
 		Aim();
-		FireIfPressed();
+
+		if (cooldownTimer.IsStopped())
+		{
+			Fire();
+		}
 	}
 
 	private void Aim()
@@ -72,26 +76,6 @@ public partial class Gun : Sprite2D
 		Vector2 mousePos = GetGlobalMousePosition();
 		LookAt(mousePos);
 		direction = (mousePos - GlobalPosition).Normalized();
-	}
-
-	private void FireIfPressed()
-	{
-		bool cooledDown = cooldownTimer.IsStopped();
-		bool shouldFire = false;
-
-		if (OS.HasFeature("mobile"))
-		{
-			shouldFire = firingJoystick is not null && firingJoystick.PosVector != Vector2.Zero;
-		}
-		else
-		{
-			shouldFire = Input.IsActionPressed("fire");
-		}
-
-		if (shouldFire && cooledDown)
-		{
-			Fire();
-		}
 	}
 
 	private void Fire()
