@@ -49,6 +49,10 @@ target_position = Vector2(500, 0)
 collision_mask = 6
 collide_with_areas = true
 
+[node name="Camera2D2" type="Camera2D" parent="."]
+process_mode = 3
+script = ExtResource("7_camera")
+
 [node name="AudioPlayers" type="Node" parent="."]
 
 [node name="DeathAudioPlayer" type="AudioStreamPlayer" parent="AudioPlayers"]
@@ -73,7 +77,7 @@ initial_velocity_max = 100.0
 scale_amount_min = 4.0
 scale_amount_max = 4.0
 scale_amount_curve = SubResource("Curve_qvt8o")
-color = Color(0.447059, 1, 0.105882, 1)
+color = Color(0, 1, 1, 1)
 
 [node name="DeathParticles" type="CPUParticles2D" parent="."]
 process_mode = 3
@@ -91,16 +95,12 @@ initial_velocity_max = 150.0
 scale_amount_min = 8.0
 scale_amount_max = 8.0
 scale_amount_curve = SubResource("Curve_death_scale")
-color = Color(0.447059, 1, 0.105882, 1)
+color = Color(0, 1, 1, 1)
 
 [node name="AudioPlayerContainer" type="Node" parent="."]
 
 [node name="RegenerationTimer" type="Timer" parent="."]
 autostart = true
-
-[node name="Camera2D2" type="Camera2D" parent="."]
-process_mode = 3
-script = ExtResource("7_camera")
 
 [node name="DeathPauseTimer" type="Timer" parent="."]
 process_mode = 1
