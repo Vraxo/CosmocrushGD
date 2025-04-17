@@ -22,7 +22,7 @@ background_mode = 3
 glow_enabled = true
 glow_mix = 0.2
 glow_bloom = 1.0
-glow_blend_mode = 1
+glow_blend_mode = 4
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_d0udc"]
 bg_color = Color(0.0361791, 0.727803, 0, 1)
