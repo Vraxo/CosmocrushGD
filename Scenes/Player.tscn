@@ -29,7 +29,7 @@ damageParticles = NodePath("DamageParticles")
 deathParticles = NodePath("DeathParticles")
 audioPlayerContainer = NodePath("AudioPlayerContainer")
 regenerationTimer = NodePath("RegenerationTimer")
-cameraPath = NodePath("Camera")
+cameraPath = NodePath("Camera2D2")
 deathPauseTimer = NodePath("DeathPauseTimer")
 
 [node name="ActualCollider" type="CollisionShape2D" parent="."]
@@ -49,7 +49,7 @@ target_position = Vector2(500, 0)
 collision_mask = 6
 collide_with_areas = true
 
-[node name="Camera" type="Camera2D" parent="."]
+[node name="Camera2D2" type="Camera2D" parent="."]
 process_mode = 3
 script = ExtResource("7_camera")
 
@@ -103,6 +103,6 @@ color = Color(0, 1, 1, 1)
 autostart = true
 
 [node name="DeathPauseTimer" type="Timer" parent="."]
-process_mode = 1
+process_mode = 3
 wait_time = 1.6
 one_shot = true

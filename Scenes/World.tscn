@@ -208,6 +208,7 @@ position = Vector2(88, -64)
 [node name="Player" parent="." instance=ExtResource("3_litg1")]
 self_modulate = Color(22, 22, 22, 1)
 position = Vector2(584, 888)
+cameraPath = NodePath("Camera")
 
 [node name="EnemySpawner" parent="." node_paths=PackedStringArray("enemyPoolManager") instance=ExtResource("9_ukot3")]
 explodingEnemyScene = ExtResource("11_dqhek")
