@@ -16,6 +16,7 @@ gravity = Vector3(980, 0, 0)
 linear_accel_min = 15.0
 linear_accel_max = 30.0
 scale_max = 2.0
+color = Color(2, 2, 2, 1)
 
 [node name="MenuShell" type="Control" node_paths=PackedStringArray("menuContainer", "starParticles")]
 process_mode = 3
@@ -50,6 +51,7 @@ preprocess = 1.0
 emission_shape = 3
 emission_rect_extents = Vector2(1, 720)
 gravity = Vector2(980, 0)
+scale_amount_max = 5.0
 
 [node name="MenuContainer" type="Control" parent="."]
 layout_mode = 1
