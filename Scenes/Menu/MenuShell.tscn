@@ -48,7 +48,7 @@ amount = 300
 lifetime = 4.0
 preprocess = 1.0
 emission_shape = 3
-emission_rect_extents = Vector2(1, 720)
+emission_rect_extents = Vector2(1, 1)
 gravity = Vector2(980, 0)
 
 [node name="MenuContainer" type="Control" parent="."]
