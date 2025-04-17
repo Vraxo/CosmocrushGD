@@ -8,6 +8,7 @@ public partial class GameOverMenu : ColorRect
     [Export] private Label scoreLabel;
     [Export] private UIButton playAgainButton;
     [Export] private UIButton returnButton;
+    [Export] private AnimationPlayer scoreAnimationPlayer;
 
     private const string MainMenuScenePath = "res://Scenes/Menu/MenuShell.tscn";
     private const string GameScenePath = "res://Scenes/World.tscn";
@@ -15,22 +16,28 @@ public partial class GameOverMenu : ColorRect
     private const float FadeInDuration = 0.3f;
     private const float StaggerDelay = 0.1f;
     private const float InitialScaleMultiplier = 2.0f;
-    private const float ScoreCountDuration = 0.8f; // Default duration for non-zero scores
-    private const float ZeroScoreDuration = 0.01f; // Very short duration if score is 0
+    private const float ScoreCountDuration = 0.8f;
+    private const float ZeroScoreDuration = 0.01f;
 
     private int _targetScore = 0;
     private float _animatedScoreValue = 0f;
+    private int _lastAnimatedScoreInt = -1;
 
     private float AnimatedScoreValue
     {
         get => _animatedScoreValue;
         set
         {
+            int currentIntScore = Mathf.RoundToInt(value);
+            if (currentIntScore != _lastAnimatedScoreInt && _targetScore > 0)
+            {
+                PlayScorePunchAnimation();
+                _lastAnimatedScoreInt = currentIntScore;
+            }
             _animatedScoreValue = value;
             UpdateScoreLabelText();
         }
     }
-
 
     public override void _Ready()
     {
@@ -49,6 +56,10 @@ public partial class GameOverMenu : ColorRect
         if (returnButton is null)
         {
             GD.PrintErr("GameOverMenu: Return Button not assigned!");
+        }
+        if (scoreAnimationPlayer is null)
+        {
+            GD.PrintErr("GameOverMenu: Score Animation Player not assigned!");
         }
 
         if (playAgainButton is not null)
@@ -121,10 +132,12 @@ public partial class GameOverMenu : ColorRect
     {
         _targetScore = score;
         _animatedScoreValue = 0f;
+        _lastAnimatedScoreInt = -1;
 
         if (scoreLabel is not null)
         {
             scoreLabel.Text = "Final Score: 0";
+            scoreLabel.Scale = Vector2.One;
         }
 
         CallDeferred(nameof(SetupPivots));
@@ -137,6 +150,21 @@ public partial class GameOverMenu : ColorRect
         {
             scoreLabel.Text = $"Final Score: {Mathf.RoundToInt(AnimatedScoreValue)}";
         }
+    }
+
+    private void PlayScorePunchAnimation()
+    {
+        if (scoreAnimationPlayer is null)
+        {
+            return;
+        }
+
+        if (scoreAnimationPlayer.IsPlaying() && scoreAnimationPlayer.CurrentAnimation == "ScorePunch")
+        {
+            return;
+        }
+
+        scoreAnimationPlayer.Play("ScorePunch");
     }
 
     private void StartFadeInAnimation()
@@ -157,9 +185,8 @@ public partial class GameOverMenu : ColorRect
         Vector2 initialScaleValue = Vector2.One * InitialScaleMultiplier;
         Vector2 finalScale = Vector2.One;
 
-        tween.TweenInterval(StaggerDelay); // Initial overall delay
+        tween.TweenInterval(StaggerDelay);
 
-        // Animate Game Over Label
         if (gameOverLabel is not null)
         {
             tween.SetParallel(true);
@@ -169,29 +196,24 @@ public partial class GameOverMenu : ColorRect
             tween.TweenInterval(StaggerDelay);
         }
 
-        // Animate Score Label
         if (scoreLabel is not null)
         {
             tween.SetParallel(true);
             tween.TweenProperty(scoreLabel, "modulate:a", 1.0f, FadeInDuration);
             tween.TweenProperty(scoreLabel, "scale", finalScale, FadeInDuration).From(initialScaleValue);
             tween.SetParallel(false);
-            // No delay needed here, score animation starts right after label appears
         }
 
-        // Animate score value (conditionally short duration)
         float actualScoreDuration = _targetScore == 0
             ? ZeroScoreDuration
             : ScoreCountDuration;
 
-        tween.TweenProperty(this, "AnimatedScoreValue", _targetScore, actualScoreDuration)
+        tween.TweenProperty(this, nameof(AnimatedScoreValue), _targetScore, actualScoreDuration)
              .SetTrans(Tween.TransitionType.Cubic)
              .SetEase(Tween.EaseType.Out);
 
-        // Add a delay *after* score animation step, before buttons
         tween.TweenInterval(StaggerDelay);
 
-        // Animate Play Again button
         if (playAgainButton is not null)
         {
             tween.SetParallel(true);
@@ -199,10 +221,9 @@ public partial class GameOverMenu : ColorRect
             tween.TweenProperty(playAgainButton, "scale", finalScale, FadeInDuration).From(initialScaleValue);
             tween.SetParallel(false);
             tween.TweenCallback(Callable.From(() => { if (playAgainButton is not null) { playAgainButton.TweenScale = true; } }));
-            tween.TweenInterval(StaggerDelay); // Delay between Play Again and Return
+            tween.TweenInterval(StaggerDelay);
         }
 
-        // Animate Return button
         if (returnButton is not null)
         {
             tween.SetParallel(true);
