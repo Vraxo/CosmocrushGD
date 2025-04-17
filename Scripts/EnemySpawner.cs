@@ -5,15 +5,13 @@ namespace CosmocrushGD;
 
 public partial class EnemySpawner : Node
 {
-	// Removed SpawnEdge enum
-
 	[Export] private Timer spawnTimer;
 	[Export] private Timer rateIncreaseTimer;
 	[Export] private PackedScene meleeEnemyScene;
 	[Export] private PackedScene rangedEnemyScene;
 	[Export] private PackedScene explodingEnemyScene;
 	[Export] private PackedScene tankEnemyScene;
-	// Removed spawnMargin export
+	[Export] private PackedScene swiftEnemyScene; // Added SwiftEnemy scene export
 	[Export] private NodePath playerPath;
 	[Export] private float baseSpawnRate = 2.0f;
 	[Export] private float minSpawnInterval = 0.5f;
@@ -27,11 +25,10 @@ public partial class EnemySpawner : Node
 
 	private Player player;
 	private float timeElapsed;
-	private Rect2 _spawnAreaRect; // Stores the calculated spawn area bounds
+	private Rect2 _spawnAreaRect;
 	private Area2D _spawnAreaNode;
-	private const int MaxSpawnAttempts = 10; // Renamed from MaxSpawnAttempts for clarity in this context
+	private const int MaxSpawnAttempts = 10;
 	private readonly RandomNumberGenerator rng = new();
-	// Removed InwardOffsetMultiplier
 
 	public override void _Ready()
 	{
@@ -111,7 +108,7 @@ public partial class EnemySpawner : Node
 
 	private void SpawnInitialEnemies()
 	{
-		if (meleeEnemyScene is null && rangedEnemyScene is null && explodingEnemyScene is null && tankEnemyScene is null)
+		if (meleeEnemyScene is null && rangedEnemyScene is null && explodingEnemyScene is null && tankEnemyScene is null && swiftEnemyScene is null) // Added SwiftEnemy check
 		{
 			GD.PrintErr("EnemySpawner: No enemy scenes assigned. Cannot perform initial spawn.");
 			return;
@@ -148,7 +145,7 @@ public partial class EnemySpawner : Node
 
 	private bool SpawnRandomEnemy()
 	{
-		if (meleeEnemyScene is null && rangedEnemyScene is null && explodingEnemyScene is null && tankEnemyScene is null)
+		if (meleeEnemyScene is null && rangedEnemyScene is null && explodingEnemyScene is null && tankEnemyScene is null && swiftEnemyScene is null) // Added SwiftEnemy check
 		{
 			GD.PrintErr("EnemySpawner: Cannot spawn random enemy, no scenes are assigned.");
 			return false;
@@ -174,6 +171,7 @@ public partial class EnemySpawner : Node
 		if (rangedEnemyScene is not null) availableScenes.Add(rangedEnemyScene);
 		if (explodingEnemyScene is not null) availableScenes.Add(explodingEnemyScene);
 		if (tankEnemyScene is not null) availableScenes.Add(tankEnemyScene);
+		if (swiftEnemyScene is not null) availableScenes.Add(swiftEnemyScene); // Added SwiftEnemy to selection
 
 		if (availableScenes.Count == 0)
 		{
@@ -184,7 +182,6 @@ public partial class EnemySpawner : Node
 		return availableScenes[randomIndex];
 	}
 
-	// Modified to use GetRandomPointInArea
 	private void TrySpawnEnemyFromPool(PackedScene enemyScene)
 	{
 		bool foundValidPosition = false;
@@ -193,10 +190,8 @@ public partial class EnemySpawner : Node
 
 		while (!foundValidPosition && attempts < MaxSpawnAttempts)
 		{
-			// Get a random point anywhere *inside* the defined rectangle
 			spawnPosition = GetRandomPointInArea();
 
-			// Check only against player distance
 			if (IsPositionValid(spawnPosition))
 			{
 				foundValidPosition = true;
@@ -232,28 +227,23 @@ public partial class EnemySpawner : Node
 		}
 		else
 		{
-			// If it fails, it's likely because all random points were too close to the player
 			GD.Print($"EnemySpawner: Failed to find valid spawn position (far enough from player) within Area2D for {enemyScene.ResourcePath} after {MaxSpawnAttempts} attempts.");
 		}
 	}
 
-	// Checks if the position is far enough from the player
 	private bool IsPositionValid(Vector2 position)
 	{
 		if (player is null || !IsInstanceValid(player))
 		{
-			return false; // Cannot validate if player doesn't exist
+			return false;
 		}
 		return position.DistanceSquaredTo(player.GlobalPosition) >= minPlayerDistance * minPlayerDistance;
 	}
 
-	// --- NEW: Generates a random point within the _spawnAreaRect ---
 	private Vector2 GetRandomPointInArea()
 	{
 		float randomX = rng.RandfRange(_spawnAreaRect.Position.X, _spawnAreaRect.End.X);
 		float randomY = rng.RandfRange(_spawnAreaRect.Position.Y, _spawnAreaRect.End.Y);
 		return new Vector2(randomX, randomY);
 	}
-
-	// Removed GetRandomEdgePosition function entirely
 }

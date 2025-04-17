@@ -8,11 +8,13 @@ public partial class EnemyPoolManager : Node
 	[Export] private PackedScene meleeEnemyScene;
 	[Export] private PackedScene rangedEnemyScene;
 	[Export] private PackedScene explodingEnemyScene;
-	[Export] private PackedScene tankEnemyScene; // Added export for TankEnemy scene
+	[Export] private PackedScene tankEnemyScene;
+	[Export] private PackedScene swiftEnemyScene; // Added SwiftEnemy scene export
 	[Export] private int initialPoolSizeMelee = 20;
 	[Export] private int initialPoolSizeRanged = 15;
 	[Export] private int initialPoolSizeExploding = 10;
-	[Export] private int initialPoolSizeTank = 5; // Added export for TankEnemy pool size
+	[Export] private int initialPoolSizeTank = 5;
+	[Export] private int initialPoolSizeSwift = 15; // Added SwiftEnemy pool size export
 	[Export] private NodePath enemyContainerPath;
 
 	private Dictionary<PackedScene, Queue<BaseEnemy>> availableEnemies = new();
@@ -30,7 +32,8 @@ public partial class EnemyPoolManager : Node
 		InitializePool(meleeEnemyScene, initialPoolSizeMelee);
 		InitializePool(rangedEnemyScene, initialPoolSizeRanged);
 		InitializePool(explodingEnemyScene, initialPoolSizeExploding);
-		InitializePool(tankEnemyScene, initialPoolSizeTank); // Added initialization for TankEnemy pool
+		InitializePool(tankEnemyScene, initialPoolSizeTank);
+		InitializePool(swiftEnemyScene, initialPoolSizeSwift); // Added initialization for SwiftEnemy pool
 	}
 
 	private void InitializePool(PackedScene scene, int count)
@@ -69,6 +72,12 @@ public partial class EnemyPoolManager : Node
 
 	public BaseEnemy GetEnemy(PackedScene scene)
 	{
+		if (scene is null)
+		{
+			GD.PushError($"EnemyPoolManager: Attempted to get enemy with a null PackedScene reference.");
+			return null;
+		}
+
 		if (!availableEnemies.TryGetValue(scene, out Queue<BaseEnemy> queue))
 		{
 			GD.PushError($"EnemyPoolManager: Attempted to get enemy from uninitialized pool for scene: {scene.ResourcePath}. Check if the scene is assigned in the EnemyPoolManager inspector properties and if the pool was initialized correctly. Instantiating fallback.");
@@ -93,6 +102,14 @@ public partial class EnemyPoolManager : Node
 		{
 			BaseEnemy enemy = queue.Dequeue();
 
+			if (enemy is null || !IsInstanceValid(enemy))
+			{
+				GD.PushWarning($"EnemyPoolManager: Found an invalid enemy instance in the pool for {scene.ResourcePath}. Removing and creating new.");
+				// Attempt to instantiate a new one instead of returning null
+				return InstantiateNewEnemy(scene);
+			}
+
+
 			if (enemy.GetParent() != enemyContainer)
 			{
 				enemy.GetParent()?.RemoveChild(enemy);
@@ -112,32 +129,53 @@ public partial class EnemyPoolManager : Node
 		else
 		{
 			GD.PushWarning($"EnemyPoolManager: Pool empty for {scene.ResourcePath}. Instantiating new enemy.");
-			BaseEnemy enemy = scene.Instantiate<BaseEnemy>();
-			enemy.PoolManager = this;
-			enemy.SourceScene = scene;
-
-			if (enemyContainer is null)
-			{
-				GD.PushError($"EnemyPoolManager: enemyContainer is null when trying to add new enemy for scene: {scene.ResourcePath}. Adding to PoolManager node instead.");
-				AddChild(enemy);
-			}
-			else
-			{
-				enemyContainer.AddChild(enemy);
-			}
-			return enemy;
+			return InstantiateNewEnemy(scene);
 		}
+	}
+
+	private BaseEnemy InstantiateNewEnemy(PackedScene scene)
+	{
+		if (scene is null)
+		{
+			GD.PushError($"EnemyPoolManager: Cannot instantiate new enemy, PackedScene is null.");
+			return null;
+		}
+
+		BaseEnemy enemy = scene.Instantiate<BaseEnemy>();
+		enemy.PoolManager = this;
+		enemy.SourceScene = scene;
+
+		if (enemyContainer is null)
+		{
+			GD.PushError($"EnemyPoolManager: enemyContainer is null when trying to add new enemy for scene: {scene.ResourcePath}. Adding to PoolManager node instead.");
+			AddChild(enemy);
+		}
+		else
+		{
+			enemyContainer.AddChild(enemy);
+		}
+		return enemy;
 	}
 
 	public void ReturnEnemy(BaseEnemy enemy)
 	{
-		if (enemy is null || enemy.SourceScene is null || !availableEnemies.ContainsKey(enemy.SourceScene))
+		if (enemy is null || !IsInstanceValid(enemy))
 		{
-			GD.PushError("EnemyPoolManager: Cannot return enemy. Invalid enemy, source scene, or pool not found.");
-			if (enemy is not null && !enemy.IsQueuedForDeletion())
-			{
-				enemy.QueueFree();
-			}
+			GD.PushWarning("EnemyPoolManager: Attempted to return a null or invalid enemy instance.");
+			return;
+		}
+
+		if (enemy.SourceScene is null)
+		{
+			GD.PushError($"EnemyPoolManager: Cannot return enemy '{enemy.Name}'. SourceScene is null. Queueing free.");
+			enemy.QueueFree();
+			return;
+		}
+
+		if (!availableEnemies.TryGetValue(enemy.SourceScene, out Queue<BaseEnemy> queue))
+		{
+			GD.PushError($"EnemyPoolManager: Cannot return enemy '{enemy.Name}'. Pool not found for scene {enemy.SourceScene.ResourcePath}. Queueing free.");
+			enemy.QueueFree();
 			return;
 		}
 
@@ -164,6 +202,6 @@ public partial class EnemyPoolManager : Node
 			AddChild(enemy);
 		}
 
-		availableEnemies[enemy.SourceScene].Enqueue(enemy);
+		queue.Enqueue(enemy);
 	}
 }

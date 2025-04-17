@@ -37,9 +37,6 @@ public partial class Player : CharacterBody2D
 
 	public override void _Ready()
 	{
-		gun = GetNode<Gun>("Gun");
-		sprite = GetNode<Sprite2D>("Sprite");
-
 		if (cameraPath is not null)
 		{
 			camera = GetNode<ShakeyCamera>(cameraPath);
@@ -192,14 +189,9 @@ public partial class Player : CharacterBody2D
 		ProcessMode = ProcessModeEnum.Disabled;
 		SetPhysicsProcess(false);
 
-		if (sprite is not null)
-		{
-			sprite.Visible = false;
-		}
-		if (deathParticles is not null)
-		{
-			deathParticles.Emitting = true;
-		}
+		sprite.Visible = false;
+		gun.Visible = false;
+		deathParticles.Emitting = true;
 
 		GD.Print($"Player.Die: Checking camera instance validity before zoom...");
 		if (camera is not null && IsInstanceValid(camera))
