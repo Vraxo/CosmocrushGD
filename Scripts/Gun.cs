@@ -25,8 +25,7 @@ public partial class Gun : Sprite2D
 
 	public override void _Ready()
 	{
-		// Corrected Path: Use Camera2D2 instead of Camera2D
-		camera = GetNode<ShakeyCamera>("/root/World/Player/Camera2D2");
+		camera = GetParent<Player>().GetNode<ShakeyCamera>("Camera");
 
 		if (OS.HasFeature("mobile"))
 		{
@@ -98,23 +97,11 @@ public partial class Gun : Sprite2D
 	private void Fire()
 	{
 		PlayGunshotSound();
-		// Check if camera is valid before shaking
-		if (camera is not null && IsInstanceValid(camera))
-		{
-			camera.Shake(shakeStrength, shakeDuration);
-		}
-		else
-		{
-			// Attempt to get camera again if it failed in _Ready (optional, but can help recovery)
-			camera = GetNode<ShakeyCamera>("/root/World/Player/Camera2D2");
-			camera?.Shake(shakeStrength, shakeDuration);
-		}
-
+		camera.Shake(shakeStrength, shakeDuration);
 		cooldownTimer.Start();
 		DamageEnemyIfHit();
 		UpdateBulletTrail();
 	}
-
 
 	private void PlayGunshotSound()
 	{

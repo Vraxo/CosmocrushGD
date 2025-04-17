@@ -1,4 +1,4 @@
-[gd_scene load_steps=26 format=3 uid="uid://rflfyu4apk38"]
+[gd_scene load_steps=25 format=3 uid="uid://rflfyu4apk38"]
 
 [ext_resource type="AudioStream" uid="uid://blvqtb4sj0647" path="res://Audio/Songs/Going Ultimate!.mp3" id="1_4w1vw"]
 [ext_resource type="Script" path="res://Scripts/World.cs" id="1_k2m3n"]
@@ -10,7 +10,6 @@
 [ext_resource type="PackedScene" uid="uid://ccgy7bcrdqq1t" path="res://Scenes/Rock.tscn" id="7_suwn8"]
 [ext_resource type="Script" path="res://Scripts/Inventory/HealthBar.cs" id="8_h5gnh"]
 [ext_resource type="PackedScene" uid="uid://bqu24huyyxf2h" path="res://EnemySpawner.tscn" id="9_ukot3"]
-[ext_resource type="Script" path="res://Scripts/ShakeyCamera.cs" id="11_0a8f1"]
 [ext_resource type="PackedScene" uid="uid://dplq8x7y6w5f1" path="res://Scenes/Enemies/ExplodingEnemy.tscn" id="11_dqhek"]
 [ext_resource type="PackedScene" uid="uid://kl8icgw5t1ag" path="res://Scenes/Joystick.tscn" id="12_vbg6t"]
 [ext_resource type="Script" path="res://Scripts/Enemy/EnemyPoolManager.cs" id="13_mra1g"]
@@ -209,10 +208,6 @@ position = Vector2(88, -64)
 [node name="Player" parent="." instance=ExtResource("3_litg1")]
 self_modulate = Color(22, 22, 22, 1)
 position = Vector2(584, 888)
-
-[node name="Camera2D3" type="Camera2D" parent="Player"]
-process_mode = 3
-script = ExtResource("11_0a8f1")
 
 [node name="EnemySpawner" parent="." node_paths=PackedStringArray("enemyPoolManager") instance=ExtResource("9_ukot3")]
 explodingEnemyScene = ExtResource("11_dqhek")

@@ -29,10 +29,9 @@ public partial class Player : CharacterBody2D
 	private const float DamageShakeMaxStrength = 2.5f;
 	private const float DamageShakeDuration = 0.3f;
 	private const float DeathZoomAmount = 2.0f;
-	private const float DeathZoomDuration = 1.5f; // Increased duration
+	private const float DeathZoomDuration = 1.5f;
 	private const string SfxBusName = "SFX";
 
-	public event Action AudioPlayerFinished;
 	public event Action GameOver;
 
 	public override void _Ready()
@@ -55,8 +54,6 @@ public partial class Player : CharacterBody2D
 		{
 			GD.PrintErr("Player: Camera Path not set!");
 		}
-
-		AudioPlayerFinished += OnAudioPlayerFinished;
 
 		if (regenerationTimer is not null)
 		{
@@ -161,21 +158,6 @@ public partial class Player : CharacterBody2D
 		newAudioPlayer.Play();
 	}
 
-	private void OnAudioPlayerFinished()
-	{
-		foreach (Node child in audioPlayerContainer.GetChildren())
-		{
-			if (child is AudioStreamPlayer audioPlayer && !audioPlayer.Playing)
-			{
-				audioPlayer.QueueFree();
-			}
-			else if (child is AudioStreamPlayer2D audioPlayer2D && !audioPlayer2D.Playing)
-			{
-				audioPlayer2D.QueueFree();
-			}
-		}
-	}
-
 	private void Die()
 	{
 		if ((deathPauseTimer is not null && !deathPauseTimer.IsStopped()) || GetTree().Paused)
@@ -204,17 +186,8 @@ public partial class Player : CharacterBody2D
 			GD.PrintErr("Player.Die: Camera reference is null or invalid, cannot perform death zoom.");
 		}
 
-		if (deathPauseTimer is not null)
-		{
-			GD.Print($"Player.Die: Starting DeathPauseTimer ({deathPauseTimer.WaitTime}s).");
-			deathPauseTimer.Start();
-		}
-		else
-		{
-			GD.PrintErr("Player.Die: DeathPauseTimer is null. Cannot delay pause. Pausing immediately and invoking GameOver.");
-			GetTree().Paused = true;
-			GameOver?.Invoke();
-		}
+		GD.Print($"Player.Die: Starting DeathPauseTimer ({deathPauseTimer.WaitTime}s).");
+		deathPauseTimer.Start();
 	}
 
 	private void OnDeathPauseTimerTimeout()
@@ -229,7 +202,6 @@ public partial class Player : CharacterBody2D
 		GameOver?.Invoke();
 		GD.Print("Player.OnDeathPauseTimerTimeout: GameOver event invoked.");
 	}
-
 
 	public void ApplyKnockback(Vector2 knockback)
 	{
