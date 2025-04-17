@@ -21,6 +21,13 @@ public partial class ShakeyCamera : Camera2D
 
     public override void _Process(double delta)
     {
+        // Check if the game is paused
+        if (GetTree().Paused)
+        {
+            ResetShake(); // Reset the shake immediately to stop any ongoing shake
+            return;       // Exit the process function to avoid further calculations
+        }
+
         // Print zoom level every frame (even when paused due to ProcessMode=Always)
         // Reduce frequency if too spammy, e.g., using a timer check
         // GD.Print($"ShakeyCamera._Process: Current Zoom: {Zoom}");
