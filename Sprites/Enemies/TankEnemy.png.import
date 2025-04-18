@@ -3,15 +3,15 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://ccxnuoe6ia47n"
-path="res://.godot/imported/Player.png-6743db40c14c7a1274f38ac177b0ba4f.ctex"
+path="res://.godot/imported/TankEnemy.png-50f27e0f904e3a67d9ee3f1cbab7abc5.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://Sprites/Enemies/Player.png"
-dest_files=["res://.godot/imported/Player.png-6743db40c14c7a1274f38ac177b0ba4f.ctex"]
+source_file="res://Sprites/Enemies/TankEnemy.png"
+dest_files=["res://.godot/imported/TankEnemy.png-50f27e0f904e3a67d9ee3f1cbab7abc5.ctex"]
 
 [params]
 

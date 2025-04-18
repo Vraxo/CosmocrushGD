@@ -1,130 +1,22 @@
-[gd_scene load_steps=13 format=3 uid="uid://baoyd4vyuac"]
+[gd_scene load_steps=7 format=3 uid="uid://bx3w8vb1clo5u"]
 
 [ext_resource type="Script" path="res://Scripts/Enemy/RangedEnemy.cs" id="1_3crpb"]
 [ext_resource type="Texture2D" uid="uid://bg1u4fcmqhu6p" path="res://Sprites/Enemies/RangedEnemy.png" id="1_aevvj"]
+[ext_resource type="PackedScene" uid="uid://cyx6s25635vxa" path="res://Scenes/Enemies/BaseEnemy.tscn" id="1_iyp4x"]
 [ext_resource type="Shader" path="res://Shaders/EnemyHitFlash.gdshader" id="1_q2njb"]
 [ext_resource type="PackedScene" uid="uid://dmqcrw4acmcn4" path="res://Scenes/Enemies/Projectile.tscn" id="3_12pu3"]
-[ext_resource type="PackedScene" uid="uid://1jkhq6d44qfr" path="res://Scenes/DamageIndicator.tscn" id="3_c7ipe"]
 
-[sub_resource type="ShaderMaterial" id="ShaderMaterial_kqe6k"]
-shader = ExtResource("1_q2njb")
-shader_parameter/flash_color = Color(1, 1, 1, 1)
-shader_parameter/flash_value = null
-
-[sub_resource type="RectangleShape2D" id="RectangleShape2D_85f4y"]
-size = Vector2(32, 32)
-
-[sub_resource type="ShaderMaterial" id="ShaderMaterial_5b5ve"]
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_gokdc"]
 resource_local_to_scene = true
 shader = ExtResource("1_q2njb")
 shader_parameter/flash_color = Color(1, 1, 1, 1)
 shader_parameter/flash_value = 0.0
 
-[sub_resource type="Animation" id="Animation_pnc6v"]
-resource_name = "new_animation"
-length = 0.6
-tracks/0/type = "bezier"
-tracks/0/imported = false
-tracks/0/enabled = true
-tracks/0/path = NodePath(".:material:shader_parameter/flash_value")
-tracks/0/interp = 1
-tracks/0/loop_wrap = true
-tracks/0/keys = {
-"handle_modes": PackedInt32Array(0, 0, 0),
-"points": PackedFloat32Array(0, -0.25, 0, 0.25, 0, 0.5, -0.25, 0, 0.25, 0, 0, -0.25, 0, 0.25, 0),
-"times": PackedFloat32Array(0, 0.3, 0.6)
-}
-
-[sub_resource type="Animation" id="Animation_ojtld"]
-length = 0.001
-tracks/0/type = "bezier"
-tracks/0/imported = false
-tracks/0/enabled = true
-tracks/0/path = NodePath(".:material:shader_parameter/flash_value")
-tracks/0/interp = 1
-tracks/0/loop_wrap = true
-tracks/0/keys = {
-"handle_modes": PackedInt32Array(0),
-"points": PackedFloat32Array(0, -0.25, 0, 0.25, 0),
-"times": PackedFloat32Array(0)
-}
-
-[sub_resource type="AnimationLibrary" id="AnimationLibrary_vmuel"]
-_data = {
-"HitFlash": SubResource("Animation_pnc6v"),
-"RESET": SubResource("Animation_ojtld")
-}
-
-[sub_resource type="Curve" id="Curve_2qoxu"]
-_data = [Vector2(0.00433911, 0.993671), 0.0, 0.0, 0, 0, Vector2(0.998999, 0.00219095), 0.0, 0.0, 0, 0]
-point_count = 2
-
-[node name="RangedEnemy" type="CharacterBody2D" node_paths=PackedStringArray("Navigator", "Sprite", "DeathTimer", "DamageCooldownTimer", "Collider", "DamageParticles", "DeathParticles", "HitAnimationPlayer")]
-material = SubResource("ShaderMaterial_kqe6k")
-position = Vector2(56, 104)
-collision_mask = 5
-input_pickable = true
-motion_mode = 1
+[node name="RangedEnemy" instance=ExtResource("1_iyp4x")]
 script = ExtResource("1_3crpb")
 projectileScene = ExtResource("3_12pu3")
-Navigator = NodePath("Navigator")
-Sprite = NodePath("Sprite")
-DeathTimer = NodePath("DeathTimer")
-DamageCooldownTimer = NodePath("DamageTimer")
-Collider = NodePath("Collider")
-DamageParticles = NodePath("DamageParticles")
-DeathParticles = NodePath("DeathParticles")
-DamageIndicatorScene = ExtResource("3_c7ipe")
-HitAnimationPlayer = NodePath("Sprite/AnimationPlayer")
+DamageIndicatorScene = null
 
-[node name="Collider" type="CollisionShape2D" parent="."]
-shape = SubResource("RectangleShape2D_85f4y")
-
-[node name="Navigator" type="NavigationAgent2D" parent="."]
-
-[node name="Sprite" type="Sprite2D" parent="."]
-material = SubResource("ShaderMaterial_5b5ve")
+[node name="Sprite" parent="." index="2"]
+material = SubResource("ShaderMaterial_gokdc")
 texture = ExtResource("1_aevvj")
-
-[node name="AnimationPlayer" type="AnimationPlayer" parent="Sprite"]
-libraries = {
-"": SubResource("AnimationLibrary_vmuel")
-}
-
-[node name="DeathTimer" type="Timer" parent="."]
-
-[node name="DamageParticles" type="CPUParticles2D" parent="."]
-position = Vector2(0, -1)
-emitting = false
-amount = 25
-lifetime = 0.5
-one_shot = true
-explosiveness = 1.0
-spread = 180.0
-gravity = Vector2(0, 0)
-initial_velocity_min = 50.0
-initial_velocity_max = 100.0
-scale_amount_min = 4.0
-scale_amount_max = 4.0
-scale_amount_curve = SubResource("Curve_2qoxu")
-color = Color(0.639216, 0.286275, 0.643137, 1)
-
-[node name="DeathParticles" type="CPUParticles2D" parent="."]
-position = Vector2(0, -1)
-emitting = false
-amount = 25
-one_shot = true
-explosiveness = 1.0
-emission_shape = 3
-emission_rect_extents = Vector2(1, 1)
-spread = 180.0
-gravity = Vector2(0, 0)
-initial_velocity_min = 100.0
-initial_velocity_max = 150.0
-scale_amount_min = 8.0
-scale_amount_max = 8.0
-scale_amount_curve = SubResource("Curve_2qoxu")
-color = Color(0.639216, 0.286275, 0.643137, 1)
-
-[node name="DamageTimer" type="Timer" parent="."]
-wait_time = 0.5

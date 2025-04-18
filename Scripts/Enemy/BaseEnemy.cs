@@ -2,7 +2,7 @@ using Godot;
 
 namespace CosmocrushGD;
 
-public abstract partial class BaseEnemy : CharacterBody2D
+public partial class BaseEnemy : CharacterBody2D
 {
 	[Export] protected NavigationAgent2D Navigator;
 	[Export] protected Sprite2D Sprite;
@@ -243,7 +243,10 @@ public abstract partial class BaseEnemy : CharacterBody2D
 		Sprite.FlipH = GlobalPosition.X > TargetPlayer.GlobalPosition.X;
 	}
 
-	protected abstract void AttemptAttack();
+	protected virtual void AttemptAttack() 
+	{ 
+
+	}
 
 	protected virtual void Die()
 	{
