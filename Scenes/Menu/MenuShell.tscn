@@ -45,6 +45,7 @@ color = Color(0, 0, 0, 1)
 [node name="StarParticles" type="CPUParticles2D" parent="."]
 z_index = 1
 material = SubResource("ParticleProcessMaterial_stars")
+position = Vector2(-32, 0)
 amount = 300
 lifetime = 4.0
 preprocess = 1.0
