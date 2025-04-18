@@ -10,7 +10,7 @@ config_version=5
 
 [application]
 
-config/name="Cosmocrush"
+config/name="Bluemboom"
 run/main_scene="res://Scenes/Menu/MenuShell.tscn"
 config/features=PackedStringArray("4.3", "C#", "Forward Plus")
 boot_splash/image="res://Sprites/Splash.png"
@@ -24,6 +24,7 @@ SceneTransitionManager="*res://Scenes/FadeOverlay.tscn"
 
 window/size/viewport_width=1280
 window/size/viewport_height=720
+window/stretch/mode="canvas_items"
 
 [dotnet]
 
