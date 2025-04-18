@@ -242,16 +242,35 @@ public partial class GameOverMenu : ColorRect
         {
             tree.Paused = false;
             tree.ChangeSceneToFile(GameScenePath);
-        }
-    }
+		}
+	}
 
-    private void OnReturnButtonPressed()
-    {
-        StatisticsManager.Instance.Save();
+	private async void OnReturnButtonPressed()
+	{
+		StatisticsManager.Instance.Save(); // Save stats first
 
+		// Get the autoloaded transition screen
+		var transitionScreen = GetNode<TransitionScreen>("/root/TransitionScreen");
+		if (transitionScreen != null)
+		{
+			// Start the fade out
+			GD.Print("GameOverMenu: Calling FadeTransition().");
+			transitionScreen.FadeTransition();
+			// Wait until the screen is fully black (signal emitted)
+			GD.Print("GameOverMenu: Awaiting TransitionFinished signal...");
+			await ToSignal(transitionScreen, TransitionScreen.SignalName.TransitionFinished);
+			GD.Print("GameOverMenu: TransitionFinished signal received.");
+		}
+		else
+		{
+			GD.PrintErr("TransitionScreen autoload node not found!");
+		}
+
+		// Now change the scene
+		GD.Print("GameOverMenu: Proceeding to change scene.");
         if (GetTree() is SceneTree tree)
         {
-            tree.Paused = false;
+            tree.Paused = false; // Ensure game is unpaused
             tree.ChangeSceneToFile(MainMenuScenePath);
         }
     }

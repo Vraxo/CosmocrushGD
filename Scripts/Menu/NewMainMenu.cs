@@ -149,8 +149,23 @@ public partial class NewMainMenu : CenterContainer
 		tween.Play();
 	}
 
-	private void OnStartButtonPressed()
+	private async void OnStartButtonPressed()
 	{
+		// Get the autoloaded transition screen
+		var transitionScreen = GetNode<TransitionScreen>("/root/TransitionScreen");
+		if (transitionScreen != null)
+		{
+			// Start the fade out
+			transitionScreen.FadeTransition();
+			// Wait until the screen is fully black (signal emitted)
+			await ToSignal(transitionScreen, TransitionScreen.SignalName.TransitionFinished);
+		}
+		else
+		{
+			GD.PrintErr("TransitionScreen autoload node not found!");
+		}
+
+		// Now change the scene
 		menuShell?.StartGame();
 	}
 

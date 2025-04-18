@@ -18,6 +18,7 @@ boot_splash/image="res://Sprites/Splash.png"
 [autoload]
 
 GlobalAudioPlayer="*res://Scripts/GlobalAudioPlayer.cs"
+TransitionScreen="*res://Scenes/TransitionScreen.tscn"
 
 [display]
 
