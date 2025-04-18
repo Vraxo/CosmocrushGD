@@ -150,7 +150,7 @@ public partial class PauseMenu : CenterContainer
 		// QueueFree();
 	}
 
-	private async void OnReturnButtonPressed()
+	private void OnReturnButtonPressed()
 	{
 		var worldNode = GetNode<World>("/root/World");
 		if (worldNode is not null)
@@ -161,28 +161,12 @@ public partial class PauseMenu : CenterContainer
 		else
 		{
 			GD.PrintErr("PauseMenu: Could not find World node at /root/World to update scores.");
-			StatisticsManager.Instance.Save(); // Save even if world node not found
+			StatisticsManager.Instance.Save();
 		}
 
-		// Get the autoloaded transition screen
-		var transitionScreen = GetNode<TransitionScreen>("/root/TransitionScreen");
-		if (transitionScreen != null)
-		{
-			// Start the fade out
-			transitionScreen.FadeTransition();
-			// Wait until the screen is fully black (signal emitted)
-			await ToSignal(transitionScreen, TransitionScreen.SignalName.TransitionFinished);
-		}
-		else
-		{
-			GD.PrintErr("TransitionScreen autoload node not found!");
-		}
-
-
-		// Now change the scene
 		if (GetTree() is SceneTree tree)
 		{
-			tree.Paused = false; // Ensure game is unpaused before changing scene
+			tree.Paused = false;
 			tree.ChangeSceneToFile(MainMenuScenePath);
 		}
 	}
