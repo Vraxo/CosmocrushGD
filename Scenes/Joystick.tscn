@@ -6,7 +6,6 @@
 [ext_resource type="Script" path="res://Scripts/Joystick/Knob.cs" id="4_0oe1l"]
 
 [node name="Joystick" type="Control"]
-visible = false
 layout_mode = 3
 anchors_preset = 0
 script = ExtResource("2_k6xia")
