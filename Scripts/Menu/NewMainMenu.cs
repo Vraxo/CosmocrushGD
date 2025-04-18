@@ -14,6 +14,7 @@ public partial class NewMainMenu : CenterContainer
 	private const float FadeInDuration = 0.3f;
 	private const float StaggerDelay = 0.1f;
 	private const float InitialScaleMultiplier = 2.0f;
+	private const string GameScenePath = "res://Scenes/World.tscn";
 
 	private MenuShell menuShell;
 
@@ -151,7 +152,7 @@ public partial class NewMainMenu : CenterContainer
 
 	private void OnStartButtonPressed()
 	{
-		menuShell?.StartGame();
+		SceneTransitionManager.Instance?.ChangeScene(GameScenePath);
 	}
 
 	private void OnSettingsButtonPressed()

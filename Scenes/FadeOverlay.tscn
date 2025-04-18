@@ -1,0 +1,19 @@
+[gd_scene load_steps=2 format=3 uid="uid://cx7c77m0o826b"]
+
+[ext_resource type="Script" path="res://Scripts/SceneTransitionManager.cs" id="1_manager_script"]
+
+[node name="SceneTransitionManager" type="CanvasLayer" node_paths=PackedStringArray("fadeRect")]
+process_mode = 3
+layer = 128
+script = ExtResource("1_manager_script")
+fadeRect = NodePath("FadeRect")
+
+[node name="FadeRect" type="ColorRect" parent="."]
+modulate = Color(1, 1, 1, 0)
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0, 0, 0, 1)

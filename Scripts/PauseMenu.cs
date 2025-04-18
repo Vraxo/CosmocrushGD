@@ -1,14 +1,13 @@
 using Godot;
-using CosmocrushGD;
 
 namespace CosmocrushGD;
 
 public partial class PauseMenu : CenterContainer
 {
-	[Export] private Label titleLabel; // Added export for title
-	[Export] private UIButton continueButton; // Changed type
-	[Export] private UIButton returnButton; // Changed type
-	[Export] private UIButton quitButton; // Changed type
+	[Export] private Label titleLabel;
+	[Export] private UIButton continueButton;
+	[Export] private UIButton returnButton;
+	[Export] private UIButton quitButton;
 
 	private const string MainMenuScenePath = "res://Scenes/Menu/MenuShell.tscn";
 
@@ -18,7 +17,6 @@ public partial class PauseMenu : CenterContainer
 
 	public override void _Ready()
 	{
-		// Basic null checks
 		if (titleLabel is null) GD.PrintErr("PauseMenu: Title Label not assigned!");
 		if (continueButton is null) GD.PrintErr("PauseMenu: Continue Button not assigned!");
 		if (returnButton is null) GD.PrintErr("PauseMenu: Return Button not assigned!");
@@ -42,7 +40,7 @@ public partial class PauseMenu : CenterContainer
 
 		CallDeferred(nameof(SetupPivots));
 		SetInitialState();
-		CallDeferred(nameof(StartFadeInAnimation)); // Run animation when shown
+		CallDeferred(nameof(StartFadeInAnimation));
 	}
 
 	private void SetupPivots()
@@ -71,7 +69,6 @@ public partial class PauseMenu : CenterContainer
 			return;
 		}
 
-		// Ensure pivots are set before animating
 		SetupPivots();
 
 		Tween tween = CreateTween();
@@ -82,9 +79,8 @@ public partial class PauseMenu : CenterContainer
 		Vector2 initialScaleValue = Vector2.One * InitialScaleMultiplier;
 		Vector2 finalScale = Vector2.One;
 
-		tween.TweenInterval(StaggerDelay); // Initial delay
+		tween.TweenInterval(StaggerDelay);
 
-		// Title
 		if (titleLabel is not null)
 		{
 			tween.SetParallel(true);
@@ -94,7 +90,6 @@ public partial class PauseMenu : CenterContainer
 			tween.TweenInterval(StaggerDelay);
 		}
 
-		// Continue Button
 		if (continueButton is not null)
 		{
 			tween.SetParallel(true);
@@ -104,7 +99,6 @@ public partial class PauseMenu : CenterContainer
 			tween.TweenInterval(StaggerDelay);
 		}
 
-		// Return Button
 		if (returnButton is not null)
 		{
 			tween.SetParallel(true);
@@ -114,14 +108,12 @@ public partial class PauseMenu : CenterContainer
 			tween.TweenInterval(StaggerDelay);
 		}
 
-		// Quit Button
 		if (quitButton is not null)
 		{
 			tween.SetParallel(true);
 			tween.TweenProperty(quitButton, "modulate:a", 1.0f, FadeInDuration);
 			tween.TweenProperty(quitButton, "scale", finalScale, FadeInDuration).From(initialScaleValue);
 			tween.SetParallel(false);
-			// Enable tweening after the last button animates
 			tween.TweenCallback(Callable.From(() =>
 			{
 				if (continueButton is not null) { continueButton.TweenScale = true; }
@@ -146,8 +138,7 @@ public partial class PauseMenu : CenterContainer
 		}
 
 		Hide();
-		// Consider QueueFree() if you always instantiate a new pause menu
-		// QueueFree();
+		QueueFree();
 	}
 
 	private void OnReturnButtonPressed()
@@ -164,11 +155,7 @@ public partial class PauseMenu : CenterContainer
 			StatisticsManager.Instance.Save();
 		}
 
-		if (GetTree() is SceneTree tree)
-		{
-			tree.Paused = false;
-			tree.ChangeSceneToFile(MainMenuScenePath);
-		}
+		SceneTransitionManager.Instance?.ChangeScene(MainMenuScenePath);
 	}
 
 	private void OnQuitButtonPressed()
@@ -209,7 +196,6 @@ public partial class PauseMenu : CenterContainer
 			GetTree().Paused = false;
 		}
 
-		// Unsubscribe from events
 		if (continueButton is not null && IsInstanceValid(continueButton))
 		{
 			continueButton.Pressed -= OnContinueButtonPressed;

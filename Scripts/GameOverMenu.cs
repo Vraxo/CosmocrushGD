@@ -238,22 +238,13 @@ public partial class GameOverMenu : ColorRect
 
     private void OnPlayAgainButtonPressed()
     {
-        if (GetTree() is SceneTree tree)
-        {
-            tree.Paused = false;
-            tree.ChangeSceneToFile(GameScenePath);
-        }
+        SceneTransitionManager.Instance?.ChangeScene(GameScenePath);
     }
 
     private void OnReturnButtonPressed()
     {
         StatisticsManager.Instance.Save();
-
-        if (GetTree() is SceneTree tree)
-        {
-            tree.Paused = false;
-            tree.ChangeSceneToFile(MainMenuScenePath);
-        }
+        SceneTransitionManager.Instance?.ChangeScene(MainMenuScenePath);
     }
 
     public override void _ExitTree()
