@@ -22,6 +22,7 @@ public partial class GameOverMenu : ColorRect
     private int _targetScore = 0;
     private float _animatedScoreValue = 0f;
     private int _lastAnimatedScoreInt = -1;
+    // No need for member variable for TransitionScreen
 
     private float AnimatedScoreValue
     {
@@ -41,6 +42,17 @@ public partial class GameOverMenu : ColorRect
 
     public override void _Ready()
     {
+        // Access instance and connect signals directly
+        if (TransitionScreen.Instance is not null)
+        {
+            GD.Print("GameOverMenu: Found TransitionScreen Instance. Connecting signal.");
+            TransitionScreen.Instance.TransitionMidpointReached += OnTransitionMidpointReached;
+        }
+        else
+        {
+            GD.PrintErr("GameOverMenu: Could not find TransitionScreen Instance in _Ready!");
+        }
+
         if (gameOverLabel is null)
         {
             GD.PrintErr("GameOverMenu: Game Over Label not assigned!");
@@ -79,6 +91,8 @@ public partial class GameOverMenu : ColorRect
         CallDeferred(nameof(SetupPivots));
         SetInitialState();
     }
+
+    // Removed InitializeTransitionScreen method
 
     private void SetupPivots()
     {
@@ -241,7 +255,16 @@ public partial class GameOverMenu : ColorRect
         if (GetTree() is SceneTree tree)
         {
             tree.Paused = false;
-            tree.ChangeSceneToFile(GameScenePath);
+        }
+
+        if (TransitionScreen.Instance is not null)
+        {
+            TransitionScreen.Instance.TransitionToScene(GameScenePath);
+        }
+        else
+        {
+            GD.PrintErr("GameOverMenu: Cannot PlayAgain, TransitionScreen Instance is null. Changing scene directly.");
+            GetTree().ChangeSceneToFile(GameScenePath); // Fallback
         }
     }
 
@@ -252,8 +275,23 @@ public partial class GameOverMenu : ColorRect
         if (GetTree() is SceneTree tree)
         {
             tree.Paused = false;
-            tree.ChangeSceneToFile(MainMenuScenePath);
         }
+
+        if (TransitionScreen.Instance is not null)
+        {
+            TransitionScreen.Instance.TransitionToScene(MainMenuScenePath);
+        }
+        else
+        {
+            GD.PrintErr("GameOverMenu: Cannot Return, TransitionScreen Instance is null. Changing scene directly.");
+            GetTree().ChangeSceneToFile(MainMenuScenePath); // Fallback
+        }
+    }
+
+    private void OnTransitionMidpointReached(string scenePathToLoad)
+    {
+        GD.Print($"GameOverMenu: OnTransitionMidpointReached, loading: {scenePathToLoad}");
+        GetTree().ChangeSceneToFile(scenePathToLoad);
     }
 
     public override void _ExitTree()
@@ -261,6 +299,15 @@ public partial class GameOverMenu : ColorRect
         if (GetTree()?.Paused ?? false)
         {
             GetTree().Paused = false;
+        }
+
+        if (TransitionScreen.Instance is not null && IsInstanceValid(TransitionScreen.Instance))
+        {
+            if (TransitionScreen.Instance.IsConnected(TransitionScreen.SignalName.TransitionMidpointReached, Callable.From<string>(OnTransitionMidpointReached)))
+            {
+                TransitionScreen.Instance.TransitionMidpointReached -= OnTransitionMidpointReached;
+                GD.Print("GameOverMenu: Unsubscribed from TransitionMidpointReached.");
+            }
         }
 
         if (playAgainButton is not null && IsInstanceValid(playAgainButton))
