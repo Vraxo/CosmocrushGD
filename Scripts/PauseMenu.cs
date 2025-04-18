@@ -5,10 +5,10 @@ namespace CosmocrushGD;
 
 public partial class PauseMenu : CenterContainer
 {
-	[Export] private Label titleLabel;
-	[Export] private UIButton continueButton;
-	[Export] private UIButton returnButton;
-	[Export] private UIButton quitButton;
+	[Export] private Label titleLabel; // Added export for title
+	[Export] private UIButton continueButton; // Changed type
+	[Export] private UIButton returnButton; // Changed type
+	[Export] private UIButton quitButton; // Changed type
 
 	private const string MainMenuScenePath = "res://Scenes/Menu/MenuShell.tscn";
 
@@ -16,21 +16,9 @@ public partial class PauseMenu : CenterContainer
 	private const float StaggerDelay = 0.1f;
 	private const float InitialScaleMultiplier = 2.0f;
 
-	// No need for member variable for TransitionScreen
-
 	public override void _Ready()
 	{
-		// Access instance and connect signals directly
-		if (TransitionScreen.Instance is not null)
-		{
-			GD.Print("PauseMenu: Found TransitionScreen Instance. Connecting signal.");
-			TransitionScreen.Instance.TransitionMidpointReached += OnTransitionMidpointReached;
-		}
-		else
-		{
-			GD.PrintErr("PauseMenu: Could not find TransitionScreen Instance in _Ready!");
-		}
-
+		// Basic null checks
 		if (titleLabel is null) GD.PrintErr("PauseMenu: Title Label not assigned!");
 		if (continueButton is null) GD.PrintErr("PauseMenu: Continue Button not assigned!");
 		if (returnButton is null) GD.PrintErr("PauseMenu: Return Button not assigned!");
@@ -54,10 +42,8 @@ public partial class PauseMenu : CenterContainer
 
 		CallDeferred(nameof(SetupPivots));
 		SetInitialState();
-		CallDeferred(nameof(StartFadeInAnimation));
+		CallDeferred(nameof(StartFadeInAnimation)); // Run animation when shown
 	}
-
-	// Removed InitializeTransitionScreen method
 
 	private void SetupPivots()
 	{
@@ -85,6 +71,7 @@ public partial class PauseMenu : CenterContainer
 			return;
 		}
 
+		// Ensure pivots are set before animating
 		SetupPivots();
 
 		Tween tween = CreateTween();
@@ -95,8 +82,9 @@ public partial class PauseMenu : CenterContainer
 		Vector2 initialScaleValue = Vector2.One * InitialScaleMultiplier;
 		Vector2 finalScale = Vector2.One;
 
-		tween.TweenInterval(StaggerDelay);
+		tween.TweenInterval(StaggerDelay); // Initial delay
 
+		// Title
 		if (titleLabel is not null)
 		{
 			tween.SetParallel(true);
@@ -106,6 +94,7 @@ public partial class PauseMenu : CenterContainer
 			tween.TweenInterval(StaggerDelay);
 		}
 
+		// Continue Button
 		if (continueButton is not null)
 		{
 			tween.SetParallel(true);
@@ -115,6 +104,7 @@ public partial class PauseMenu : CenterContainer
 			tween.TweenInterval(StaggerDelay);
 		}
 
+		// Return Button
 		if (returnButton is not null)
 		{
 			tween.SetParallel(true);
@@ -124,13 +114,14 @@ public partial class PauseMenu : CenterContainer
 			tween.TweenInterval(StaggerDelay);
 		}
 
+		// Quit Button
 		if (quitButton is not null)
 		{
 			tween.SetParallel(true);
 			tween.TweenProperty(quitButton, "modulate:a", 1.0f, FadeInDuration);
 			tween.TweenProperty(quitButton, "scale", finalScale, FadeInDuration).From(initialScaleValue);
 			tween.SetParallel(false);
-
+			// Enable tweening after the last button animates
 			tween.TweenCallback(Callable.From(() =>
 			{
 				if (continueButton is not null) { continueButton.TweenScale = true; }
@@ -155,10 +146,9 @@ public partial class PauseMenu : CenterContainer
 		}
 
 		Hide();
-		// QueueFree() is still an option here if you always want a fresh pause menu
+		// Consider QueueFree() if you always instantiate a new pause menu
 		// QueueFree();
 	}
-
 
 	private void OnReturnButtonPressed()
 	{
@@ -174,21 +164,10 @@ public partial class PauseMenu : CenterContainer
 			StatisticsManager.Instance.Save();
 		}
 
-		// Unpause happens in OnTransitionMidpointReached now
-		// if (GetTree() is SceneTree tree)
-		// {
-		//     tree.Paused = false;
-		// }
-
-		if (TransitionScreen.Instance is not null)
+		if (GetTree() is SceneTree tree)
 		{
-			TransitionScreen.Instance.TransitionToScene(MainMenuScenePath);
-		}
-		else
-		{
-			GD.PrintErr("PauseMenu: Cannot Return, TransitionScreen Instance is null. Changing scene directly.");
-			if (GetTree() is SceneTree tree) { tree.Paused = false; } // Unpause before direct change
-			GetTree().ChangeSceneToFile(MainMenuScenePath); // Fallback
+			tree.Paused = false;
+			tree.ChangeSceneToFile(MainMenuScenePath);
 		}
 	}
 
@@ -209,17 +188,6 @@ public partial class PauseMenu : CenterContainer
 		GetTree()?.Quit();
 	}
 
-	private void OnTransitionMidpointReached(string scenePathToLoad)
-	{
-		GD.Print($"PauseMenu: OnTransitionMidpointReached, loading: {scenePathToLoad}");
-		// Ensure we unpause if we are changing scenes from the pause menu
-		if (GetTree() is SceneTree tree)
-		{
-			tree.Paused = false;
-		}
-		GetTree().ChangeSceneToFile(scenePathToLoad);
-	}
-
 	public override void _Input(InputEvent inputEvent)
 	{
 		if (!Visible)
@@ -236,22 +204,12 @@ public partial class PauseMenu : CenterContainer
 
 	public override void _ExitTree()
 	{
-		// Ensure game is unpaused if exiting tree while paused
-		// (e.g., if closed abruptly or returned via another menu)
 		if (GetTree()?.Paused ?? false)
 		{
 			GetTree().Paused = false;
 		}
 
-		if (TransitionScreen.Instance is not null && IsInstanceValid(TransitionScreen.Instance))
-		{
-			if (TransitionScreen.Instance.IsConnected(TransitionScreen.SignalName.TransitionMidpointReached, Callable.From<string>(OnTransitionMidpointReached)))
-			{
-				TransitionScreen.Instance.TransitionMidpointReached -= OnTransitionMidpointReached;
-				GD.Print("PauseMenu: Unsubscribed from TransitionMidpointReached.");
-			}
-		}
-
+		// Unsubscribe from events
 		if (continueButton is not null && IsInstanceValid(continueButton))
 		{
 			continueButton.Pressed -= OnContinueButtonPressed;

@@ -16,22 +16,10 @@ public partial class World : WorldEnvironment
 	private PauseMenu pauseMenu;
 	private GameOverMenu gameOverMenu;
 	private Player player;
-	// No need for member variable for TransitionScreen
 
 	public override void _Ready()
 	{
 		GD.Print("World._Ready: Start");
-
-		// Access instance directly
-		if (TransitionScreen.Instance is not null)
-		{
-			TransitionScreen.Instance.StartFadeIn(); // Start fade-in when world loads
-		}
-		else
-		{
-			GD.PrintErr("World: Could not find TransitionScreen Instance in _Ready!");
-		}
-
 		if (hudLayer is null)
 		{
 			GD.PrintErr("World._Ready: HUD Layer reference not set!");
@@ -74,8 +62,6 @@ public partial class World : WorldEnvironment
 		GD.Print("World._Ready: End");
 	}
 
-	// Removed InitializeTransitionScreen method
-
 	public override void _Process(double delta)
 	{
 		if (Input.IsActionJustPressed("ui_cancel") && !GetTree().Paused)
@@ -87,13 +73,10 @@ public partial class World : WorldEnvironment
 	public override void _ExitTree()
 	{
 		GD.Print("World._ExitTree: Start");
-		if (player is not null && IsInstanceValid(player))
+		if (player is not null)
 		{
+			GD.Print("World._ExitTree: Unsubscribing from player GameOver event.");
 			player.GameOver -= OnGameOver;
-		}
-		if (pauseButton is not null && IsInstanceValid(pauseButton))
-		{
-			pauseButton.Pressed -= OnPauseButtonPressed;
 		}
 		base._ExitTree();
 		GD.Print("World._ExitTree: End");

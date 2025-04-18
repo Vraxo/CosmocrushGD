@@ -11,10 +11,11 @@ public partial class MenuShell : Control
 	[Export] private PackedScene statisticsMenuScene;
 
 	private Node currentMenuInstance;
-	// No need for member variables for Autoloads if accessed via Instance
 
 	private const string GameScenePath = "res://Scenes/World.tscn";
+	// Reverted to 2.0 multiplier as a balanced default, can be increased if needed
 	private const float ParticleVerticalPaddingMultiplier = 2.0f;
+	// BaselineHeight, BaselineAmount, MinimumParticleAmount are no longer needed here
 
 	public override void _Ready()
 	{
@@ -43,18 +44,6 @@ public partial class MenuShell : Control
 			return;
 		}
 
-		// Access instance and connect signals directly
-		if (TransitionScreen.Instance is not null)
-		{
-			GD.Print("MenuShell: Found TransitionScreen Instance. Connecting signal.");
-			TransitionScreen.Instance.TransitionMidpointReached += OnTransitionMidpointReached;
-			TransitionScreen.Instance.StartFadeIn(); // Start initial fade-in
-		}
-		else
-		{
-			GD.PrintErr("MenuShell: Could not find TransitionScreen Instance in _Ready!");
-		}
-
 		ProcessMode = ProcessModeEnum.Always;
 
 		var root = GetTree()?.Root;
@@ -77,20 +66,8 @@ public partial class MenuShell : Control
 		ShowMainMenu();
 	}
 
-	// Removed InitializeAutoloads method
-
 	public override void _ExitTree()
 	{
-		// Check instance validity before unsubscribing
-		if (TransitionScreen.Instance is not null && IsInstanceValid(TransitionScreen.Instance))
-		{
-			if (TransitionScreen.Instance.IsConnected(TransitionScreen.SignalName.TransitionMidpointReached, Callable.From<string>(OnTransitionMidpointReached)))
-			{
-				TransitionScreen.Instance.TransitionMidpointReached -= OnTransitionMidpointReached;
-				GD.Print("MenuShell: Unsubscribed from TransitionMidpointReached.");
-			}
-		}
-
 		if (IsInstanceValid(this))
 		{
 			Resized -= UpdateParticleEmitterBounds;
@@ -124,6 +101,9 @@ public partial class MenuShell : Control
 
 		var viewportSize = viewport.GetVisibleRect().Size;
 		var viewportHeight = viewportSize.Y;
+
+		// No height threshold check needed if we aren't changing amount
+		// No amount calculation needed
 
 		const float spawnOffsetX = -10.0f;
 		float totalEmissionHeight = viewportHeight * ParticleVerticalPaddingMultiplier;
@@ -179,16 +159,7 @@ public partial class MenuShell : Control
 
 	public void StartGame()
 	{
-		if (TransitionScreen.Instance is not null)
-		{
-			GD.Print($"MenuShell: StartGame called. Requesting transition. Current time: {Time.GetTicksMsec()}"); // Added timestamp
-			TransitionScreen.Instance.TransitionToScene(GameScenePath);
-		}
-		else
-		{
-			GD.PrintErr("MenuShell: Cannot StartGame, TransitionScreen Instance is null. Changing scene directly.");
-			GetTree().ChangeSceneToFile(GameScenePath); // Fallback
-		}
+		GetTree().ChangeSceneToFile(GameScenePath);
 	}
 
 	public void QuitGame()
@@ -200,11 +171,5 @@ public partial class MenuShell : Control
 	private void OnWindowCloseRequested()
 	{
 		QuitGame();
-	}
-
-	private void OnTransitionMidpointReached(string scenePathToLoad)
-	{
-		GD.Print($"MenuShell: OnTransitionMidpointReached received, loading: {scenePathToLoad}. Current time: {Time.GetTicksMsec()}"); // Added timestamp
-		GetTree().ChangeSceneToFile(scenePathToLoad);
 	}
 }
