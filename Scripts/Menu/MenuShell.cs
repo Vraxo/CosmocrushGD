@@ -13,34 +13,27 @@ public partial class MenuShell : Control
 	private Node currentMenuInstance;
 
 	private const string GameScenePath = "res://Scenes/World.tscn";
-	// Reverted to 2.0 multiplier as a balanced default, can be increased if needed
 	private const float ParticleVerticalPaddingMultiplier = 2.0f;
-	// BaselineHeight, BaselineAmount, MinimumParticleAmount are no longer needed here
 
 	public override void _Ready()
 	{
 		if (menuContainer is null)
 		{
-			GD.PrintErr("MenuShell: Menu Container node not assigned!");
 			return;
 		}
 		if (starParticles is null)
 		{
-			GD.PrintErr("MenuShell: Star Particles node not assigned!");
 		}
 		if (mainMenuScene is null)
 		{
-			GD.PrintErr("MenuShell: Main Menu Scene not assigned!");
 			return;
 		}
 		if (settingsMenuScene is null)
 		{
-			GD.PrintErr("MenuShell: Settings Menu Scene not assigned!");
 			return;
 		}
 		if (statisticsMenuScene is null)
 		{
-			GD.PrintErr("MenuShell: Statistics Menu Scene not assigned!");
 			return;
 		}
 
@@ -53,7 +46,6 @@ public partial class MenuShell : Control
 		}
 		else
 		{
-			GD.PrintErr("MenuShell: GetTree().Root is null, cannot connect CloseRequested signal.");
 		}
 
 		Resized += UpdateParticleEmitterBounds;
@@ -102,9 +94,6 @@ public partial class MenuShell : Control
 		var viewportSize = viewport.GetVisibleRect().Size;
 		var viewportHeight = viewportSize.Y;
 
-		// No height threshold check needed if we aren't changing amount
-		// No amount calculation needed
-
 		const float spawnOffsetX = -10.0f;
 		float totalEmissionHeight = viewportHeight * ParticleVerticalPaddingMultiplier;
 		float emissionExtentsY = totalEmissionHeight / 2.0f;
@@ -133,7 +122,6 @@ public partial class MenuShell : Control
 	{
 		if (menuScene is null || menuContainer is null)
 		{
-			GD.PrintErr("MenuShell: Cannot show menu, scene or container is null.");
 			return;
 		}
 
@@ -159,7 +147,7 @@ public partial class MenuShell : Control
 
 	public void StartGame()
 	{
-		GetTree().ChangeSceneToFile(GameScenePath);
+		SceneTransitionManager.Instance?.ChangeScene(GameScenePath);
 	}
 
 	public void QuitGame()

@@ -1,4 +1,4 @@
-[gd_scene load_steps=20 format=3 uid="uid://rflfyu4apk38"]
+[gd_scene load_steps=25 format=3 uid="uid://rflfyu4apk38"]
 
 [ext_resource type="AudioStream" uid="uid://blvqtb4sj0647" path="res://Audio/Songs/Going Ultimate!.mp3" id="1_4w1vw"]
 [ext_resource type="Script" path="res://Scripts/World.cs" id="1_k2m3n"]
@@ -6,11 +6,16 @@
 [ext_resource type="PackedScene" uid="uid://druxgxf4hraot" path="res://Scenes/PauseMenu.tscn" id="2_oslhl"]
 [ext_resource type="PackedScene" uid="uid://40dd12m6jo1n" path="res://Scenes/Menu/GameOverMenu.tscn" id="3_kn687"]
 [ext_resource type="PackedScene" uid="uid://b3dwcw52g56vq" path="res://Scenes/Player.tscn" id="3_litg1"]
+[ext_resource type="PackedScene" uid="uid://dckpb03kuu5e0" path="res://Scenes/Enemies/MeleeEnemy.tscn" id="5_p3yak"]
+[ext_resource type="PackedScene" uid="uid://kl8icgw5t1ag" path="res://Scenes/Joystick.tscn" id="6_cuxsd"]
 [ext_resource type="PackedScene" uid="uid://ccgy7bcrdqq1t" path="res://Scenes/Rock.tscn" id="7_suwn8"]
 [ext_resource type="Script" path="res://Scripts/Inventory/HealthBar.cs" id="8_h5gnh"]
 [ext_resource type="PackedScene" uid="uid://bqu24huyyxf2h" path="res://Scenes/EnemySpawner.tscn" id="9_ukot3"]
-[ext_resource type="PackedScene" uid="uid://kl8icgw5t1ag" path="res://Scenes/Joystick.tscn" id="12_vbg6t"]
+[ext_resource type="PackedScene" uid="uid://ycjuiag28aml" path="res://Scenes/Enemies/ExplodingEnemy.tscn" id="11_dqhek"]
 [ext_resource type="Script" path="res://Scripts/Enemy/EnemyPoolManager.cs" id="13_mra1g"]
+[ext_resource type="PackedScene" uid="uid://bx3w8vb1clo5u" path="res://Scenes/Enemies/RangedEnemy.tscn" id="14_qfgrb"]
+[ext_resource type="PackedScene" uid="uid://cjwdwplrovln5" path="res://Scenes/Enemies/SwiftEnemy.tscn" id="14_ywjyk"]
+[ext_resource type="PackedScene" uid="uid://brifun4nf7fd2" path="res://Scenes/Enemies/TankEnemy.tscn" id="16_tj1fl"]
 
 [sub_resource type="Environment" id="Environment_fpnmc"]
 background_mode = 3
@@ -72,15 +77,15 @@ outlines = Array[PackedVector2Array]([PackedVector2Array(-528, -288, -528, 952, 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_1vfw6"]
 size = Vector2(2188, 1112)
 
-[node name="World" type="WorldEnvironment" node_paths=PackedStringArray("pauseButton", "hudLayer", "scoreLabel", "fpsLabel", "scoreAnimationPlayer")]
+[node name="World" type="WorldEnvironment" node_paths=PackedStringArray("pauseButton", "hudLayer", "scoreAnimationPlayer")]
 environment = SubResource("Environment_fpnmc")
 script = ExtResource("1_k2m3n")
 pauseMenuScene = ExtResource("2_oslhl")
 gameOverMenuScene = ExtResource("3_kn687")
 pauseButton = NodePath("HUD/PauseButton")
 hudLayer = NodePath("HUD")
-scoreLabel = NodePath("HUD/ScoreLabel")
-fpsLabel = NodePath("HUD/FpsLabel")
+scoreLabelPath = NodePath("HUD/ScoreLabel")
+fpsLabelPath = NodePath("HUD/FpsLabel")
 playerPath = NodePath("Player")
 scoreAnimationPlayer = NodePath("HUD/ScoreAnimationPlayer")
 metadata/_edit_horizontal_guides_ = [-408.0]
@@ -102,30 +107,19 @@ script = ExtResource("2_bvcjy")
 
 [node name="HUD" type="CanvasLayer" parent="."]
 
-[node name="Joystick" parent="HUD" instance=ExtResource("12_vbg6t")]
-anchors_preset = 2
-anchor_top = 1.0
-anchor_bottom = 1.0
-offset_left = 184.0
-offset_top = -160.0
-offset_right = 184.0
-offset_bottom = -160.0
-grow_vertical = 0
-scale = Vector2(0.1, 0.1)
+[node name="Joystick" parent="HUD" instance=ExtResource("6_cuxsd")]
+offset_left = 166.0
+offset_top = 593.0
+offset_right = 166.0
+offset_bottom = 593.0
+scale = Vector2(-0.1, -0.1)
 
-[node name="FiringJoystick" parent="HUD" instance=ExtResource("12_vbg6t")]
-anchors_preset = 3
-anchor_left = 1.0
-anchor_top = 1.0
-anchor_right = 1.0
-anchor_bottom = 1.0
-offset_left = -160.0
-offset_top = -160.0
-offset_right = -160.0
-offset_bottom = -160.0
-grow_horizontal = 0
-grow_vertical = 0
-scale = Vector2(0.1, 0.1)
+[node name="FiringJoystick" parent="HUD" instance=ExtResource("6_cuxsd")]
+offset_left = 1122.0
+offset_top = 614.0
+offset_right = 1122.0
+offset_bottom = 614.0
+scale = Vector2(-0.1, -0.1)
 SimulateInput = false
 
 [node name="Healthbar" type="ProgressBar" parent="HUD"]
@@ -210,14 +204,21 @@ navigation_polygon = SubResource("NavigationPolygon_hiflp")
 position = Vector2(88, -64)
 
 [node name="Player" parent="." instance=ExtResource("3_litg1")]
-self_modulate = Color(22, 22, 22, 1)
 position = Vector2(584, 888)
 
-[node name="EnemySpawner" parent="." instance=ExtResource("9_ukot3")]
+[node name="EnemySpawner" parent="." node_paths=PackedStringArray("enemyPoolManager") instance=ExtResource("9_ukot3")]
+enemyPoolManager = NodePath("../EnemyPoolManager")
 
 [node name="EnemyPoolManager" type="Node2D" parent="."]
 position = Vector2(360, 160)
 script = ExtResource("13_mra1g")
+meleeEnemyScene = ExtResource("5_p3yak")
+rangedEnemyScene = ExtResource("14_qfgrb")
+explodingEnemyScene = ExtResource("11_dqhek")
+tankEnemyScene = ExtResource("16_tj1fl")
+swiftEnemyScene = ExtResource("14_ywjyk")
+enemyContainerPath = NodePath("../EnemySpawner")
+initializationDelay = 0.2
 
 [node name="SpawnZone" type="Area2D" parent="."]
 position = Vector2(1160, 632)

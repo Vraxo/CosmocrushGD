@@ -5,7 +5,7 @@ namespace CosmocrushGD;
 
 public partial class Player : CharacterBody2D
 {
-	public int Health = 1;
+	public int Health = 100;
 	public int MaxHealth = 100;
 	public Inventory Inventory = new();
 
@@ -43,18 +43,15 @@ public partial class Player : CharacterBody2D
 			camera = GetNode<ShakeyCamera>(cameraPath);
 			if (IsInstanceValid(camera))
 			{
-				GD.Print("Player._Ready: Camera found and zoom reset.");
 				camera.ResetZoom();
 			}
 			else
 			{
-				GD.PrintErr("Player._Ready: Camera node found at path, but instance is invalid!");
 				camera = null;
 			}
 		}
 		else
 		{
-			GD.PrintErr("Player: Camera Path not set!");
 		}
 
 		if (regenerationTimer is not null)
@@ -63,7 +60,6 @@ public partial class Player : CharacterBody2D
 		}
 		else
 		{
-			GD.PrintErr("Player: RegenTimer not assigned!");
 		}
 
 		if (deathPauseTimer is not null)
@@ -72,7 +68,6 @@ public partial class Player : CharacterBody2D
 		}
 		else
 		{
-			GD.PrintErr("Player: DeathPauseTimer not assigned in the scene tree or path!");
 		}
 
 
@@ -157,50 +152,45 @@ public partial class Player : CharacterBody2D
 	{
 		if ((deathPauseTimer is not null && !deathPauseTimer.IsStopped()) || GetTree().Paused)
 		{
-			GD.Print("Player.Die: Death sequence already in progress or game paused. Aborting.");
 			return;
 		}
 
-		GD.Print("Player.Die: Player has died. Starting death sequence.");
 		regenerationTimer?.Stop();
 		ProcessMode = ProcessModeEnum.Disabled;
 		SetPhysicsProcess(false);
 
 		sprite.Visible = false;
 		gun.Visible = false;
-		deathParticles.Emitting = true;
+		if (deathParticles is not null)
+		{
+			deathParticles.Emitting = true;
+		}
+
 
 		if (deathAudioPlayer is not null)
 		{
 			deathAudioPlayer.Play();
 		}
 
-		GD.Print($"Player.Die: Checking camera instance validity before zoom...");
 		if (camera is not null && IsInstanceValid(camera))
 		{
-			GD.Print($"Player.Die: Camera instance is valid. Starting camera zoom to {DeathZoomAmount}x over {DeathZoomDuration}s.");
 			camera.ZoomToPoint(DeathZoomAmount, DeathZoomDuration);
 		}
 		else
 		{
-			GD.PrintErr("Player.Die: Camera reference is null or invalid, cannot perform death zoom.");
 		}
 
-		GD.Print($"Player.Die: Starting DeathPauseTimer ({deathPauseTimer.WaitTime}s).");
 		deathPauseTimer.Start();
 	}
 
 	private void OnDeathPauseTimerTimeout()
 	{
-		GD.Print("Player.OnDeathPauseTimerTimeout: Timer finished. Pausing tree and invoking GameOver.");
-
 		if (!GetTree().Paused)
 		{
 			GetTree().Paused = true;
 		}
 
 		GameOver?.Invoke();
-		GD.Print("Player.OnDeathPauseTimerTimeout: GameOver event invoked.");
 	}
 
 	public void ApplyKnockback(Vector2 knockback)
@@ -219,6 +209,4 @@ public partial class Player : CharacterBody2D
 
 		Health = Math.Min(Health + RegenerationRate, MaxHealth);
 	}
-
-
 }

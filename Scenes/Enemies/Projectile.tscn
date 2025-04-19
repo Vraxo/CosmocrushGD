@@ -10,11 +10,13 @@ size = Vector2(32, 32)
 _data = [Vector2(0.00433911, 0.993671), 0.0, 0.0, 0, 0, Vector2(0.998999, 0.00219095), 0.0, 0.0, 0, 0]
 point_count = 2
 
-[node name="Projectile" type="Area2D" node_paths=PackedStringArray("Sprite", "DestructionParticles")]
+[node name="Projectile" type="Area2D" node_paths=PackedStringArray("Sprite", "DestructionParticles", "LifetimeTimer", "DestructionDelayTimer")]
 scale = Vector2(0.25, 0.25)
 script = ExtResource("1_jqlnh")
 Sprite = NodePath("Sprite")
 DestructionParticles = NodePath("DestructionParticles")
+LifetimeTimer = NodePath("LifetimeTimer")
+DestructionDelayTimer = NodePath("DestructionDelayTimer")
 
 [node name="Sprite" type="Sprite2D" parent="."]
 texture = ExtResource("1_aevvj")
@@ -38,4 +40,10 @@ scale_amount_max = 4.0
 scale_amount_curve = SubResource("Curve_c1awf")
 color = Color(0.639216, 0.286275, 0.643137, 1)
 
-[node name="DestructionTimer" type="Timer" parent="."]
+[node name="LifetimeTimer" type="Timer" parent="."]
+wait_time = 10.0
+one_shot = true
+
+[node name="DestructionDelayTimer" type="Timer" parent="."]
+wait_time = 1.0
+one_shot = true

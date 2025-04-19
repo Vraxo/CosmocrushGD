@@ -1,7 +1,7 @@
 ﻿using Godot;
 using System.Diagnostics;
 using System.Resources;
-using System.Threading.Tasks; // Keep using Task for async/await convenience
+using System.Threading.Tasks;
 
 namespace CosmocrushGD;
 
@@ -22,7 +22,15 @@ public partial class SceneTransitionManager : CanvasLayer
         {
             Instance = this;
             ProcessMode = ProcessModeEnum.Always;
-            currentScenePath = GetTree().CurrentScene.SceneFilePath;
+
+            if (GetTree().CurrentScene is not null)
+            {
+                currentScenePath = GetTree().CurrentScene.SceneFilePath;
+            }
+            else
+            {
+                currentScenePath = "";
+            }
         }
         else
         {
@@ -34,7 +42,6 @@ public partial class SceneTransitionManager : CanvasLayer
     {
         if (fadeRect is null)
         {
-            GD.PrintErr("SceneTransitionManager: FadeRect node not assigned!");
             return;
         }
 
@@ -44,14 +51,18 @@ public partial class SceneTransitionManager : CanvasLayer
 
     public async void ChangeScene(string scenePath)
     {
-        if (fadeRect is null || isTransitioning || scenePath == currentScenePath)
+
+        if (fadeRect is null || isTransitioning)
         {
-            GD.Print($"SceneTransitionManager: Transition blocked (In progress: {isTransitioning}, FadeRect null: {fadeRect is null}, Same scene: {scenePath == currentScenePath}).");
             return;
         }
 
+        if (scenePath == currentScenePath)
+        {
+        }
+
+
         isTransitioning = true;
-        GD.Print($"SceneTransitionManager: Starting transition to {scenePath}");
 
 
         activeTween?.Kill();
@@ -68,18 +79,15 @@ public partial class SceneTransitionManager : CanvasLayer
 
 
         await ToSignal(activeTween, Tween.SignalName.Finished);
-        GD.Print("SceneTransitionManager: Fade out finished.");
 
 
         PackedScene loadedScene = await loadTask;
         if (loadedScene is null)
         {
-            GD.PrintErr($"SceneTransitionManager: Failed to load scene {scenePath} asynchronously.");
             ResetFade();
             isTransitioning = false;
             return;
         }
-        GD.Print("SceneTransitionManager: Scene loaded asynchronously.");
 
 
         if (GetTree().Paused)
@@ -97,7 +105,6 @@ public partial class SceneTransitionManager : CanvasLayer
         GetTree().Root.AddChild(newSceneInstance);
         GetTree().CurrentScene = newSceneInstance;
         currentScenePath = scenePath;
-        GD.Print($"SceneTransitionManager: Instantiated and set current scene to {scenePath}");
 
 
         activeTween?.Kill();
@@ -108,7 +115,6 @@ public partial class SceneTransitionManager : CanvasLayer
         activeTween.SetTrans(Tween.TransitionType.Linear);
         activeTween.TweenProperty(fadeRect, "modulate:a", 0.0f, fadeDuration);
         await ToSignal(activeTween, Tween.SignalName.Finished);
-        GD.Print("SceneTransitionManager: Fade in finished.");
 
         isTransitioning = false;
     }
@@ -116,7 +122,6 @@ public partial class SceneTransitionManager : CanvasLayer
     private async Task<PackedScene> LoadSceneAsync(string path)
     {
         ResourceLoader.LoadThreadedRequest(path);
-        GD.Print($"SceneTransitionManager: Started threaded load for {path}");
         while (ResourceLoader.LoadThreadedGetStatus(path) == ResourceLoader.ThreadLoadStatus.InProgress)
         {
             await Task.Delay(16);
@@ -124,12 +129,10 @@ public partial class SceneTransitionManager : CanvasLayer
 
         if (ResourceLoader.LoadThreadedGetStatus(path) == ResourceLoader.ThreadLoadStatus.Loaded)
         {
-            GD.Print($"SceneTransitionManager: Threaded load finished for {path}");
             return ResourceLoader.LoadThreadedGet(path) as PackedScene;
         }
         else
         {
-            GD.PrintErr($"SceneTransitionManager: Threaded load failed for {path}. Status: {ResourceLoader.LoadThreadedGetStatus(path)}");
             return null;
         }
     }

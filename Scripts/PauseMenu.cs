@@ -17,10 +17,10 @@ public partial class PauseMenu : CenterContainer
 
 	public override void _Ready()
 	{
-		if (titleLabel is null) GD.PrintErr("PauseMenu: Title Label not assigned!");
-		if (continueButton is null) GD.PrintErr("PauseMenu: Continue Button not assigned!");
-		if (returnButton is null) GD.PrintErr("PauseMenu: Return Button not assigned!");
-		if (quitButton is null) GD.PrintErr("PauseMenu: Quit Button not assigned!");
+		if (titleLabel is null) { }
+		if (continueButton is null) { }
+		if (returnButton is null) { }
+		if (quitButton is null) { }
 
 
 		if (continueButton is not null)
@@ -65,7 +65,6 @@ public partial class PauseMenu : CenterContainer
 	{
 		if (titleLabel is null || continueButton is null || returnButton is null || quitButton is null)
 		{
-			GD.PrintErr("PauseMenu: Cannot start animation, one or more nodes are null.");
 			return;
 		}
 
@@ -147,11 +146,9 @@ public partial class PauseMenu : CenterContainer
 		if (worldNode is not null)
 		{
 			StatisticsManager.Instance.UpdateScores(worldNode.Score);
-			GD.Print($"Returning to menu. Recorded Score: {worldNode.Score}");
 		}
 		else
 		{
-			GD.PrintErr("PauseMenu: Could not find World node at /root/World to update scores.");
 			StatisticsManager.Instance.Save();
 		}
 
@@ -164,11 +161,9 @@ public partial class PauseMenu : CenterContainer
 		if (worldNode is not null)
 		{
 			StatisticsManager.Instance.UpdateScores(worldNode.Score);
-			GD.Print($"Quitting game. Recorded Score: {worldNode.Score}");
 		}
 		else
 		{
-			GD.PrintErr("PauseMenu: Could not find World node at /root/World to update scores.");
 			StatisticsManager.Instance.Save();
 		}
 
