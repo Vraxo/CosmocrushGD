@@ -1,6 +1,4 @@
 ﻿using Godot;
-using System.Diagnostics;
-using System.Resources;
 using System.Threading.Tasks; // Keep using Task for async/await convenience
 
 namespace CosmocrushGD;
@@ -117,8 +115,10 @@ public partial class SceneTransitionManager : CanvasLayer
     {
         ResourceLoader.LoadThreadedRequest(path);
         GD.Print($"SceneTransitionManager: Started threaded load for {path}");
+
         while (ResourceLoader.LoadThreadedGetStatus(path) == ResourceLoader.ThreadLoadStatus.InProgress)
         {
+
             await Task.Delay(16);
         }
 

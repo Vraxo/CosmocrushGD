@@ -9,7 +9,6 @@ public partial class World : WorldEnvironment
 	[Export] private Button pauseButton;
 	[Export] private CanvasLayer hudLayer;
 	[Export] private Label scoreLabel;
-	[Export] private Label fpsLabel;
 	[Export] private NodePath playerPath;
 	[Export] private AnimationPlayer scoreAnimationPlayer;
 
@@ -28,10 +27,6 @@ public partial class World : WorldEnvironment
 		if (scoreLabel is null)
 		{
 			GD.PrintErr("World._Ready: Score Label reference not set!");
-		}
-		if (fpsLabel is null)
-		{
-			GD.PrintErr("World._Ready: FPS Label reference not set!");
 		}
 		if (scoreAnimationPlayer is null)
 		{
@@ -69,11 +64,6 @@ public partial class World : WorldEnvironment
 
 	public override void _Process(double delta)
 	{
-		if (fpsLabel is not null)
-		{
-			fpsLabel.Text = $"FPS: {Engine.GetFramesPerSecond()}";
-		}
-
 		if (Input.IsActionJustPressed("ui_cancel") && !GetTree().Paused)
 		{
 			Pause();
@@ -83,23 +73,11 @@ public partial class World : WorldEnvironment
 	public override void _ExitTree()
 	{
 		GD.Print("World._ExitTree: Start");
-		if (player is not null && IsInstanceValid(player))
+		if (player is not null)
 		{
-
-
+			GD.Print("World._ExitTree: Unsubscribing from player GameOver event.");
 			player.GameOver -= OnGameOver;
-			GD.Print("World._ExitTree: Unsubscribed from player GameOver event.");
 		}
-
-		if (pauseButton is not null && IsInstanceValid(pauseButton))
-		{
-
-			if (pauseButton.IsConnected(Button.SignalName.Pressed, Callable.From(OnPauseButtonPressed)))
-			{
-				pauseButton.Pressed -= OnPauseButtonPressed;
-			}
-		}
-
 		base._ExitTree();
 		GD.Print("World._ExitTree: End");
 	}

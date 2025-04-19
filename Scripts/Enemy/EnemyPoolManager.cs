@@ -6,7 +6,6 @@ namespace CosmocrushGD;
 
 public partial class EnemyPoolManager : Node
 {
-	/*
 	[Export] private PackedScene meleeEnemyScene;
 	[Export] private PackedScene rangedEnemyScene;
 	[Export] private PackedScene explodingEnemyScene;
@@ -248,5 +247,4 @@ public partial class EnemyPoolManager : Node
 
 		queue.Enqueue(enemy);
 	}
-	*/
 }

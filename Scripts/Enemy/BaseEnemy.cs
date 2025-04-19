@@ -1,5 +1,4 @@
 using Godot;
-using System; // Added using System for Action
 
 namespace CosmocrushGD;
 
@@ -20,10 +19,10 @@ public partial class BaseEnemy : CharacterBody2D
 	protected bool CanShoot = true;
 	protected Vector2 Knockback = Vector2.Zero;
 	protected Player TargetPlayer;
-	private bool _navigationMapNeedsUpdate = true;
+	private bool _navigationMapNeedsUpdate = true; // Flag to control map setting
 
-	private Action damageCooldownTimeoutAction;
-
+	public EnemyPoolManager PoolManager { get; set; }
+	public PackedScene SourceScene { get; set; }
 
 	protected virtual float KnockbackResistanceMultiplier => 0.1f;
 	protected virtual int MaxHealth => 20;
@@ -37,22 +36,12 @@ public partial class BaseEnemy : CharacterBody2D
 	public override void _Ready()
 	{
 		TargetPlayer = GetNode<Player>("/root/World/Player");
-
-
-		damageCooldownTimeoutAction = () => CanShoot = true;
-
-		if (DeathTimer is not null)
-		{
-			DeathTimer.Timeout += OnDeathTimerTimeout;
-		}
-		if (DamageCooldownTimer is not null)
-		{
-			DamageCooldownTimer.WaitTime = AttackCooldown;
-			DamageCooldownTimer.Timeout += damageCooldownTimeoutAction;
-		}
+		DeathTimer.Timeout += ReturnToPool;
+		DamageCooldownTimer.WaitTime = AttackCooldown;
+		DamageCooldownTimer.Timeout += () => CanShoot = true;
 	}
 
-
+	// Modified ResetState to remove navigation map RID parameter
 	public virtual void ResetState(Vector2 spawnPosition)
 	{
 		GlobalPosition = spawnPosition;
@@ -61,7 +50,7 @@ public partial class BaseEnemy : CharacterBody2D
 		Velocity = Vector2.Zero;
 		Knockback = Vector2.Zero;
 		CanShoot = true;
-		_navigationMapNeedsUpdate = true;
+		_navigationMapNeedsUpdate = true; // Signal that map needs to be set
 
 		Visible = true;
 		if (Sprite is not null)
@@ -84,12 +73,15 @@ public partial class BaseEnemy : CharacterBody2D
 			DeathParticles.Restart();
 		}
 
-		DeathTimer?.Stop();
-		DamageCooldownTimer?.Stop();
+		DeathTimer.Stop();
+		DamageCooldownTimer.Stop();
 
-		HitAnimationPlayer?.Stop(true);
+		if (HitAnimationPlayer is not null && HitAnimationPlayer.IsPlaying())
+		{
+			HitAnimationPlayer.Stop(true);
+		}
 
-
+		// Clear any previous navigation path
 		if (Navigator is not null)
 		{
 			Navigator.TargetPosition = GlobalPosition;
@@ -117,7 +109,7 @@ public partial class BaseEnemy : CharacterBody2D
 			return;
 		}
 
-
+		// Attempt to set the navigation map if needed
 		if (_navigationMapNeedsUpdate)
 		{
 			if (Navigator is not null && IsInsideTree())
@@ -126,16 +118,24 @@ public partial class BaseEnemy : CharacterBody2D
 				if (currentWorldMap.IsValid)
 				{
 					Navigator.SetNavigationMap(currentWorldMap);
-					_navigationMapNeedsUpdate = false;
+					// GD.Print($"{Name} successfully set navigation map: {currentWorldMap}"); // Optional debug log
+					_navigationMapNeedsUpdate = false; // Map is set, don't try again until reset
+				}
+				else
+				{
+					// Map not ready yet, will retry next physics frame
+					// GD.Print($"{Name} waiting for valid navigation map..."); // Optional debug log
 				}
 			}
 			else
 			{
+				// Navigator null or not in tree, cannot set map yet
 				_navigationMapNeedsUpdate = true;
 			}
 		}
 
 
+		// Only calculate movement if the map has been successfully set
 		Vector2 movement = Vector2.Zero;
 		if (!_navigationMapNeedsUpdate)
 		{
@@ -149,7 +149,7 @@ public partial class BaseEnemy : CharacterBody2D
 
 	protected virtual Vector2 CalculateMovement()
 	{
-
+		// Basic checks first
 		if (_navigationMapNeedsUpdate || TargetPlayer is null || !IsInstanceValid(TargetPlayer) || Navigator is null)
 		{
 			return Vector2.Zero;
@@ -158,15 +158,16 @@ public partial class BaseEnemy : CharacterBody2D
 		float distanceToPlayer = GlobalPosition.DistanceTo(TargetPlayer.GlobalPosition);
 		if (distanceToPlayer <= ProximityThreshold)
 		{
-			Navigator.TargetPosition = GlobalPosition;
+			Navigator.TargetPosition = GlobalPosition; // Stop moving
 			return Vector2.Zero;
 		}
 
-
+		// Check if the map assigned to the agent is valid and active
 		Rid currentMap = Navigator.GetNavigationMap();
 		if (!currentMap.IsValid || !NavigationServer2D.MapIsActive(currentMap))
 		{
-			_navigationMapNeedsUpdate = true;
+			// GD.Print($"Navigation map invalid or inactive for {Name}. RID: {currentMap}"); // Optional: Debug log
+			_navigationMapNeedsUpdate = true; // Attempt to re-acquire map next frame
 			return Vector2.Zero;
 		}
 
@@ -177,9 +178,11 @@ public partial class BaseEnemy : CharacterBody2D
 			return Vector2.Zero;
 		}
 
-
+		// Check reachability *after* setting target position
 		if (!Navigator.IsTargetReachable())
 		{
+			// Target might be outside the navmesh, maybe stop or use direct path?
+			// For now, just stop movement calculated via navigation.
 			return Vector2.Zero;
 		}
 
@@ -240,8 +243,8 @@ public partial class BaseEnemy : CharacterBody2D
 		Sprite.FlipH = GlobalPosition.X > TargetPlayer.GlobalPosition.X;
 	}
 
-	protected virtual void AttemptAttack()
-	{
+	protected virtual void AttemptAttack() 
+	{ 
 
 	}
 
@@ -270,7 +273,7 @@ public partial class BaseEnemy : CharacterBody2D
 			DeathParticles.Emitting = true;
 		}
 
-		DeathTimer?.Start();
+		DeathTimer.Start();
 	}
 
 	private void ShowDamageIndicator(int damage)
@@ -297,21 +300,15 @@ public partial class BaseEnemy : CharacterBody2D
 		AddChild(indicator);
 	}
 
-	private void OnDeathTimerTimeout()
+	private void ReturnToPool()
 	{
-		QueueFree();
-	}
+		if (PoolManager is null)
+		{
+			GD.PushError("Enemy cannot return to pool: PoolManager reference missing!");
+			QueueFree();
+			return;
+		}
 
-	public override void _ExitTree()
-	{
-		if (DeathTimer is not null && DeathTimer.IsConnected(Timer.SignalName.Timeout, Callable.From(OnDeathTimerTimeout)))
-		{
-			DeathTimer.Timeout -= OnDeathTimerTimeout;
-		}
-		if (DamageCooldownTimer is not null && damageCooldownTimeoutAction is not null && DamageCooldownTimer.IsConnected(Timer.SignalName.Timeout, Callable.From(damageCooldownTimeoutAction)))
-		{
-			DamageCooldownTimer.Timeout -= damageCooldownTimeoutAction;
-		}
-		base._ExitTree();
+		PoolManager.ReturnEnemy(this);
 	}
 }
