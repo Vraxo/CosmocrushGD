@@ -81,8 +81,6 @@ shape = SubResource("RectangleShape2D_collider")
 path_desired_distance = 5.0
 target_desired_distance = 5.0
 path_max_distance = 10.0
-avoidance_enabled = true
-radius = 16.0
 
 [node name="Sprite" type="Sprite2D" parent="."]
 material = SubResource("ShaderMaterial_sprite_mat")
@@ -133,6 +131,3 @@ initial_velocity_max = 150.0
 scale_amount_min = 8.0
 scale_amount_max = 8.0
 scale_amount_curve = SubResource("Curve_particle_scale")
-
-[node name="PathUpdateTimer" type="Timer" parent="."]
-autostart = true

@@ -8,7 +8,6 @@
 [node name="Joystick" type="Control"]
 layout_mode = 3
 anchors_preset = 0
-mouse_filter = 1
 script = ExtResource("2_k6xia")
 
 [node name="Ring" type="Sprite2D" parent="."]
@@ -28,4 +27,3 @@ offset_top = -960.0
 offset_right = -871.0
 offset_bottom = -828.0
 scale = Vector2(29.6, 14.44)
-mouse_filter = 1

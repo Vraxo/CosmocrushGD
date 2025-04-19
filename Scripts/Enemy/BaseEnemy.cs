@@ -1,5 +1,5 @@
 using Godot;
-using System;
+using System; // Added using System for Action
 
 namespace CosmocrushGD;
 
@@ -14,7 +14,6 @@ public partial class BaseEnemy : CharacterBody2D
 	[Export] public CpuParticles2D DeathParticles;
 	[Export] protected PackedScene DamageIndicatorScene;
 	[Export] protected AnimationPlayer HitAnimationPlayer;
-	[Export] protected Timer PathUpdateTimer;
 
 	protected int Health;
 	protected bool Dead = false;
@@ -50,14 +49,6 @@ public partial class BaseEnemy : CharacterBody2D
 		{
 			DamageCooldownTimer.WaitTime = AttackCooldown;
 			DamageCooldownTimer.Timeout += damageCooldownTimeoutAction;
-		}
-		if (PathUpdateTimer is not null)
-		{
-			PathUpdateTimer.Timeout += OnPathUpdateTimerTimeout;
-		}
-		else
-		{
-			GD.PrintErr($"{Name}: PathUpdateTimer is not assigned in the inspector!");
 		}
 	}
 
@@ -95,8 +86,6 @@ public partial class BaseEnemy : CharacterBody2D
 
 		DeathTimer?.Stop();
 		DamageCooldownTimer?.Stop();
-		PathUpdateTimer?.Start();
-
 
 		HitAnimationPlayer?.Stop(true);
 
@@ -138,7 +127,6 @@ public partial class BaseEnemy : CharacterBody2D
 				{
 					Navigator.SetNavigationMap(currentWorldMap);
 					_navigationMapNeedsUpdate = false;
-					CallDeferred(nameof(UpdateNavigationTarget));
 				}
 			}
 			else
@@ -156,15 +144,6 @@ public partial class BaseEnemy : CharacterBody2D
 
 		Knockback = Knockback.Lerp(Vector2.Zero, KnockbackRecovery);
 		Velocity = movement + Knockback;
-
-
-		if (Navigator is not null && Navigator.AvoidanceEnabled)
-		{
-			Navigator.Velocity = Velocity;
-			Vector2 safeVelocity = Navigator.GetNextPathPosition() - GlobalPosition;
-			Velocity = safeVelocity.Normalized() * Velocity.Length();
-		}
-
 		MoveAndSlide();
 	}
 
@@ -179,7 +158,7 @@ public partial class BaseEnemy : CharacterBody2D
 		float distanceToPlayer = GlobalPosition.DistanceTo(TargetPlayer.GlobalPosition);
 		if (distanceToPlayer <= ProximityThreshold)
 		{
-
+			Navigator.TargetPosition = GlobalPosition;
 			return Vector2.Zero;
 		}
 
@@ -191,6 +170,7 @@ public partial class BaseEnemy : CharacterBody2D
 			return Vector2.Zero;
 		}
 
+		Navigator.TargetPosition = TargetPlayer.GlobalPosition;
 
 		if (Navigator.IsNavigationFinished() || Navigator.IsTargetReached())
 		{
@@ -204,19 +184,8 @@ public partial class BaseEnemy : CharacterBody2D
 		}
 
 
-
 		Vector2 direction = (Navigator.GetNextPathPosition() - GlobalPosition).Normalized();
 		return direction * Speed;
-	}
-
-	private void UpdateNavigationTarget()
-	{
-		if (_navigationMapNeedsUpdate || TargetPlayer is null || !IsInstanceValid(TargetPlayer) || Navigator is null || Dead)
-		{
-			return;
-		}
-
-		Navigator.TargetPosition = TargetPlayer.GlobalPosition;
 	}
 
 	public void TakeDamage(int damage)
@@ -286,8 +255,6 @@ public partial class BaseEnemy : CharacterBody2D
 		Dead = true;
 		Velocity = Vector2.Zero;
 		Knockback = Vector2.Zero;
-		PathUpdateTimer?.Stop();
-
 
 		if (Collider is not null)
 		{
@@ -335,11 +302,6 @@ public partial class BaseEnemy : CharacterBody2D
 		QueueFree();
 	}
 
-	private void OnPathUpdateTimerTimeout()
-	{
-		UpdateNavigationTarget();
-	}
-
 	public override void _ExitTree()
 	{
 		if (DeathTimer is not null && DeathTimer.IsConnected(Timer.SignalName.Timeout, Callable.From(OnDeathTimerTimeout)))
@@ -349,10 +311,6 @@ public partial class BaseEnemy : CharacterBody2D
 		if (DamageCooldownTimer is not null && damageCooldownTimeoutAction is not null && DamageCooldownTimer.IsConnected(Timer.SignalName.Timeout, Callable.From(damageCooldownTimeoutAction)))
 		{
 			DamageCooldownTimer.Timeout -= damageCooldownTimeoutAction;
-		}
-		if (PathUpdateTimer is not null && PathUpdateTimer.IsConnected(Timer.SignalName.Timeout, Callable.From(OnPathUpdateTimerTimeout)))
-		{
-			PathUpdateTimer.Timeout -= OnPathUpdateTimerTimeout;
 		}
 		base._ExitTree();
 	}

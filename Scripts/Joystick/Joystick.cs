@@ -27,8 +27,8 @@ public partial class Joystick : Control
     {
         if (!OS.HasFeature("mobile"))
         {
-            //QueueFree();
-            //return;
+            QueueFree();
+            return;
         }
 
         Visible = true;
