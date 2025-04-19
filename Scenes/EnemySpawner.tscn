@@ -7,7 +7,7 @@
 [ext_resource type="PackedScene" uid="uid://brifun4nf7fd2" path="res://Scenes/Enemies/TankEnemy.tscn" id="5_tank"]
 [ext_resource type="PackedScene" uid="uid://cjwdwplrovln5" path="res://Scenes/Enemies/SwiftEnemy.tscn" id="6_swift"]
 
-[node name="EnemySpawner" type="Node2D" node_paths=PackedStringArray("spawnTimer", "rateIncreaseTimer", "enemyPoolManager")]
+[node name="EnemySpawner" type="Node2D" node_paths=PackedStringArray("spawnTimer", "rateIncreaseTimer")]
 script = ExtResource("1_raqvy")
 spawnTimer = NodePath("SpawnTimer")
 rateIncreaseTimer = NodePath("RateIncreaseTimer")
@@ -18,7 +18,7 @@ tankEnemyScene = ExtResource("5_tank")
 swiftEnemyScene = ExtResource("6_swift")
 playerPath = NodePath("../Player")
 spawnAreaNodePath = NodePath("../SpawnZone")
-enemyPoolManager = NodePath("../EnemyPoolManager")
+
 
 [node name="SpawnTimer" type="Timer" parent="."]
 wait_time = 2.0

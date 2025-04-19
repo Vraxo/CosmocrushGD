@@ -209,7 +209,8 @@ position = Vector2(88, -64)
 self_modulate = Color(22, 22, 22, 1)
 position = Vector2(584, 888)
 
-[node name="EnemySpawner" parent="." instance=ExtResource("9_ukot3")]
+[node name="EnemySpawner" parent="." node_paths=PackedStringArray("enemyPoolManager") instance=ExtResource("9_ukot3")]
+enemyPoolManager = NodePath("../EnemyPoolManager")
 
 [node name="EnemyPoolManager" type="Node2D" parent="."]
 position = Vector2(360, 160)
