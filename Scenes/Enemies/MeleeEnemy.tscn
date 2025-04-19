@@ -18,3 +18,7 @@ meleeKnockbackForce = 500.0
 [node name="Sprite" parent="." index="2"]
 material = SubResource("ShaderMaterial_c0udt")
 texture = ExtResource("2_y6omx")
+
+[node name="NavigationUpdateTimer" parent="." index="5"]
+process_callback = 0
+wait_time = 0.25

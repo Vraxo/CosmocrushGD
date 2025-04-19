@@ -1,10 +1,17 @@
+using CosmocrushGD;
 using Godot;
+using System.Diagnostics;
+using System.Xml.Linq;
+using System;
+
+using Godot;
+using System;
 
 namespace CosmocrushGD;
 
 public partial class BaseEnemy : CharacterBody2D
 {
-	[Export] protected NavigationAgent2D Navigator;
+	// Removed: Navigator, NavigationUpdateTimer
 	[Export] protected Sprite2D Sprite;
 	[Export] protected Timer DeathTimer;
 	[Export] protected Timer DamageCooldownTimer;
@@ -19,7 +26,7 @@ public partial class BaseEnemy : CharacterBody2D
 	protected bool CanShoot = true;
 	protected Vector2 Knockback = Vector2.Zero;
 	protected Player TargetPlayer;
-	private bool _navigationMapNeedsUpdate = true; // Flag to control map setting
+	// Removed: _navigationMapReady, _navigationDesiredVelocity
 
 	public EnemyPoolManager PoolManager { get; set; }
 	public PackedScene SourceScene { get; set; }
@@ -28,20 +35,24 @@ public partial class BaseEnemy : CharacterBody2D
 	protected virtual int MaxHealth => 20;
 	protected virtual int Damage => 1;
 	protected virtual float Speed => 100f;
-	protected virtual float DamageRadius => 50f;
-	protected virtual float ProximityThreshold => 32f;
+	protected virtual float DamageRadius => 50f; // Used for attack range
+	protected virtual float ProximityThreshold => 32f; // Distance at which to stop moving closer
 	protected virtual float KnockbackRecovery => 0.1f;
 	protected virtual float AttackCooldown => 0.5f;
+	// Removed: NavigationReachedThreshold
 
 	public override void _Ready()
 	{
 		TargetPlayer = GetNode<Player>("/root/World/Player");
-		DeathTimer.Timeout += ReturnToPool;
+		DeathTimer.Timeout += OnDeathTimerTimeout;
 		DamageCooldownTimer.WaitTime = AttackCooldown;
-		DamageCooldownTimer.Timeout += () => CanShoot = true;
+		DamageCooldownTimer.Timeout += OnDamageCooldownTimerTimeout;
+		// Removed: NavigationUpdateTimer connection
+		// Removed: Navigator signal connection
 	}
 
-	// Modified ResetState to remove navigation map RID parameter
+	// Removed: _Notification method for map setting
+
 	public virtual void ResetState(Vector2 spawnPosition)
 	{
 		GlobalPosition = spawnPosition;
@@ -50,7 +61,7 @@ public partial class BaseEnemy : CharacterBody2D
 		Velocity = Vector2.Zero;
 		Knockback = Vector2.Zero;
 		CanShoot = true;
-		_navigationMapNeedsUpdate = true; // Signal that map needs to be set
+		// Removed: _navigationMapReady reset
 
 		Visible = true;
 		if (Sprite is not null)
@@ -75,18 +86,13 @@ public partial class BaseEnemy : CharacterBody2D
 
 		DeathTimer.Stop();
 		DamageCooldownTimer.Stop();
+		// Removed: NavigationUpdateTimer start/stop
+		// Removed: Navigator state reset
 
 		if (HitAnimationPlayer is not null && HitAnimationPlayer.IsPlaying())
 		{
 			HitAnimationPlayer.Stop(true);
 		}
-
-		// Clear any previous navigation path
-		if (Navigator is not null)
-		{
-			Navigator.TargetPosition = GlobalPosition;
-		}
-
 
 		ProcessMode = ProcessModeEnum.Inherit;
 	}
@@ -106,89 +112,52 @@ public partial class BaseEnemy : CharacterBody2D
 	{
 		if (Dead)
 		{
+			Velocity = Knockback.Lerp(Vector2.Zero, KnockbackRecovery); // Still apply knockback decay
+			if (Velocity != Vector2.Zero) { MoveAndSlide(); }
 			return;
 		}
 
-		// Attempt to set the navigation map if needed
-		if (_navigationMapNeedsUpdate)
-		{
-			if (Navigator is not null && IsInsideTree())
-			{
-				Rid currentWorldMap = GetWorld2D().NavigationMap;
-				if (currentWorldMap.IsValid)
-				{
-					Navigator.SetNavigationMap(currentWorldMap);
-					// GD.Print($"{Name} successfully set navigation map: {currentWorldMap}"); // Optional debug log
-					_navigationMapNeedsUpdate = false; // Map is set, don't try again until reset
-				}
-				else
-				{
-					// Map not ready yet, will retry next physics frame
-					// GD.Print($"{Name} waiting for valid navigation map..."); // Optional debug log
-				}
-			}
-			else
-			{
-				// Navigator null or not in tree, cannot set map yet
-				_navigationMapNeedsUpdate = true;
-			}
-		}
-
-
-		// Only calculate movement if the map has been successfully set
-		Vector2 movement = Vector2.Zero;
-		if (!_navigationMapNeedsUpdate)
-		{
-			movement = CalculateMovement();
-		}
-
+		// Apply knockback decay
 		Knockback = Knockback.Lerp(Vector2.Zero, KnockbackRecovery);
-		Velocity = movement + Knockback;
-		MoveAndSlide();
+
+		Vector2 desiredMovement = Vector2.Zero;
+
+		if (TargetPlayer is not null && IsInstanceValid(TargetPlayer))
+		{
+			Vector2 directionToPlayer = (TargetPlayer.GlobalPosition - GlobalPosition).Normalized();
+			float distanceToPlayer = GlobalPosition.DistanceTo(TargetPlayer.GlobalPosition);
+
+			// Only move if further than the proximity threshold
+			if (distanceToPlayer > ProximityThreshold)
+			{
+				desiredMovement = directionToPlayer * Speed;
+			}
+		}
+
+		// Set the final velocity for the CharacterBody2D
+		Velocity = desiredMovement + Knockback;
+
+		// Move the character
+		if (Velocity != Vector2.Zero)
+		{
+			MoveAndSlide();
+		}
 	}
 
-	protected virtual Vector2 CalculateMovement()
+	// Removed: OnSafeVelocityComputed
+	// Removed: TrySetNavigationMap
+	// Removed: OnNavigationUpdateTimerTimeout
+	// Removed: RequestNavigationUpdate
+	// Removed: CalculateDesiredVelocity
+
+	private void OnDamageCooldownTimerTimeout()
 	{
-		// Basic checks first
-		if (_navigationMapNeedsUpdate || TargetPlayer is null || !IsInstanceValid(TargetPlayer) || Navigator is null)
-		{
-			return Vector2.Zero;
-		}
+		CanShoot = true;
+	}
 
-		float distanceToPlayer = GlobalPosition.DistanceTo(TargetPlayer.GlobalPosition);
-		if (distanceToPlayer <= ProximityThreshold)
-		{
-			Navigator.TargetPosition = GlobalPosition; // Stop moving
-			return Vector2.Zero;
-		}
-
-		// Check if the map assigned to the agent is valid and active
-		Rid currentMap = Navigator.GetNavigationMap();
-		if (!currentMap.IsValid || !NavigationServer2D.MapIsActive(currentMap))
-		{
-			// GD.Print($"Navigation map invalid or inactive for {Name}. RID: {currentMap}"); // Optional: Debug log
-			_navigationMapNeedsUpdate = true; // Attempt to re-acquire map next frame
-			return Vector2.Zero;
-		}
-
-		Navigator.TargetPosition = TargetPlayer.GlobalPosition;
-
-		if (Navigator.IsNavigationFinished() || Navigator.IsTargetReached())
-		{
-			return Vector2.Zero;
-		}
-
-		// Check reachability *after* setting target position
-		if (!Navigator.IsTargetReachable())
-		{
-			// Target might be outside the navmesh, maybe stop or use direct path?
-			// For now, just stop movement calculated via navigation.
-			return Vector2.Zero;
-		}
-
-
-		Vector2 direction = (Navigator.GetNextPathPosition() - GlobalPosition).Normalized();
-		return direction * Speed;
+	private void OnDeathTimerTimeout()
+	{
+		ReturnToPool();
 	}
 
 	public void TakeDamage(int damage)
@@ -229,7 +198,7 @@ public partial class BaseEnemy : CharacterBody2D
 		{
 			return;
 		}
-
+		// No navigation velocity to reset anymore
 		Knockback += force * KnockbackResistanceMultiplier;
 	}
 
@@ -240,13 +209,53 @@ public partial class BaseEnemy : CharacterBody2D
 			return;
 		}
 
-		Sprite.FlipH = GlobalPosition.X > TargetPlayer.GlobalPosition.X;
+		// Base flipping on the current velocity or player position if stationary
+		if (Math.Abs(Velocity.X) > 0.1f)
+		{
+			Sprite.FlipH = Velocity.X < 0;
+		}
+		else // If not moving horizontally, base flip on player position relative to enemy
+		{
+			Sprite.FlipH = GlobalPosition.X > TargetPlayer.GlobalPosition.X;
+		}
 	}
 
-	protected virtual void AttemptAttack() 
-	{ 
+	protected virtual void AttemptAttack()
+	{
+		if (!CanShoot || TargetPlayer is null || !IsInstanceValid(TargetPlayer))
+		{
+			return;
+		}
 
+		float distance = GlobalPosition.DistanceTo(TargetPlayer.GlobalPosition);
+
+		// Use DamageRadius for attack range check
+		if (distance > DamageRadius)
+		{
+			return;
+		}
+
+		PerformAttackAction(); // Call a method to perform the specific attack
+
+		CanShoot = false;
+		DamageCooldownTimer.Start();
 	}
+
+	// Renamed from PerformMeleeAttack for generality, derived classes implement specifics
+	protected virtual void PerformAttackAction()
+	{
+		// Base implementation could be empty or a default melee attack
+		// Example: Melee damage + knockback
+		if (TargetPlayer is not null && IsInstanceValid(TargetPlayer))
+		{
+			TargetPlayer.TakeDamage(Damage);
+			Vector2 knockbackDir = (TargetPlayer.GlobalPosition - GlobalPosition).Normalized();
+			TargetPlayer.ApplyKnockback(knockbackDir * meleeKnockbackForce); // Ensure meleeKnockbackForce is defined
+		}
+	}
+	// Add a placeholder for meleeKnockbackForce if PerformAttackAction uses it in BaseEnemy
+	protected virtual float meleeKnockbackForce => 500f;
+
 
 	protected virtual void Die()
 	{
@@ -258,6 +267,8 @@ public partial class BaseEnemy : CharacterBody2D
 		Dead = true;
 		Velocity = Vector2.Zero;
 		Knockback = Vector2.Zero;
+		// Removed: NavigationUpdateTimer.Stop();
+		// Removed: Navigator state reset
 
 		if (Collider is not null)
 		{
@@ -296,7 +307,6 @@ public partial class BaseEnemy : CharacterBody2D
 
 		indicator.Position = new(0, verticalOffset);
 
-
 		AddChild(indicator);
 	}
 
@@ -305,10 +315,29 @@ public partial class BaseEnemy : CharacterBody2D
 		if (PoolManager is null)
 		{
 			GD.PushError("Enemy cannot return to pool: PoolManager reference missing!");
-			QueueFree();
+			QueueFree(); // Free if pool manager is gone
 			return;
 		}
 
 		PoolManager.ReturnEnemy(this);
+	}
+
+	public override void _ExitTree()
+	{
+		// Ensure timers are stopped if the node exits prematurely
+		DeathTimer?.Stop();
+		DamageCooldownTimer?.Stop();
+
+		if (DeathTimer is not null && IsInstanceValid(DeathTimer))
+		{
+			DeathTimer.Timeout -= OnDeathTimerTimeout;
+		}
+		if (DamageCooldownTimer is not null && IsInstanceValid(DamageCooldownTimer))
+		{
+			DamageCooldownTimer.Timeout -= OnDamageCooldownTimerTimeout;
+		}
+		// Removed: NavigationUpdateTimer disconnect
+		// Removed: Navigator signal disconnect
+		base._ExitTree();
 	}
 }
