@@ -6,10 +6,10 @@
 [ext_resource type="PackedScene" uid="uid://druxgxf4hraot" path="res://Scenes/PauseMenu.tscn" id="2_oslhl"]
 [ext_resource type="PackedScene" uid="uid://40dd12m6jo1n" path="res://Scenes/Menu/GameOverMenu.tscn" id="3_kn687"]
 [ext_resource type="PackedScene" uid="uid://b3dwcw52g56vq" path="res://Scenes/Player.tscn" id="3_litg1"]
+[ext_resource type="PackedScene" uid="uid://kl8icgw5t1ag" path="res://Scenes/Joystick.tscn" id="6_cuxsd"]
 [ext_resource type="PackedScene" uid="uid://ccgy7bcrdqq1t" path="res://Scenes/Rock.tscn" id="7_suwn8"]
 [ext_resource type="Script" path="res://Scripts/Inventory/HealthBar.cs" id="8_h5gnh"]
 [ext_resource type="PackedScene" uid="uid://bqu24huyyxf2h" path="res://Scenes/EnemySpawner.tscn" id="9_ukot3"]
-[ext_resource type="PackedScene" uid="uid://kl8icgw5t1ag" path="res://Scenes/Joystick.tscn" id="12_vbg6t"]
 [ext_resource type="Script" path="res://Scripts/Enemy/EnemyPoolManager.cs" id="13_mra1g"]
 
 [sub_resource type="Environment" id="Environment_fpnmc"]
@@ -102,29 +102,18 @@ script = ExtResource("2_bvcjy")
 
 [node name="HUD" type="CanvasLayer" parent="."]
 
-[node name="Joystick" parent="HUD" instance=ExtResource("12_vbg6t")]
-anchors_preset = 2
-anchor_top = 1.0
-anchor_bottom = 1.0
-offset_left = 184.0
-offset_top = -160.0
-offset_right = 184.0
-offset_bottom = -160.0
-grow_vertical = 0
+[node name="Joystick" parent="HUD" instance=ExtResource("6_cuxsd")]
+offset_left = 166.0
+offset_top = 593.0
+offset_right = 166.0
+offset_bottom = 593.0
 scale = Vector2(0.1, 0.1)
 
-[node name="FiringJoystick" parent="HUD" instance=ExtResource("12_vbg6t")]
-anchors_preset = 3
-anchor_left = 1.0
-anchor_top = 1.0
-anchor_right = 1.0
-anchor_bottom = 1.0
-offset_left = -160.0
-offset_top = -160.0
-offset_right = -160.0
-offset_bottom = -160.0
-grow_horizontal = 0
-grow_vertical = 0
+[node name="FiringJoystick" parent="HUD" instance=ExtResource("6_cuxsd")]
+offset_left = 1122.0
+offset_top = 614.0
+offset_right = 1122.0
+offset_bottom = 614.0
 scale = Vector2(0.1, 0.1)
 SimulateInput = false
 
@@ -210,7 +199,6 @@ navigation_polygon = SubResource("NavigationPolygon_hiflp")
 position = Vector2(88, -64)
 
 [node name="Player" parent="." instance=ExtResource("3_litg1")]
-self_modulate = Color(22, 22, 22, 1)
 position = Vector2(584, 888)
 
 [node name="EnemySpawner" parent="." instance=ExtResource("9_ukot3")]

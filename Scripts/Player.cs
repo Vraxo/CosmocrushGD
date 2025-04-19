@@ -5,7 +5,7 @@ namespace CosmocrushGD;
 
 public partial class Player : CharacterBody2D
 {
-	public int Health = 1;
+	public int Health = 100;
 	public int MaxHealth = 100;
 	public Inventory Inventory = new();
 
