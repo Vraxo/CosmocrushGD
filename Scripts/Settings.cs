@@ -1,4 +1,4 @@
-﻿using Godot;
+﻿﻿using Godot;
 using YamlDotNet.Core;
 using YamlDotNet.Serialization;
 using YamlDotNet.Serialization.NamingConventions;
@@ -49,6 +49,7 @@ public sealed class Settings
         }
         catch (YamlException e)
         {
+            GD.PrintErr($"Error loading settings: {e.Message}");
 
             SettingsData = new()
             {

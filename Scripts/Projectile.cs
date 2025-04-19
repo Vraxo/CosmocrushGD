@@ -1,138 +1,89 @@
-using System.Xml.Linq;
-using Godot;
+﻿using Godot;
 
 namespace CosmocrushGD;
 
 public partial class Projectile : Area2D
 {
-	public Vector2 Direction = Vector2.Zero;
+    public Vector2 Direction = Vector2.Zero;
 
-	[Export] public Sprite2D Sprite;
-	[Export] public CpuParticles2D DestructionParticles;
-	[Export] public Timer LifetimeTimer;
-	[Export] public Timer DestructionDelayTimer;
+    [Export] public Sprite2D Sprite;
+    [Export] public CpuParticles2D DestructionParticles;
 
-	private bool active = true;
+    private bool active = true;
 
-	private const float Speed = 300f;
-	private const float KnockbackForce = 300f;
-	private const float DefaultLifetime = 10.0f;
-	private const float DefaultDestructionDelay = 1.0f;
+    private const float Speed = 300f;
+    private const float KnockbackForce = 300f;
 
-	public override void _Ready()
-	{
-		BodyEntered += OnBodyEntered;
+    public override void _Ready()
+    {
+        BodyEntered += OnBodyEntered;
+        
+        GetTree().CreateTimer(10.0).Timeout += () =>
+        {
+            if (!active)
+            {
+                return;
+            }
 
-		if (LifetimeTimer is not null)
-		{
-			LifetimeTimer.WaitTime = DefaultLifetime;
-			LifetimeTimer.Timeout += OnLifetimeTimeout;
-			LifetimeTimer.Start();
-		}
-		else
-		{
-		}
+            StartDestructionSequence();
+        };
+    }
 
-		if (DestructionDelayTimer is not null)
-		{
-			DestructionDelayTimer.WaitTime = DefaultDestructionDelay;
-			DestructionDelayTimer.OneShot = true;
-			DestructionDelayTimer.Timeout += QueueFreeSelf;
-		}
-		else
-		{
-		}
-	}
+    public override void _PhysicsProcess(double delta)
+    {
+        if (!active || Direction == Vector2.Zero)
+        {
+            return;
+        }
 
-	public override void _PhysicsProcess(double delta)
-	{
-		if (!active || Direction == Vector2.Zero)
-		{
-			return;
-		}
+        GlobalPosition += Direction * Speed * (float)delta;
+    }
 
-		GlobalPosition += Direction * Speed * (float)delta;
-	}
+    private void OnBodyEntered(Node2D body)
+    {
+        if (!active || body is not Player player)
+        {
+            return;
+        }
 
-	public override void _ExitTree()
-	{
-		if (IsInstanceValid(this))
-		{
-			BodyEntered -= OnBodyEntered;
-		}
-		if (LifetimeTimer is not null && IsInstanceValid(LifetimeTimer))
-		{
-			LifetimeTimer.Timeout -= OnLifetimeTimeout;
-		}
-		if (DestructionDelayTimer is not null && IsInstanceValid(DestructionDelayTimer))
-		{
-			DestructionDelayTimer.Timeout -= QueueFreeSelf;
-		}
-		base._ExitTree();
-	}
+        player.TakeDamage(1);
+        player.ApplyKnockback(Direction * KnockbackForce);
+        StartDestructionSequence();
+    }
 
-	private void OnBodyEntered(Node2D body)
-	{
-		if (!active || body is not Player player)
-		{
-			return;
-		}
+    private void StartDestructionSequence()
+    {
+        if (!active)
+        {
+            return;
+        }
 
-		player.TakeDamage(1);
-		player.ApplyKnockback(Direction * KnockbackForce);
-		StartDestructionSequence();
-	}
+        active = false;
 
-	private void OnLifetimeTimeout()
-	{
-		if (!active)
-		{
-			return;
-		}
-		StartDestructionSequence();
-	}
+        SetDeferred(Area2D.PropertyName.Monitoring, false);
+        SetDeferred(Area2D.PropertyName.Monitorable, false);
 
-	private void StartDestructionSequence()
-	{
-		if (!active)
-		{
-			return;
-		}
+        if (Sprite != null)
+        {
+            Sprite.Visible = false;
+        }
 
-		active = false;
-		LifetimeTimer?.Stop();
+        Direction = Vector2.Zero;
 
-		SetDeferred(Area2D.PropertyName.Monitoring, false);
-		SetDeferred(Area2D.PropertyName.Monitorable, false);
+        if (DestructionParticles is not null)
+        {
+            DestructionParticles.Emitting = true;
+            DestructionParticles.OneShot = true;
+        }
 
-		if (Sprite != null)
-		{
-			Sprite.Visible = false;
-		}
+        GetTree().CreateTimer(1.0).Timeout += () =>
+        {
+            if (!IsInstanceValid(this))
+            {
+                return;
+            }
 
-		Direction = Vector2.Zero;
-
-		if (DestructionParticles is not null)
-		{
-			DestructionParticles.OneShot = true;
-		}
-
-		if (DestructionDelayTimer is not null)
-		{
-			DestructionDelayTimer.Start();
-		}
-		else
-		{
-			QueueFreeSelf();
-		}
-	}
-
-	private void QueueFreeSelf()
-	{
-		if (!IsInstanceValid(this))
-		{
-			return;
-		}
-		QueueFree();
-	}
+            QueueFree();
+        };
+    }
 }

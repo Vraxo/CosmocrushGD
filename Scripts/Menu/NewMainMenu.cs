@@ -23,6 +23,7 @@ public partial class NewMainMenu : CenterContainer
 		menuShell = GetParent()?.GetParent<MenuShell>();
 		if (menuShell is null)
 		{
+			GD.PrintErr("NewMainMenu: Could not find MenuShell parent!");
 		}
 
 		try
@@ -32,6 +33,7 @@ public partial class NewMainMenu : CenterContainer
 		}
 		catch (Exception e)
 		{
+			GD.PrintErr($"Error accessing Singletons (Settings/Statistics): {e.Message}");
 		}
 
 		if (startButton is not null) startButton.Pressed += OnStartButtonPressed;

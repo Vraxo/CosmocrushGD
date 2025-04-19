@@ -28,30 +28,6 @@ public partial class GlobalAudioPlayer : Node
 		InitializePools();
 	}
 
-	public override void _ExitTree()
-	{
-		if (_instance == this)
-		{
-			_instance = null;
-		}
-
-		foreach (var player in availablePlayers1D)
-		{
-			if (IsInstanceValid(player) && player.IsConnected(AudioStreamPlayer.SignalName.Finished, Callable.From(OnPlayer1DFinished)))
-			{
-				player.Finished -= OnPlayer1DFinished;
-			}
-		}
-		foreach (var player in availablePlayers2D)
-		{
-			if (IsInstanceValid(player) && player.IsConnected(AudioStreamPlayer2D.SignalName.Finished, Callable.From(OnPlayer2DFinished)))
-			{
-				player.Finished -= OnPlayer2DFinished;
-			}
-		}
-		base._ExitTree();
-	}
-
 	private void InitializePools()
 	{
 		for (int i = 0; i < InitialPoolSize; i++)
@@ -65,7 +41,7 @@ public partial class GlobalAudioPlayer : Node
 	{
 		AudioStreamPlayer audioPlayer = new() { Bus = SfxBusName };
 		AddChild(audioPlayer);
-		audioPlayer.Finished += OnPlayer1DFinished;
+		audioPlayer.Finished += () => ReturnPlayerToPool(audioPlayer);
 		return audioPlayer;
 	}
 
@@ -73,7 +49,7 @@ public partial class GlobalAudioPlayer : Node
 	{
 		AudioStreamPlayer2D audioPlayer = new() { Bus = SfxBusName };
 		AddChild(audioPlayer);
-		audioPlayer.Finished += OnPlayer2DFinished;
+		audioPlayer.Finished += () => ReturnPlayerToPool(audioPlayer);
 		return audioPlayer;
 	}
 
@@ -91,6 +67,7 @@ public partial class GlobalAudioPlayer : Node
 		}
 		else
 		{
+			GD.Print("GlobalAudioPlayer: 2D pool empty, creating new player.");
 			audioPlayer = CreateAndSetupPlayer2D();
 		}
 
@@ -114,6 +91,7 @@ public partial class GlobalAudioPlayer : Node
 		}
 		else
 		{
+			GD.Print("GlobalAudioPlayer: 1D pool empty, creating new player.");
 			audioPlayer = CreateAndSetupPlayer1D();
 		}
 
@@ -122,34 +100,9 @@ public partial class GlobalAudioPlayer : Node
 		audioPlayer.Play();
 	}
 
-	private void OnPlayer1DFinished()
-	{
-		foreach (var child in GetChildren())
-		{
-			if (child is AudioStreamPlayer player && !player.Playing)
-			{
-				ReturnPlayerToPool(player);
-				break;
-			}
-		}
-	}
-
-	private void OnPlayer2DFinished()
-	{
-		foreach (var child in GetChildren())
-		{
-			if (child is AudioStreamPlayer2D player && !player.Playing)
-			{
-				ReturnPlayerToPool(player);
-				break;
-			}
-		}
-	}
-
-
 	private void ReturnPlayerToPool(AudioStreamPlayer audioPlayer)
 	{
-		if (audioPlayer is null || !IsInstanceValid(audioPlayer) || availablePlayers1D.Contains(audioPlayer))
+		if (audioPlayer is null || !IsInstanceValid(audioPlayer))
 		{
 			return;
 		}
@@ -159,7 +112,7 @@ public partial class GlobalAudioPlayer : Node
 
 	private void ReturnPlayerToPool(AudioStreamPlayer2D audioPlayer)
 	{
-		if (audioPlayer is null || !IsInstanceValid(audioPlayer) || availablePlayers2D.Contains(audioPlayer))
+		if (audioPlayer is null || !IsInstanceValid(audioPlayer))
 		{
 			return;
 		}

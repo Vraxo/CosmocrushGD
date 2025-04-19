@@ -1,18 +1,14 @@
 using Godot;
-using System;
+using System; // Added using System for Action
 
 namespace CosmocrushGD;
 
 public partial class BaseEnemy : CharacterBody2D
 {
-	[Signal]
-	public delegate void EnemyDiedEventHandler(BaseEnemy enemy);
-
 	[Export] protected NavigationAgent2D Navigator;
 	[Export] protected Sprite2D Sprite;
 	[Export] protected Timer DeathTimer;
 	[Export] protected Timer DamageCooldownTimer;
-	[Export] protected Timer NavigationUpdateTimer; // Added Export for the new timer
 	[Export] public CollisionShape2D Collider;
 	[Export] public CpuParticles2D DamageParticles;
 	[Export] public CpuParticles2D DeathParticles;
@@ -23,14 +19,9 @@ public partial class BaseEnemy : CharacterBody2D
 	protected bool Dead = false;
 	protected bool CanShoot = true;
 	protected Vector2 Knockback = Vector2.Zero;
-
+	protected Player TargetPlayer;
 	private bool _navigationMapNeedsUpdate = true;
-	private bool _navigationMapValidCheck = false;
-	private bool _canUpdateNavigationTarget = true; // Flag to control target updates
 
-	public EnemyPoolManager PoolManager { get; set; }
-	public PackedScene SourceScene { get; set; }
-	public Player TargetPlayer { get; set; }
 	private Action damageCooldownTimeoutAction;
 
 
@@ -42,41 +33,28 @@ public partial class BaseEnemy : CharacterBody2D
 	protected virtual float ProximityThreshold => 32f;
 	protected virtual float KnockbackRecovery => 0.1f;
 	protected virtual float AttackCooldown => 0.5f;
-	protected virtual float NavigationUpdateInterval => 0.5f; // Default interval, can be overridden
 
 	public override void _Ready()
 	{
+		TargetPlayer = GetNode<Player>("/root/World/Player");
+
+
 		damageCooldownTimeoutAction = () => CanShoot = true;
 
 		if (DeathTimer is not null)
 		{
-			DeathTimer.Timeout += ReturnToPool;
+			DeathTimer.Timeout += OnDeathTimerTimeout;
 		}
 		if (DamageCooldownTimer is not null)
 		{
 			DamageCooldownTimer.WaitTime = AttackCooldown;
 			DamageCooldownTimer.Timeout += damageCooldownTimeoutAction;
 		}
-		if (NavigationUpdateTimer is not null) // Setup the new timer
-		{
-			NavigationUpdateTimer.WaitTime = NavigationUpdateInterval;
-			NavigationUpdateTimer.OneShot = false; // Make it repeating
-			NavigationUpdateTimer.Timeout += OnNavigationUpdateTimeout;
-		}
 	}
 
-	// New method called by the NavigationUpdateTimer
-	private void OnNavigationUpdateTimeout()
-	{
-		_canUpdateNavigationTarget = true;
-	}
 
 	public virtual void ResetState(Vector2 spawnPosition)
 	{
-		if (TargetPlayer is null)
-		{
-		}
-
 		GlobalPosition = spawnPosition;
 		Health = MaxHealth;
 		Dead = false;
@@ -84,8 +62,6 @@ public partial class BaseEnemy : CharacterBody2D
 		Knockback = Vector2.Zero;
 		CanShoot = true;
 		_navigationMapNeedsUpdate = true;
-		_navigationMapValidCheck = false;
-		_canUpdateNavigationTarget = true; // Allow immediate update on reset
 
 		Visible = true;
 		if (Sprite is not null)
@@ -110,24 +86,26 @@ public partial class BaseEnemy : CharacterBody2D
 
 		DeathTimer?.Stop();
 		DamageCooldownTimer?.Stop();
-		NavigationUpdateTimer?.Start(); // Start the navigation timer
+
 		HitAnimationPlayer?.Stop(true);
+
 
 		if (Navigator is not null)
 		{
+			Navigator.TargetPosition = GlobalPosition;
 		}
 
+
 		ProcessMode = ProcessModeEnum.Inherit;
-		SetPhysicsProcess(true);
-		SetProcess(true);
 	}
 
 	public override void _Process(double delta)
 	{
-		if (Dead || TargetPlayer is null || !IsInstanceValid(TargetPlayer))
+		if (Dead)
 		{
 			return;
 		}
+
 		UpdateSpriteDirection();
 		AttemptAttack();
 	}
@@ -139,20 +117,16 @@ public partial class BaseEnemy : CharacterBody2D
 			return;
 		}
 
+
 		if (_navigationMapNeedsUpdate)
 		{
 			if (Navigator is not null && IsInsideTree())
 			{
-				var worldMap = GetWorld2D()?.NavigationMap ?? default;
-				if (worldMap.IsValid)
+				Rid currentWorldMap = GetWorld2D().NavigationMap;
+				if (currentWorldMap.IsValid)
 				{
-					Navigator.SetNavigationMap(worldMap);
+					Navigator.SetNavigationMap(currentWorldMap);
 					_navigationMapNeedsUpdate = false;
-					Navigator.TargetPosition = GlobalPosition; // Set initial target
-					_canUpdateNavigationTarget = true; // Allow update after map set
-				}
-				else
-				{
 				}
 			}
 			else
@@ -161,8 +135,9 @@ public partial class BaseEnemy : CharacterBody2D
 			}
 		}
 
+
 		Vector2 movement = Vector2.Zero;
-		if (!_navigationMapNeedsUpdate && TargetPlayer is not null && IsInstanceValid(TargetPlayer))
+		if (!_navigationMapNeedsUpdate)
 		{
 			movement = CalculateMovement();
 		}
@@ -174,7 +149,8 @@ public partial class BaseEnemy : CharacterBody2D
 
 	protected virtual Vector2 CalculateMovement()
 	{
-		if (TargetPlayer is null || !IsInstanceValid(TargetPlayer) || Navigator is null)
+
+		if (_navigationMapNeedsUpdate || TargetPlayer is null || !IsInstanceValid(TargetPlayer) || Navigator is null)
 		{
 			return Vector2.Zero;
 		}
@@ -182,46 +158,35 @@ public partial class BaseEnemy : CharacterBody2D
 		float distanceToPlayer = GlobalPosition.DistanceTo(TargetPlayer.GlobalPosition);
 		if (distanceToPlayer <= ProximityThreshold)
 		{
-			// Only update target if allowed, to prevent rapid recalculation when close
-			if (_canUpdateNavigationTarget)
-			{
-				Navigator.TargetPosition = GlobalPosition; // Stop moving when close
-				_canUpdateNavigationTarget = false; // Consume the update permission
-			}
+			Navigator.TargetPosition = GlobalPosition;
 			return Vector2.Zero;
 		}
 
+
 		Rid currentMap = Navigator.GetNavigationMap();
-		bool isMapValid = currentMap.IsValid && NavigationServer2D.MapIsActive(currentMap);
-
-		// Update the target position only if the timer allows and the map is valid
-		if (_canUpdateNavigationTarget && isMapValid)
+		if (!currentMap.IsValid || !NavigationServer2D.MapIsActive(currentMap))
 		{
-			Navigator.TargetPosition = TargetPlayer.GlobalPosition;
-			_canUpdateNavigationTarget = false; // We just updated the target
+			_navigationMapNeedsUpdate = true;
+			return Vector2.Zero;
 		}
-		else if (!isMapValid) // Handle invalid map case
-		{
-			if (!_navigationMapValidCheck)
-			{
-				_navigationMapValidCheck = true;
-			}
-			_navigationMapNeedsUpdate = true; // Try to re-acquire map next frame
-			return Vector2.Zero; // Don't move if map is bad
-		}
-		_navigationMapValidCheck = isMapValid; // Update check flag based on current validity
 
+		Navigator.TargetPosition = TargetPlayer.GlobalPosition;
 
 		if (Navigator.IsNavigationFinished() || Navigator.IsTargetReached())
 		{
-			return Vector2.Zero; // Reached target or finished path
+			return Vector2.Zero;
 		}
 
-		// Always get direction towards the next point on the *current* path
+
+		if (!Navigator.IsTargetReachable())
+		{
+			return Vector2.Zero;
+		}
+
+
 		Vector2 direction = (Navigator.GetNextPathPosition() - GlobalPosition).Normalized();
 		return direction * Speed;
 	}
-
 
 	public void TakeDamage(int damage)
 	{
@@ -229,17 +194,19 @@ public partial class BaseEnemy : CharacterBody2D
 		{
 			return;
 		}
+
 		Health -= damage;
 		HitAnimationPlayer?.Play("HitFlash");
 		ShowDamageIndicator(damage);
 
-
-		if (World.Instance is not null)
+		var worldNode = GetNode<World>("/root/World");
+		if (worldNode is not null)
 		{
-			World.Instance.AddScore(damage);
+			worldNode.AddScore(damage);
 		}
 		else
 		{
+			GD.PrintErr($"Could not find World node at /root/World to grant score in {Name}.TakeDamage.");
 		}
 
 		if (DamageParticles is not null)
@@ -259,6 +226,7 @@ public partial class BaseEnemy : CharacterBody2D
 		{
 			return;
 		}
+
 		Knockback += force * KnockbackResistanceMultiplier;
 	}
 
@@ -268,11 +236,13 @@ public partial class BaseEnemy : CharacterBody2D
 		{
 			return;
 		}
+
 		Sprite.FlipH = GlobalPosition.X > TargetPlayer.GlobalPosition.X;
 	}
 
 	protected virtual void AttemptAttack()
 	{
+
 	}
 
 	protected virtual void Die()
@@ -281,17 +251,16 @@ public partial class BaseEnemy : CharacterBody2D
 		{
 			return;
 		}
+
 		Dead = true;
 		Velocity = Vector2.Zero;
 		Knockback = Vector2.Zero;
-		SetPhysicsProcess(false);
-		SetProcess(false);
-		NavigationUpdateTimer?.Stop(); // Stop the navigation timer
 
 		if (Collider is not null)
 		{
 			Collider.Disabled = true;
 		}
+
 		if (Sprite is not null)
 		{
 			Sprite.Visible = false;
@@ -300,8 +269,8 @@ public partial class BaseEnemy : CharacterBody2D
 		{
 			DeathParticles.Emitting = true;
 		}
-		EmitSignal(SignalName.EnemyDied, this);
-		DeathTimer?.Start(); // Death timer handles returning to pool
+
+		DeathTimer?.Start();
 	}
 
 	private void ShowDamageIndicator(int damage)
@@ -310,45 +279,38 @@ public partial class BaseEnemy : CharacterBody2D
 		{
 			return;
 		}
+
 		var indicator = DamageIndicatorScene.Instantiate<DamageIndicator>();
 		indicator.Text = damage.ToString();
 		indicator.Health = Health;
 		indicator.MaxHealth = MaxHealth;
+
 		float verticalOffset = -20f;
 		if (Sprite is not null && Sprite.Texture is not null)
 		{
-			verticalOffset = -Sprite.Texture.GetHeight() / 2f * Scale.Y - 5f;
+			verticalOffset = -Sprite.Texture.GetHeight() / 2f * Scale.Y;
 		}
+
 		indicator.Position = new(0, verticalOffset);
+
+
 		AddChild(indicator);
 	}
 
-
-	private void ReturnToPool()
+	private void OnDeathTimerTimeout()
 	{
-		if (PoolManager is null)
-		{
-			QueueFree();
-			return;
-		}
-		TargetPlayer = null;
-		NavigationUpdateTimer?.Stop(); // Ensure timer is stopped before returning
-		PoolManager.ReturnEnemy(this);
+		QueueFree();
 	}
 
 	public override void _ExitTree()
 	{
-		if (DeathTimer is not null && IsInstanceValid(DeathTimer) && DeathTimer.IsConnected(Timer.SignalName.Timeout, Callable.From(ReturnToPool)))
+		if (DeathTimer is not null && DeathTimer.IsConnected(Timer.SignalName.Timeout, Callable.From(OnDeathTimerTimeout)))
 		{
-			DeathTimer.Timeout -= ReturnToPool;
+			DeathTimer.Timeout -= OnDeathTimerTimeout;
 		}
-		if (DamageCooldownTimer is not null && IsInstanceValid(DamageCooldownTimer) && damageCooldownTimeoutAction is not null && DamageCooldownTimer.IsConnected(Timer.SignalName.Timeout, Callable.From(damageCooldownTimeoutAction)))
+		if (DamageCooldownTimer is not null && damageCooldownTimeoutAction is not null && DamageCooldownTimer.IsConnected(Timer.SignalName.Timeout, Callable.From(damageCooldownTimeoutAction)))
 		{
 			DamageCooldownTimer.Timeout -= damageCooldownTimeoutAction;
-		}
-		if (NavigationUpdateTimer is not null && IsInstanceValid(NavigationUpdateTimer) && NavigationUpdateTimer.IsConnected(Timer.SignalName.Timeout, Callable.From(OnNavigationUpdateTimeout)))
-		{
-			NavigationUpdateTimer.Timeout -= OnNavigationUpdateTimeout; // Disconnect the new timer signal
 		}
 		base._ExitTree();
 	}

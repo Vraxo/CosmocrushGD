@@ -16,24 +16,32 @@ public partial class ShakeyCamera : Camera2D
     public override void _Ready()
     {
         rng.Randomize();
+        GD.Print($"ShakeyCamera._Ready: Initial Zoom: {Zoom}");
     }
 
     public override void _Process(double delta)
     {
+        // Check if the game is paused
         if (GetTree().Paused)
         {
-            ResetShake();
-            return;
+            ResetShake(); // Reset the shake immediately to stop any ongoing shake
+            return;       // Exit the process function to avoid further calculations
         }
 
+        // Print zoom level every frame (even when paused due to ProcessMode=Always)
+        // Reduce frequency if too spammy, e.g., using a timer check
+        // GD.Print($"ShakeyCamera._Process: Current Zoom: {Zoom}");
 
         if (shakeStrength <= 0)
         {
+            // Only reset shake if not actively shaking
             if (Offset != Vector2.Zero || Rotation != 0.0f)
             {
+                // ResetShake(); // Maybe don't reset here if zoom is happening? Let zoom finish?
             }
+            // return; // Keep processing zoom even if not shaking
         }
-        else
+        else // Only apply shake logic if actively shaking
         {
             shakeDuration = Mathf.Max(shakeDuration - (float)delta, 0);
             shakeStrength = Mathf.Lerp(shakeStrength, 0.0f, ShakeDecay * (float)delta);
@@ -52,16 +60,24 @@ public partial class ShakeyCamera : Camera2D
 
     public void Shake(float strength, float duration)
     {
+        if (strength > shakeStrength)
+        {
+            shakeStrength = strength;
+        }
 
+        shakeDuration = duration;
     }
 
     public void ZoomToPoint(float zoomAmount, float duration)
     {
+        GD.Print($"ShakeyCamera.ZoomToPoint: Called with zoomAmount={zoomAmount}, duration={duration}");
         zoomTween?.Kill();
+        GD.Print($"ShakeyCamera.ZoomToPoint: Previous zoomTween killed (if existed).");
 
         zoomTween = CreateTween();
         if (zoomTween is null)
         {
+            GD.PrintErr("ShakeyCamera.ZoomToPoint: Failed to create Tween!");
             return;
         }
 
@@ -70,15 +86,13 @@ public partial class ShakeyCamera : Camera2D
         zoomTween.SetEase(Tween.EaseType.Out);
         zoomTween.SetTrans(Tween.TransitionType.Cubic);
 
+        GD.Print($"ShakeyCamera.ZoomToPoint: Tween created and configured (ProcessMode=Idle). Binding property...");
         zoomTween.TweenProperty(this, PropertyName.Zoom.ToString(), new Vector2(zoomAmount, zoomAmount), duration);
+        GD.Print($"ShakeyCamera.ZoomToPoint: Property bound. Tween should start playing implicitly.");
 
-        zoomTween.Finished += OnZoomTweenFinished;
+        // Optional: Add a finished signal handler for debugging
+        zoomTween.Finished += () => GD.Print("ShakeyCamera.ZoomToPoint: Zoom Tween Finished.");
 
-    }
-
-    private void OnZoomTweenFinished()
-    {
-        // Can be used for debugging if needed
     }
 
     private void ApplyShake()
@@ -100,11 +114,13 @@ public partial class ShakeyCamera : Camera2D
         shakeDuration = 0.0f;
         Offset = Vector2.Zero;
         Rotation = 0.0f;
+        // GD.Print("ShakeyCamera: Shake reset."); // Optional debug
     }
 
     public void ResetZoom()
     {
         zoomTween?.Kill();
         Zoom = Vector2.One;
+        GD.Print("ShakeyCamera.ResetZoom: Zoom reset to 1.0.");
     }
 }

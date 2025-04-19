@@ -7,7 +7,7 @@
 [ext_resource type="PackedScene" uid="uid://brifun4nf7fd2" path="res://Scenes/Enemies/TankEnemy.tscn" id="5_wf851"]
 [ext_resource type="PackedScene" uid="uid://cjwdwplrovln5" path="res://Scenes/Enemies/SwiftEnemy.tscn" id="6_5lu60"]
 
-[node name="EnemyPoolManager" type="Node2D" node_paths=PackedStringArray("enemyContainerPath")]
+[node name="EnemyPoolManager" type="Node2D"]
 position = Vector2(360, 160)
 script = ExtResource("1_tr2t0")
 meleeEnemyScene = ExtResource("2_jquix")
@@ -16,5 +16,3 @@ explodingEnemyScene = ExtResource("4_1rt85")
 tankEnemyScene = ExtResource("5_wf851")
 swiftEnemyScene = ExtResource("6_5lu60")
 enemyContainerPath = NodePath("../EnemySpawner")
-initializationDelay = 0.2
-enemiesPerFrame = 1

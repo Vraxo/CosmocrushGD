@@ -7,7 +7,7 @@ public partial class Gun : Sprite2D
 	[Export] private RayCast2D rayCast;
 	[Export] private Line2D bulletTrail;
 	[Export] private Timer cooldownTimer;
-	[Export] private Timer bulletTrailTimer;
+
 
 	[Export] private float shakeStrength = 0.5f;
 	[Export] private float shakeDuration = 0.2f;
@@ -21,7 +21,6 @@ public partial class Gun : Sprite2D
 	private const float Cooldown = 0.182f;
 	private const float BulletRange = 10000f;
 	private const float KnockbackForce = 500f;
-	private const float BulletTrailDuration = 0.1f;
 
 
 	public override void _Ready()
@@ -37,12 +36,6 @@ public partial class Gun : Sprite2D
 		bulletTrail.Position = Vector2.Zero;
 
 		cooldownTimer.WaitTime = Cooldown;
-		if (bulletTrailTimer is not null)
-		{
-			bulletTrailTimer.WaitTime = BulletTrailDuration;
-			bulletTrailTimer.OneShot = true;
-			bulletTrailTimer.Timeout += HideBulletTrail;
-		}
 
 
 		gunshotAudio = ResourceLoader.Load<AudioStream>("res://Audio/SFX/Gunshot.mp3");
@@ -54,17 +47,8 @@ public partial class Gun : Sprite2D
 
 		if (cooldownTimer.IsStopped())
 		{
-			Fire(); // Re-enabled gun firing
+			Fire();
 		}
-	}
-
-	public override void _ExitTree()
-	{
-		if (bulletTrailTimer is not null && IsInstanceValid(bulletTrailTimer))
-		{
-			bulletTrailTimer.Timeout -= HideBulletTrail;
-		}
-		base._ExitTree();
 	}
 
 	private void Aim()
@@ -100,7 +84,7 @@ public partial class Gun : Sprite2D
 	private void Fire()
 	{
 		PlayGunshotSound();
-		if (camera is not null && IsInstanceValid(camera)) camera.Shake(shakeStrength, shakeDuration);
+		camera.Shake(shakeStrength, shakeDuration);
 		cooldownTimer.Start();
 		DamageEnemyIfHit();
 		UpdateBulletTrail();
@@ -116,7 +100,6 @@ public partial class Gun : Sprite2D
 
 	private void PerformRayCast()
 	{
-		if (rayCast is null) return;
 		rayCast.TargetPosition = Vector2.Right * BulletRange;
 		rayCast.ForceRaycastUpdate();
 	}
@@ -134,8 +117,6 @@ public partial class Gun : Sprite2D
 
 	private void UpdateBulletTrail()
 	{
-		if (bulletTrail is null || rayCast is null) return;
-
 		PerformRayCast();
 		bulletTrail.ClearPoints();
 		bulletTrail.AddPoint(Vector2.Zero);
@@ -146,14 +127,6 @@ public partial class Gun : Sprite2D
 
 		bulletTrail.AddPoint(ToLocal(endPosition));
 		bulletTrail.Visible = true;
-		bulletTrailTimer?.Start();
-	}
-
-	private void HideBulletTrail()
-	{
-		if (bulletTrail is not null)
-		{
-			bulletTrail.Visible = false;
-		}
+		GetTree().CreateTimer(0.1f).Timeout += () => bulletTrail.Visible = false;
 	}
 }

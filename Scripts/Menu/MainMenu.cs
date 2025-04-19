@@ -43,6 +43,7 @@ public partial class MainMenu : Node2D
 	{
 		if (worldScene is null)
 		{
+			GD.PrintErr("worldScene is not assigned in the Inspector!");
 			return;
 		}
 
