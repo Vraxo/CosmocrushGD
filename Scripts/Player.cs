@@ -10,17 +10,19 @@ public partial class Player : CharacterBody2D
 	public Inventory Inventory = new();
 
 	[Export] private Gun gun;
-	[Export] private AudioStream damageAudio;
+
 	[Export] private Sprite2D sprite;
 	[Export] private CpuParticles2D damageParticles;
 	[Export] private CpuParticles2D deathParticles;
-	[Export] private Node audioPlayerContainer;
+
 	[Export] private Timer regenerationTimer;
 	[Export] private NodePath cameraPath;
 	[Export] private Timer deathPauseTimer;
+	[Export] private AudioStreamPlayer deathAudioPlayer;
 
 	private ShakeyCamera camera;
 	private Vector2 knockbackVelocity = Vector2.Zero;
+	private AudioStream damageAudio;
 
 	private const int RegenerationRate = 0;
 	private const float Speed = 300.0f;
@@ -30,7 +32,7 @@ public partial class Player : CharacterBody2D
 	private const float DamageShakeDuration = 0.3f;
 	private const float DeathZoomAmount = 2.0f;
 	private const float DeathZoomDuration = 1.5f;
-	private const string SfxBusName = "SFX";
+
 
 	public event Action GameOver;
 
@@ -72,6 +74,9 @@ public partial class Player : CharacterBody2D
 		{
 			GD.PrintErr("Player: DeathPauseTimer not assigned in the scene tree or path!");
 		}
+
+
+		damageAudio = ResourceLoader.Load<AudioStream>("res://Audio/SFX/PlayerDamage.mp3");
 	}
 
 	public override void _PhysicsProcess(double delta)
@@ -142,20 +147,10 @@ public partial class Player : CharacterBody2D
 
 	private void PlayDamageSound()
 	{
-		if (damageAudio is null || audioPlayerContainer is null)
+		if (damageAudio is not null && GlobalAudioPlayer.Instance is not null)
 		{
-			return;
+			GlobalAudioPlayer.Instance.PlaySound(damageAudio);
 		}
-
-		AudioStreamPlayer newAudioPlayer = new()
-		{
-			Stream = damageAudio,
-			Bus = SfxBusName
-		};
-
-		audioPlayerContainer.AddChild(newAudioPlayer);
-		newAudioPlayer.Finished += () => OnSingleAudioPlayerFinished(newAudioPlayer);
-		newAudioPlayer.Play();
 	}
 
 	private void Die()
@@ -174,6 +169,11 @@ public partial class Player : CharacterBody2D
 		sprite.Visible = false;
 		gun.Visible = false;
 		deathParticles.Emitting = true;
+
+		if (deathAudioPlayer is not null)
+		{
+			deathAudioPlayer.Play();
+		}
 
 		GD.Print($"Player.Die: Checking camera instance validity before zoom...");
 		if (camera is not null && IsInstanceValid(camera))
@@ -220,12 +220,5 @@ public partial class Player : CharacterBody2D
 		Health = Math.Min(Health + RegenerationRate, MaxHealth);
 	}
 
-	private static void OnSingleAudioPlayerFinished(AudioStreamPlayer player)
-	{
-		if (player is null || !IsInstanceValid(player))
-		{
-			return;
-		}
-		player.QueueFree();
-	}
+
 }

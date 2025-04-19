@@ -1,8 +1,9 @@
-[gd_scene load_steps=6 format=3 uid="uid://ycjuiag28aml"]
+[gd_scene load_steps=7 format=3 uid="uid://ycjuiag28aml"]
 
 [ext_resource type="PackedScene" uid="uid://cyx6s25635vxa" path="res://Scenes/Enemies/BaseEnemy.tscn" id="1_cf2ug"]
 [ext_resource type="Shader" path="res://Shaders/EnemyHitFlash.gdshader" id="2_2b341"]
 [ext_resource type="Script" path="res://Scripts/Enemy/ExplodingEnemy.cs" id="2_p2ur1"]
+[ext_resource type="PackedScene" uid="uid://dmqcrw4acmcn4" path="res://Scenes/Enemies/Projectile.tscn" id="3_a16a5"]
 [ext_resource type="Texture2D" uid="uid://dbgfgox7t13k8" path="res://Sprites/Enemies/ExplodingEnemy.png" id="5_15nkj"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_mwxbo"]
@@ -13,10 +14,9 @@ shader_parameter/flash_value = 0.0
 
 [node name="ExplodingEnemy" instance=ExtResource("1_cf2ug")]
 script = ExtResource("2_p2ur1")
-projectileScene = null
+projectileScene = ExtResource("3_a16a5")
 projectileCount = 8
 meleeKnockbackForce = 500.0
-DamageIndicatorScene = null
 
 [node name="Sprite" parent="." index="2"]
 material = SubResource("ShaderMaterial_mwxbo")

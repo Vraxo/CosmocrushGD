@@ -1,9 +1,8 @@
-[gd_scene load_steps=10 format=3 uid="uid://b3dwcw52g56vq"]
+[gd_scene load_steps=9 format=3 uid="uid://b3dwcw52g56vq"]
 
 [ext_resource type="Script" path="res://Scripts/Player.cs" id="2_8tp0t"]
 [ext_resource type="Texture2D" uid="uid://cxr1nj8vjb03m" path="res://Sprites/Player.png" id="3_uj0h6"]
 [ext_resource type="PackedScene" uid="uid://be8lx86meoiyr" path="res://Scenes/Gun.tscn" id="3_yseaf"]
-[ext_resource type="AudioStream" uid="uid://yocd3vtwilsk" path="res://Audio/SFX/PlayerDamage.mp3" id="5_42wm7"]
 [ext_resource type="AudioStream" uid="uid://caa1jvfcokiae" path="res://Audio/SFX/PlayerDeath.mp3" id="6_uqcfv"]
 [ext_resource type="Script" path="res://Scripts/ShakeyCamera.cs" id="7_camera"]
 
@@ -18,19 +17,18 @@ point_count = 2
 _data = [Vector2(0.00433911, 0.993671), 0.0, 0.0, 0, 0, Vector2(0.998999, 0.00219095), 0.0, 0.0, 0, 0]
 point_count = 2
 
-[node name="Player" type="CharacterBody2D" node_paths=PackedStringArray("gun", "sprite", "damageParticles", "deathParticles", "audioPlayerContainer", "regenerationTimer", "deathPauseTimer")]
+[node name="Player" type="CharacterBody2D" node_paths=PackedStringArray("gun", "sprite", "damageParticles", "deathParticles", "regenerationTimer", "deathPauseTimer", "deathAudioPlayer")]
 collision_mask = 5
 motion_mode = 1
 script = ExtResource("2_8tp0t")
 gun = NodePath("Gun")
-damageAudio = ExtResource("5_42wm7")
 sprite = NodePath("Sprite")
 damageParticles = NodePath("DamageParticles")
 deathParticles = NodePath("DeathParticles")
-audioPlayerContainer = NodePath("AudioPlayerContainer")
 regenerationTimer = NodePath("RegenerationTimer")
 cameraPath = NodePath("Camera")
 deathPauseTimer = NodePath("DeathPauseTimer")
+deathAudioPlayer = NodePath("AudioPlayers/DeathAudioPlayer")
 
 [node name="ActualCollider" type="CollisionShape2D" parent="."]
 position = Vector2(0, 0.25)
@@ -57,10 +55,6 @@ script = ExtResource("7_camera")
 
 [node name="DeathAudioPlayer" type="AudioStreamPlayer" parent="AudioPlayers"]
 stream = ExtResource("6_uqcfv")
-bus = &"SFX"
-
-[node name="DamageAudioPlayer" type="AudioStreamPlayer" parent="AudioPlayers"]
-stream = ExtResource("5_42wm7")
 bus = &"SFX"
 
 [node name="DamageParticles" type="CPUParticles2D" parent="."]
@@ -96,8 +90,6 @@ scale_amount_min = 8.0
 scale_amount_max = 8.0
 scale_amount_curve = SubResource("Curve_death_scale")
 color = Color(0, 1, 1, 1)
-
-[node name="AudioPlayerContainer" type="Node" parent="."]
 
 [node name="RegenerationTimer" type="Timer" parent="."]
 autostart = true

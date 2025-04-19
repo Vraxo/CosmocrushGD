@@ -15,7 +15,6 @@ shader_parameter/flash_value = 0.0
 [node name="RangedEnemy" instance=ExtResource("1_iyp4x")]
 script = ExtResource("1_3crpb")
 projectileScene = ExtResource("3_12pu3")
-DamageIndicatorScene = null
 
 [node name="Sprite" parent="." index="2"]
 material = SubResource("ShaderMaterial_gokdc")

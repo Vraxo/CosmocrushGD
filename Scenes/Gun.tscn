@@ -1,11 +1,10 @@
-[gd_scene load_steps=5 format=3 uid="uid://be8lx86meoiyr"]
+[gd_scene load_steps=4 format=3 uid="uid://be8lx86meoiyr"]
 
 [ext_resource type="Script" path="res://Scripts/Gun.cs" id="1_7eoiq"]
 [ext_resource type="Texture2D" uid="uid://cd14rhlupx8ww" path="res://Sprites/Gun.png" id="1_lqgwl"]
-[ext_resource type="AudioStream" uid="uid://sm84ex4ys2ub" path="res://Audio/SFX/Gunshot.mp3" id="2_ynnvr"]
 [ext_resource type="AudioStream" uid="uid://ccneuoh8xdv8g" path="res://Audio/SFX/Reload.mp3" id="4_rjqaf"]
 
-[node name="Gun" type="Sprite2D" node_paths=PackedStringArray("rayCast", "bulletTrail", "cooldownTimer", "audioPlayerContainer")]
+[node name="Gun" type="Sprite2D" node_paths=PackedStringArray("rayCast", "bulletTrail", "cooldownTimer")]
 self_modulate = Color(2, 2, 2, 1)
 texture = ExtResource("1_lqgwl")
 offset = Vector2(16, 0)
@@ -13,8 +12,6 @@ script = ExtResource("1_7eoiq")
 rayCast = NodePath("RayCast")
 bulletTrail = NodePath("BulletTrail")
 cooldownTimer = NodePath("CooldownTimer")
-gunshotAudio = ExtResource("2_ynnvr")
-audioPlayerContainer = NodePath("AudioPlayerContainer")
 
 [node name="RayCast" type="RayCast2D" parent="."]
 target_position = Vector2(5000, 0)
@@ -35,5 +32,3 @@ one_shot = true
 
 [node name="ReloadTimer" type="Timer" parent="."]
 one_shot = true
-
-[node name="AudioPlayerContainer" type="Node" parent="."]

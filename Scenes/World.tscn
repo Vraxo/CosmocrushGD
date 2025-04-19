@@ -9,7 +9,7 @@
 [ext_resource type="PackedScene" uid="uid://dckpb03kuu5e0" path="res://Scenes/Enemies/MeleeEnemy.tscn" id="5_p3yak"]
 [ext_resource type="PackedScene" uid="uid://ccgy7bcrdqq1t" path="res://Scenes/Rock.tscn" id="7_suwn8"]
 [ext_resource type="Script" path="res://Scripts/Inventory/HealthBar.cs" id="8_h5gnh"]
-[ext_resource type="PackedScene" uid="uid://bqu24huyyxf2h" path="res://EnemySpawner.tscn" id="9_ukot3"]
+[ext_resource type="PackedScene" uid="uid://bqu24huyyxf2h" path="res://Scenes/EnemySpawner.tscn" id="9_ukot3"]
 [ext_resource type="PackedScene" uid="uid://ycjuiag28aml" path="res://Scenes/Enemies/ExplodingEnemy.tscn" id="11_dqhek"]
 [ext_resource type="PackedScene" uid="uid://kl8icgw5t1ag" path="res://Scenes/Joystick.tscn" id="12_vbg6t"]
 [ext_resource type="Script" path="res://Scripts/Enemy/EnemyPoolManager.cs" id="13_mra1g"]
@@ -209,12 +209,7 @@ position = Vector2(88, -64)
 self_modulate = Color(22, 22, 22, 1)
 position = Vector2(584, 888)
 
-[node name="EnemySpawner" parent="." node_paths=PackedStringArray("enemyPoolManager") instance=ExtResource("9_ukot3")]
-explodingEnemyScene = ExtResource("11_dqhek")
-tankEnemyScene = ExtResource("16_tj1fl")
-swiftEnemyScene = ExtResource("14_ywjyk")
-spawnAreaNodePath = NodePath("../SpawnZone")
-enemyPoolManager = NodePath("../EnemyPoolManager")
+[node name="EnemySpawner" parent="." instance=ExtResource("9_ukot3")]
 
 [node name="EnemyPoolManager" type="Node2D" parent="."]
 position = Vector2(360, 160)

@@ -7,8 +7,7 @@ public partial class Gun : Sprite2D
 	[Export] private RayCast2D rayCast;
 	[Export] private Line2D bulletTrail;
 	[Export] private Timer cooldownTimer;
-	[Export] private AudioStream gunshotAudio;
-	[Export] private Node audioPlayerContainer;
+
 
 	[Export] private float shakeStrength = 0.5f;
 	[Export] private float shakeDuration = 0.2f;
@@ -16,12 +15,13 @@ public partial class Gun : Sprite2D
 	private ShakeyCamera camera;
 	private Joystick firingJoystick;
 	private Vector2 direction = Vector2.Zero;
+	private AudioStream gunshotAudio;
 
 	private const int Damage = 5;
 	private const float Cooldown = 0.182f;
 	private const float BulletRange = 10000f;
 	private const float KnockbackForce = 500f;
-	private const string SfxBusName = "SFX";
+
 
 	public override void _Ready()
 	{
@@ -36,6 +36,9 @@ public partial class Gun : Sprite2D
 		bulletTrail.Position = Vector2.Zero;
 
 		cooldownTimer.WaitTime = Cooldown;
+
+
+		gunshotAudio = ResourceLoader.Load<AudioStream>("res://Audio/SFX/Gunshot.mp3");
 	}
 
 	public override void _Process(double delta)
@@ -89,20 +92,10 @@ public partial class Gun : Sprite2D
 
 	private void PlayGunshotSound()
 	{
-		if (gunshotAudio is null || audioPlayerContainer is null)
+		if (gunshotAudio is not null && GlobalAudioPlayer.Instance is not null)
 		{
-			return;
+			GlobalAudioPlayer.Instance.PlaySound(gunshotAudio);
 		}
-
-		AudioStreamPlayer newAudioPlayer = new()
-		{
-			Stream = gunshotAudio,
-			Bus = SfxBusName
-		};
-
-		audioPlayerContainer.AddChild(newAudioPlayer);
-		newAudioPlayer.Finished += () => newAudioPlayer.QueueFree();
-		newAudioPlayer.Play();
 	}
 
 	private void PerformRayCast()
