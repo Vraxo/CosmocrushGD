@@ -3,8 +3,8 @@
 [ext_resource type="Script" path="res://Scripts/Enemy/BaseEnemy.cs" id="1_base_script"]
 [ext_resource type="Shader" path="res://Shaders/EnemyHitFlash.gdshader" id="2_hit_flash_shader"]
 [ext_resource type="PackedScene" uid="uid://1jkhq6d44qfr" path="res://Scenes/DamageIndicator.tscn" id="3_damage_indicator"]
-[ext_resource type="PackedScene" path="res://Scenes/DamageParticleEffect.tscn" id="4_6hgar"]
-[ext_resource type="PackedScene" path="res://Scenes/DeathParticleEffect.tscn" id="5_ucnk6"]
+[ext_resource type="PackedScene" uid="uid://b8wgsgjf7w88x" path="res://Scenes/DamageParticleEffect.tscn" id="4_6hgar"]
+[ext_resource type="PackedScene" uid="uid://dxa0k84mjyghm" path="res://Scenes/DeathParticleEffect.tscn" id="5_ucnk6"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_root_mat"]
 shader = ExtResource("2_hit_flash_shader")

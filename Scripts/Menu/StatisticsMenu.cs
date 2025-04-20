@@ -1,279 +1,233 @@
 using Godot;
 
-namespace CosmocrushGD
+namespace CosmocrushGD;
+
+public partial class StatisticsMenu : ColorRect
 {
-	public partial class StatisticsMenu : ColorRect
+	[Export] private Label titleLabel;
+	[Export] private RichTextLabel gamesPlayedLabel;
+	[Export] private RichTextLabel totalScoreLabel;
+	[Export] private RichTextLabel topScoreLabel;
+	[Export] private RichTextLabel averageScoreLabel;
+	[Export] private UIButton clearButton;
+	[Export] private UIButton returnButton;
+	[Export] private ConfirmationDialog confirmationDialog;
+
+	private MenuShell menuShell;
+
+	private const string GamesPlayedDescriptionColor = "#FFE000";
+	private const string TotalScoreDescriptionColor = "#87CEEB";
+	private const string TopScoreDescriptionColor = "#FFA07A";
+	private const string AverageScoreDescriptionColor = "#98FB98";
+	private const string ValueColor = "#FFFFFF";
+	private const float FadeInDuration = 0.3f;
+	private const float StaggerDelay = 0.1f;
+	private const float InitialScaleMultiplier = 2.0f;
+
+	public override void _Ready()
 	{
-		[Export] private Label titleLabel;
-		[Export] private RichTextLabel gamesPlayedLabel;
-		[Export] private RichTextLabel totalScoreLabel;
-		[Export] private RichTextLabel topScoreLabel;
-		[Export] private RichTextLabel averageScoreLabel;
-		[Export] private UIButton clearButton;
-		[Export] private UIButton returnButton;
-		[Export] private ConfirmationDialog confirmationDialog;
-
-		private const string GamesPlayedDescColor = "#FFE000";
-		private const string TotalScoreDescColor = "#87CEEB";
-		private const string TopScoreDescColor = "#FFA07A";
-		private const string AverageScoreDescColor = "#98FB98";
-		private const string ValueColor = "#FFFFFF";
-
-		private const float FadeInDuration = 0.3f;
-		private const float StaggerDelay = 0.1f;
-		private const float InitialScaleMultiplier = 2.0f;
-
-		private MenuShell menuShell;
-
-		public override void _Ready()
+		menuShell = GetParent()?.GetParent()?.GetParent<MenuShell>();
+		if (menuShell is null)
 		{
-			menuShell = GetParent()?.GetParent<MenuShell>();
-			if (menuShell is null)
-			{
-			}
-
-			bool initializationFailed = false;
-			if (titleLabel == null) { initializationFailed = true; }
-			if (gamesPlayedLabel == null) { initializationFailed = true; }
-			if (totalScoreLabel == null) { initializationFailed = true; }
-			if (topScoreLabel == null) { initializationFailed = true; }
-			if (averageScoreLabel == null) { initializationFailed = true; }
-			if (clearButton == null) { initializationFailed = true; }
-			if (returnButton == null) { initializationFailed = true; }
-			if (confirmationDialog == null) { initializationFailed = true; }
-
-			if (initializationFailed)
-			{
-				return;
-			}
-
-			clearButton.Pressed += OnClearButtonPressed;
-			returnButton.Pressed += OnReturnButtonPressed;
-			confirmationDialog.Confirmed += OnResetConfirmed;
-
-
-			if (gamesPlayedLabel != null) gamesPlayedLabel.AutowrapMode = TextServer.AutowrapMode.Off;
-			if (totalScoreLabel != null) totalScoreLabel.AutowrapMode = TextServer.AutowrapMode.Off;
-			if (topScoreLabel != null) topScoreLabel.AutowrapMode = TextServer.AutowrapMode.Off;
-			if (averageScoreLabel != null) averageScoreLabel.AutowrapMode = TextServer.AutowrapMode.Off;
-
-			LoadAndDisplayStats();
-
-			CallDeferred(nameof(SetupPivots));
-			SetInitialState();
-			CallDeferred(nameof(StartFadeInAnimation));
+			GD.PrintErr("StatisticsMenu: Could not find MenuShell parent!");
 		}
 
-		private void SetupPivots()
+		if (titleLabel is null ||
+			gamesPlayedLabel is null ||
+			totalScoreLabel is null ||
+			topScoreLabel is null ||
+			averageScoreLabel is null ||
+			clearButton is null ||
+			returnButton is null ||
+			confirmationDialog is null)
 		{
-			if (titleLabel is not null) titleLabel.PivotOffset = titleLabel.Size / 2;
-			if (gamesPlayedLabel is not null) gamesPlayedLabel.PivotOffset = gamesPlayedLabel.Size / 2;
-			if (totalScoreLabel is not null) totalScoreLabel.PivotOffset = totalScoreLabel.Size / 2;
-			if (topScoreLabel is not null) topScoreLabel.PivotOffset = topScoreLabel.Size / 2;
-			if (averageScoreLabel is not null) averageScoreLabel.PivotOffset = averageScoreLabel.Size / 2;
-			if (clearButton is not null) clearButton.PivotOffset = clearButton.Size / 2;
-			if (returnButton is not null) returnButton.PivotOffset = returnButton.Size / 2;
+			GD.PrintErr("StatisticsMenu: One or more required node references are missing in the inspector! Aborting setup.");
+			return;
 		}
 
-		private void SetInitialState()
-		{
-			Vector2 initialScale = Vector2.One;
+		clearButton.Pressed += OnClearButtonPressed;
+		returnButton.Pressed += OnReturnButtonPressed;
+		confirmationDialog.Confirmed += OnResetConfirmed;
 
-			if (titleLabel is not null) { titleLabel.Modulate = Colors.Transparent; titleLabel.Scale = initialScale; }
-			if (gamesPlayedLabel is not null) { gamesPlayedLabel.Modulate = Colors.Transparent; gamesPlayedLabel.Scale = initialScale; }
-			if (totalScoreLabel is not null) { totalScoreLabel.Modulate = Colors.Transparent; totalScoreLabel.Scale = initialScale; }
-			if (topScoreLabel is not null) { topScoreLabel.Modulate = Colors.Transparent; topScoreLabel.Scale = initialScale; }
-			if (averageScoreLabel is not null) { averageScoreLabel.Modulate = Colors.Transparent; averageScoreLabel.Scale = initialScale; }
-			if (clearButton is not null) { clearButton.Modulate = Colors.Transparent; clearButton.Scale = initialScale; clearButton.TweenScale = false; }
-			if (returnButton is not null) { returnButton.Modulate = Colors.Transparent; returnButton.Scale = initialScale; returnButton.TweenScale = false; }
+		gamesPlayedLabel.AutowrapMode = TextServer.AutowrapMode.Off;
+		totalScoreLabel.AutowrapMode = TextServer.AutowrapMode.Off;
+		topScoreLabel.AutowrapMode = TextServer.AutowrapMode.Off;
+		averageScoreLabel.AutowrapMode = TextServer.AutowrapMode.Off;
+
+		LoadAndDisplayStats();
+
+		CallDeferred(nameof(SetupPivots));
+		SetInitialState();
+		CallDeferred(nameof(StartFadeInAnimation));
+	}
+
+	public override void _Input(InputEvent inputEvent)
+	{
+		if (confirmationDialog is not null && confirmationDialog.Visible)
+		{
+			return;
 		}
 
-		private void StartFadeInAnimation()
+		if (inputEvent.IsActionPressed("ui_cancel"))
 		{
-			if (titleLabel is null || gamesPlayedLabel is null || totalScoreLabel is null ||
-				topScoreLabel is null || averageScoreLabel is null || clearButton is null ||
-				returnButton is null)
-			{
-				return;
-			}
+			OnReturnButtonPressed();
+			GetViewport()?.SetInputAsHandled();
+		}
+	}
 
-			SetupPivots();
+	public override void _ExitTree()
+	{
+			clearButton.Pressed -= OnClearButtonPressed;
+			returnButton.Pressed -= OnReturnButtonPressed;
+			confirmationDialog.Confirmed -= OnResetConfirmed;
 
-			Tween tween = CreateTween();
-			tween.SetParallel(false);
-			tween.SetEase(Tween.EaseType.Out);
-			tween.SetTrans(Tween.TransitionType.Back);
+		base._ExitTree();
+	}
 
-			Vector2 initialScaleValue = Vector2.One * InitialScaleMultiplier;
-			Vector2 finalScale = Vector2.One;
+	private void SetupPivots()
+	{
+		titleLabel.PivotOffset = titleLabel.Size / 2;
+		gamesPlayedLabel.PivotOffset = gamesPlayedLabel.Size / 2;
+		totalScoreLabel.PivotOffset = totalScoreLabel.Size / 2;
+		topScoreLabel.PivotOffset = topScoreLabel.Size / 2;
+		averageScoreLabel.PivotOffset = averageScoreLabel.Size / 2;
+		clearButton.PivotOffset = clearButton.Size / 2;
+		returnButton.PivotOffset = returnButton.Size / 2;
+	}
 
-			tween.TweenInterval(StaggerDelay);
+	private void SetInitialState()
+	{
+		SetControlInitialState(titleLabel);
+		SetControlInitialState(gamesPlayedLabel);
+		SetControlInitialState(totalScoreLabel);
+		SetControlInitialState(topScoreLabel);
+		SetControlInitialState(averageScoreLabel);
+		SetControlInitialState(clearButton);
+		SetControlInitialState(returnButton);
+	}
 
-			if (titleLabel is not null)
-			{
-				tween.SetParallel(true);
-				tween.TweenProperty(titleLabel, "modulate:a", 1.0f, FadeInDuration);
-				tween.TweenProperty(titleLabel, "scale", finalScale, FadeInDuration).From(initialScaleValue);
-				tween.SetParallel(false);
-				tween.TweenInterval(StaggerDelay);
-			}
-
-			if (gamesPlayedLabel is not null)
-			{
-				tween.SetParallel(true);
-				tween.TweenProperty(gamesPlayedLabel, "modulate:a", 1.0f, FadeInDuration);
-				tween.TweenProperty(gamesPlayedLabel, "scale", finalScale, FadeInDuration).From(initialScaleValue);
-				tween.SetParallel(false);
-				tween.TweenInterval(StaggerDelay);
-			}
-
-			if (totalScoreLabel is not null)
-			{
-				tween.SetParallel(true);
-				tween.TweenProperty(totalScoreLabel, "modulate:a", 1.0f, FadeInDuration);
-				tween.TweenProperty(totalScoreLabel, "scale", finalScale, FadeInDuration).From(initialScaleValue);
-				tween.SetParallel(false);
-				tween.TweenInterval(StaggerDelay);
-			}
-
-			if (topScoreLabel is not null)
-			{
-				tween.SetParallel(true);
-				tween.TweenProperty(topScoreLabel, "modulate:a", 1.0f, FadeInDuration);
-				tween.TweenProperty(topScoreLabel, "scale", finalScale, FadeInDuration).From(initialScaleValue);
-				tween.SetParallel(false);
-				tween.TweenInterval(StaggerDelay);
-			}
-
-			if (averageScoreLabel is not null)
-			{
-				tween.SetParallel(true);
-				tween.TweenProperty(averageScoreLabel, "modulate:a", 1.0f, FadeInDuration);
-				tween.TweenProperty(averageScoreLabel, "scale", finalScale, FadeInDuration).From(initialScaleValue);
-				tween.SetParallel(false);
-				tween.TweenInterval(StaggerDelay);
-			}
-
-			if (clearButton is not null && returnButton is not null)
-			{
-				tween.SetParallel(true);
-				tween.TweenProperty(clearButton, "modulate:a", 1.0f, FadeInDuration);
-				tween.TweenProperty(clearButton, "scale", finalScale, FadeInDuration).From(initialScaleValue);
-				tween.TweenProperty(returnButton, "modulate:a", 1.0f, FadeInDuration);
-				tween.TweenProperty(returnButton, "scale", finalScale, FadeInDuration).From(initialScaleValue);
-				tween.SetParallel(false);
-				tween.TweenCallback(Callable.From(() =>
-				{
-					if (clearButton is not null) { clearButton.TweenScale = true; }
-					if (returnButton is not null) { returnButton.TweenScale = true; }
-				}));
-			}
-
-			tween.Play();
+	private void StartFadeInAnimation()
+	{
+		if (titleLabel is null || gamesPlayedLabel is null || totalScoreLabel is null ||
+			topScoreLabel is null || averageScoreLabel is null || clearButton is null ||
+			returnButton is null)
+		{
+			GD.PrintErr("StatisticsMenu: Cannot start fade-in animation, one or more controls are null.");
+			return;
 		}
 
-		private void LoadAndDisplayStats()
-		{
-			var statsManager = StatisticsManager.Instance;
-			var stats = statsManager.StatsData;
+		SetupPivots();
 
-			if (gamesPlayedLabel != null)
-			{
-				gamesPlayedLabel.Clear();
-				gamesPlayedLabel.PushColor(Color.FromHtml(GamesPlayedDescColor));
-				gamesPlayedLabel.AppendText("Games Played: ");
-				gamesPlayedLabel.Pop();
-				gamesPlayedLabel.PushColor(Color.FromHtml(ValueColor));
-				gamesPlayedLabel.AppendText($"{stats.GamesPlayed}");
-				gamesPlayedLabel.Pop();
-			}
-			if (totalScoreLabel != null)
-			{
-				totalScoreLabel.Clear();
-				totalScoreLabel.PushColor(Color.FromHtml(TotalScoreDescColor));
-				totalScoreLabel.AppendText("Total Score: ");
-				totalScoreLabel.Pop();
-				totalScoreLabel.PushColor(Color.FromHtml(ValueColor));
-				totalScoreLabel.AppendText($"{stats.TotalScore}");
-				totalScoreLabel.Pop();
-			}
-			if (topScoreLabel != null)
-			{
-				topScoreLabel.Clear();
-				topScoreLabel.PushColor(Color.FromHtml(TopScoreDescColor));
-				topScoreLabel.AppendText("Top Score: ");
-				topScoreLabel.Pop();
-				topScoreLabel.PushColor(Color.FromHtml(ValueColor));
-				topScoreLabel.AppendText($"{stats.TopScore}");
-				topScoreLabel.Pop();
-			}
-			if (averageScoreLabel != null)
-			{
-				averageScoreLabel.Clear();
-				averageScoreLabel.PushColor(Color.FromHtml(AverageScoreDescColor));
-				averageScoreLabel.AppendText("Average Score: ");
-				averageScoreLabel.Pop();
-				averageScoreLabel.PushColor(Color.FromHtml(ValueColor));
-				averageScoreLabel.AppendText($"{statsManager.GetAverageScore():F2}");
-				averageScoreLabel.Pop();
-			}
+		Tween tween = CreateTween();
+		tween.SetParallel(false);
+		tween.SetEase(Tween.EaseType.Out);
+		tween.SetTrans(Tween.TransitionType.Back);
+
+		var initialScaleValue = Vector2.One * InitialScaleMultiplier;
+		var finalScale = Vector2.One;
+
+		tween.TweenInterval(StaggerDelay);
+
+		AddFadeInTween(tween, titleLabel, finalScale, initialScaleValue);
+		AddFadeInTween(tween, gamesPlayedLabel, finalScale, initialScaleValue);
+		AddFadeInTween(tween, totalScoreLabel, finalScale, initialScaleValue);
+		AddFadeInTween(tween, topScoreLabel, finalScale, initialScaleValue);
+		AddFadeInTween(tween, averageScoreLabel, finalScale, initialScaleValue);
+
+		tween.SetParallel(true);
+		tween.TweenProperty(clearButton, "modulate:a", 1.0f, FadeInDuration);
+		tween.TweenProperty(clearButton, "scale", finalScale, FadeInDuration).From(initialScaleValue);
+		tween.TweenProperty(returnButton, "modulate:a", 1.0f, FadeInDuration);
+		tween.TweenProperty(returnButton, "scale", finalScale, FadeInDuration).From(initialScaleValue);
+		tween.SetParallel(false);
+		tween.TweenCallback(Callable.From(() =>
+		{
+			clearButton.TweenScale = true;
+			returnButton.TweenScale = true;
+		}));
+
+
+		tween.Play();
+	}
+
+	private void LoadAndDisplayStats()
+	{
+		var statsManager = StatisticsManager.Instance;
+		StatisticsData stats = statsManager.StatsData;
+
+		FormatStatLabel(gamesPlayedLabel, "Games Played: ", GamesPlayedDescriptionColor, $"{stats.GamesPlayed}");
+		FormatStatLabel(totalScoreLabel, "Total Score: ", TotalScoreDescriptionColor, $"{stats.TotalScore}");
+		FormatStatLabel(topScoreLabel, "Top Score: ", TopScoreDescriptionColor, $"{stats.TopScore}");
+		FormatStatLabel(averageScoreLabel, "Average Score: ", AverageScoreDescriptionColor, $"{statsManager.GetAverageScore():F2}");
+	}
+
+	private void OnClearButtonPressed()
+	{
+		if (confirmationDialog is not null)
+		{
+			confirmationDialog.PopupCentered();
+		}
+		else
+		{
+			GD.PrintErr("StatisticsMenu: Confirmation Dialog is null!");
+		}
+	}
+
+	private void OnResetConfirmed()
+	{
+		StatisticsManager.Instance.ResetStats();
+		StatisticsManager.Instance.Save();
+		LoadAndDisplayStats();
+	}
+
+	private void OnReturnButtonPressed()
+	{
+		menuShell?.ShowMainMenu();
+	}
+
+	private static void SetControlInitialState(Control control)
+	{
+		if (control is null)
+		{
+			return;
 		}
 
+		control.Modulate = Colors.Transparent;
+		control.Scale = Vector2.One;
 
-		private void OnClearButtonPressed()
+		if (control is UIButton uiButton)
 		{
-			if (confirmationDialog != null)
-			{
-				confirmationDialog.PopupCentered();
-			}
-			else
-			{
-			}
+			uiButton.TweenScale = false;
+		}
+	}
+
+	private static void AddFadeInTween(Tween tween, Control control, Vector2 finalScale, Vector2 initialScale)
+	{
+		if (control is null)
+		{
+			return;
 		}
 
-		private void OnResetConfirmed()
+		tween.SetParallel(true);
+		tween.TweenProperty(control, Control.PropertyName.Modulate.ToString() + ":a", 1.0f, FadeInDuration);
+		tween.TweenProperty(control, Control.PropertyName.Scale.ToString(), finalScale, FadeInDuration).From(initialScale);
+		tween.SetParallel(false);
+		tween.TweenInterval(StaggerDelay);
+	}
+
+	private static void FormatStatLabel(RichTextLabel label, string description, string descriptionColor, string value)
+	{
+		if (label is null)
 		{
-			StatisticsManager.Instance.ResetStats();
-			StatisticsManager.Instance.Save();
-			LoadAndDisplayStats();
+			return;
 		}
 
-
-		private void OnReturnButtonPressed()
-		{
-			menuShell?.ShowMainMenu();
-		}
-
-		public override void _Input(InputEvent @event)
-		{
-			if (confirmationDialog != null && confirmationDialog.Visible)
-			{
-				return;
-			}
-
-			if (@event.IsActionPressed("ui_cancel"))
-			{
-				OnReturnButtonPressed();
-				GetViewport()?.SetInputAsHandled();
-			}
-		}
-
-		public override void _ExitTree()
-		{
-			if (clearButton != null && IsInstanceValid(clearButton))
-			{
-				clearButton.Pressed -= OnClearButtonPressed;
-			}
-			if (returnButton != null && IsInstanceValid(returnButton))
-			{
-				returnButton.Pressed -= OnReturnButtonPressed;
-			}
-			if (confirmationDialog != null && IsInstanceValid(confirmationDialog))
-			{
-				confirmationDialog.Confirmed -= OnResetConfirmed;
-			}
-
-			base._ExitTree();
-		}
+		label.Clear();
+		label.PushColor(Color.FromHtml(descriptionColor));
+		label.AppendText(description);
+		label.Pop();
+		label.PushColor(Color.FromHtml(ValueColor));
+		label.AppendText(value);
+		label.Pop();
 	}
 }

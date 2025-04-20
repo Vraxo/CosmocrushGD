@@ -4,9 +4,9 @@ namespace CosmocrushGD;
 
 public partial class PooledParticleEffect : CpuParticles2D
 {
-    [Export] private Timer returnTimer;
-
     public PackedScene SourceScene { get; set; }
+
+    [Export] private Timer returnTimer;
 
     public override void _Ready()
     {
@@ -24,11 +24,13 @@ public partial class PooledParticleEffect : CpuParticles2D
     {
         Emitting = true;
 
-        if (returnTimer is not null)
+        if (returnTimer is null)
         {
-            returnTimer.WaitTime = Lifetime + 0.1f; // Add a small buffer
-            returnTimer.Start();
+            return;
         }
+
+        returnTimer.WaitTime = Lifetime + 0.1f; // Add a small buffer
+        returnTimer.Start();
     }
 
     private void ReturnToPool()
@@ -50,6 +52,7 @@ public partial class PooledParticleEffect : CpuParticles2D
         {
             returnTimer.Timeout -= ReturnToPool;
         }
+
         base._ExitTree();
     }
 }

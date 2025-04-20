@@ -10,11 +10,9 @@ public partial class Player : CharacterBody2D
 	public Inventory Inventory = new();
 
 	[Export] private Gun gun;
-
 	[Export] private Sprite2D sprite;
 	[Export] private CpuParticles2D damageParticles;
 	[Export] private CpuParticles2D deathParticles;
-
 	[Export] private Timer regenerationTimer;
 	[Export] private NodePath cameraPath;
 	[Export] private Timer deathPauseTimer;
@@ -155,13 +153,6 @@ public partial class Player : CharacterBody2D
 
 	private void Die()
 	{
-		if ((deathPauseTimer is not null && !deathPauseTimer.IsStopped()) || GetTree().Paused)
-		{
-			GD.Print("Player.Die: Death sequence already in progress or game paused. Aborting.");
-			return;
-		}
-
-		GD.Print("Player.Die: Player has died. Starting death sequence.");
 		regenerationTimer?.Stop();
 		ProcessMode = ProcessModeEnum.Disabled;
 		SetPhysicsProcess(false);
@@ -175,32 +166,18 @@ public partial class Player : CharacterBody2D
 			deathAudioPlayer.Play();
 		}
 
-		GD.Print($"Player.Die: Checking camera instance validity before zoom...");
-		if (camera is not null && IsInstanceValid(camera))
-		{
-			GD.Print($"Player.Die: Camera instance is valid. Starting camera zoom to {DeathZoomAmount}x over {DeathZoomDuration}s.");
-			camera.ZoomToPoint(DeathZoomAmount, DeathZoomDuration);
-		}
-		else
-		{
-			GD.PrintErr("Player.Die: Camera reference is null or invalid, cannot perform death zoom.");
-		}
-
-		GD.Print($"Player.Die: Starting DeathPauseTimer ({deathPauseTimer.WaitTime}s).");
+		camera.ZoomToPoint(DeathZoomAmount, DeathZoomDuration);
 		deathPauseTimer.Start();
 	}
 
 	private void OnDeathPauseTimerTimeout()
 	{
-		GD.Print("Player.OnDeathPauseTimerTimeout: Timer finished. Pausing tree and invoking GameOver.");
-
 		if (!GetTree().Paused)
 		{
 			GetTree().Paused = true;
 		}
 
 		GameOver?.Invoke();
-		GD.Print("Player.OnDeathPauseTimerTimeout: GameOver event invoked.");
 	}
 
 	public void ApplyKnockback(Vector2 knockback)
@@ -219,6 +196,4 @@ public partial class Player : CharacterBody2D
 
 		Health = Math.Min(Health + RegenerationRate, MaxHealth);
 	}
-
-
 }

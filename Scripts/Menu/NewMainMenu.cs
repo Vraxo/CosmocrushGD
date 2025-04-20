@@ -11,16 +11,16 @@ public partial class NewMainMenu : CenterContainer
 	[Export] private UIButton statisticsButton;
 	[Export] private UIButton quitButton;
 
+	private MenuShell menuShell;
+
 	private const float FadeInDuration = 0.3f;
 	private const float StaggerDelay = 0.1f;
 	private const float InitialScaleMultiplier = 2.0f;
 	private const string GameScenePath = "res://Scenes/World.tscn";
 
-	private MenuShell menuShell;
-
 	public override void _Ready()
 	{
-		menuShell = GetParent()?.GetParent<MenuShell>();
+		menuShell = GetParent()?.GetParent()?.GetParent<MenuShell>();
 		if (menuShell is null)
 		{
 			GD.PrintErr("NewMainMenu: Could not find MenuShell parent!");
@@ -36,10 +36,22 @@ public partial class NewMainMenu : CenterContainer
 			GD.PrintErr($"Error accessing Singletons (Settings/Statistics): {e.Message}");
 		}
 
-		if (startButton is not null) startButton.Pressed += OnStartButtonPressed;
-		if (settingsButton is not null) settingsButton.Pressed += OnSettingsButtonPressed;
-		if (statisticsButton is not null) statisticsButton.Pressed += OnStatisticsButtonPressed;
-		if (quitButton is not null) quitButton.Pressed += OnQuitButtonPressed;
+		if (startButton is not null)
+		{
+			startButton.Pressed += OnStartButtonPressed;
+		}
+		if (settingsButton is not null)
+		{
+			settingsButton.Pressed += OnSettingsButtonPressed;
+		}
+		if (statisticsButton is not null)
+		{
+			statisticsButton.Pressed += OnStatisticsButtonPressed;
+		}
+		if (quitButton is not null)
+		{
+			quitButton.Pressed += OnQuitButtonPressed;
+		}
 
 		if (titleLabel is not null)
 		{
@@ -48,6 +60,28 @@ public partial class NewMainMenu : CenterContainer
 
 		SetInitialState();
 		CallDeferred(nameof(StartFadeInAnimation));
+	}
+
+	public override void _ExitTree()
+	{
+		if (IsInstanceValid(startButton))
+		{
+			startButton.Pressed -= OnStartButtonPressed;
+		}
+		if (IsInstanceValid(settingsButton))
+		{
+			settingsButton.Pressed -= OnSettingsButtonPressed;
+		}
+		if (IsInstanceValid(statisticsButton))
+		{
+			statisticsButton.Pressed -= OnStatisticsButtonPressed;
+		}
+		if (IsInstanceValid(quitButton))
+		{
+			quitButton.Pressed -= OnQuitButtonPressed;
+		}
+
+		base._ExitTree();
 	}
 
 	private void CenterTitleLabelPivot()
@@ -117,7 +151,7 @@ public partial class NewMainMenu : CenterContainer
 			tween.TweenProperty(startButton, "modulate:a", 1.0f, FadeInDuration);
 			tween.TweenProperty(startButton, "scale", finalScale, FadeInDuration).From(initialScale);
 			tween.SetParallel(false);
-			tween.TweenCallback(Callable.From(() => { if (startButton is not null) startButton.TweenScale = true; }));
+			tween.TweenCallback(Callable.From(() => { if (startButton is not null) { startButton.TweenScale = true; } }));
 			tween.TweenInterval(StaggerDelay);
 		}
 		if (settingsButton is not null)
@@ -126,7 +160,7 @@ public partial class NewMainMenu : CenterContainer
 			tween.TweenProperty(settingsButton, "modulate:a", 1.0f, FadeInDuration);
 			tween.TweenProperty(settingsButton, "scale", finalScale, FadeInDuration).From(initialScale);
 			tween.SetParallel(false);
-			tween.TweenCallback(Callable.From(() => { if (settingsButton is not null) settingsButton.TweenScale = true; }));
+			tween.TweenCallback(Callable.From(() => { if (settingsButton is not null) { settingsButton.TweenScale = true; } }));
 			tween.TweenInterval(StaggerDelay);
 		}
 		if (statisticsButton is not null)
@@ -135,7 +169,7 @@ public partial class NewMainMenu : CenterContainer
 			tween.TweenProperty(statisticsButton, "modulate:a", 1.0f, FadeInDuration);
 			tween.TweenProperty(statisticsButton, "scale", finalScale, FadeInDuration).From(initialScale);
 			tween.SetParallel(false);
-			tween.TweenCallback(Callable.From(() => { if (statisticsButton is not null) statisticsButton.TweenScale = true; }));
+			tween.TweenCallback(Callable.From(() => { if (statisticsButton is not null) { statisticsButton.TweenScale = true; } }));
 			tween.TweenInterval(StaggerDelay);
 		}
 		if (quitButton is not null)
@@ -144,7 +178,7 @@ public partial class NewMainMenu : CenterContainer
 			tween.TweenProperty(quitButton, "modulate:a", 1.0f, FadeInDuration);
 			tween.TweenProperty(quitButton, "scale", finalScale, FadeInDuration).From(initialScale);
 			tween.SetParallel(false);
-			tween.TweenCallback(Callable.From(() => { if (quitButton is not null) quitButton.TweenScale = true; }));
+			tween.TweenCallback(Callable.From(() => { if (quitButton is not null) { quitButton.TweenScale = true; } }));
 		}
 
 		tween.Play();
@@ -168,15 +202,5 @@ public partial class NewMainMenu : CenterContainer
 	private void OnQuitButtonPressed()
 	{
 		menuShell?.QuitGame();
-	}
-
-	public override void _ExitTree()
-	{
-		if (IsInstanceValid(startButton)) startButton.Pressed -= OnStartButtonPressed;
-		if (IsInstanceValid(settingsButton)) settingsButton.Pressed -= OnSettingsButtonPressed;
-		if (IsInstanceValid(statisticsButton)) statisticsButton.Pressed -= OnStatisticsButtonPressed;
-		if (IsInstanceValid(quitButton)) quitButton.Pressed -= OnQuitButtonPressed;
-
-		base._ExitTree();
 	}
 }

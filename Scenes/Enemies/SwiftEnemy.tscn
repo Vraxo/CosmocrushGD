@@ -15,10 +15,6 @@ shader_parameter/flash_value = 0.0
 script = ExtResource("1_swift_script")
 meleeKnockbackForce = 450.0
 
-[node name="Sprite" parent="." index="2"]
+[node name="Sprite" parent="." index="1"]
 material = SubResource("ShaderMaterial_8o31v")
 texture = ExtResource("4_t64bn")
-
-[node name="NavigationUpdateTimer" parent="." index="5"]
-process_callback = 0
-wait_time = 0.25

@@ -13,15 +13,13 @@ public partial class MenuShell : Control
 	private Node currentMenuInstance;
 
 	private const string GameScenePath = "res://Scenes/World.tscn";
-	// Reverted to 2.0 multiplier as a balanced default, can be increased if needed
 	private const float ParticleVerticalPaddingMultiplier = 2.0f;
-	// BaselineHeight, BaselineAmount, MinimumParticleAmount are no longer needed here
 
 	public override void _Ready()
 	{
 		if (menuContainer is null)
 		{
-			GD.PrintErr("MenuShell: Menu Container node not assigned!");
+			GD.PrintErr("MenuShell: Menu Container node not assigned or path invalid!");
 			return;
 		}
 		if (starParticles is null)
@@ -102,9 +100,6 @@ public partial class MenuShell : Control
 		var viewportSize = viewport.GetVisibleRect().Size;
 		var viewportHeight = viewportSize.Y;
 
-		// No height threshold check needed if we aren't changing amount
-		// No amount calculation needed
-
 		const float spawnOffsetX = -10.0f;
 		float totalEmissionHeight = viewportHeight * ParticleVerticalPaddingMultiplier;
 		float emissionExtentsY = totalEmissionHeight / 2.0f;
@@ -159,7 +154,7 @@ public partial class MenuShell : Control
 
 	public void StartGame()
 	{
-		GetTree().ChangeSceneToFile(GameScenePath);
+		SceneTransitionManager.Instance?.ChangeScene(GameScenePath);
 	}
 
 	public void QuitGame()
