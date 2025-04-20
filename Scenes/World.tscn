@@ -111,7 +111,7 @@ offset_top = -211.0
 offset_right = 238.0
 offset_bottom = -211.0
 grow_vertical = 0
-scale = Vector2(0.2, 0.2)
+scale = Vector2(0.15, 0.15)
 
 [node name="FiringJoystick" parent="HUD" instance=ExtResource("12_vbg6t")]
 anchors_preset = 3
@@ -125,7 +125,7 @@ offset_right = -226.0
 offset_bottom = -211.0
 grow_horizontal = 0
 grow_vertical = 0
-scale = Vector2(0.2, 0.2)
+scale = Vector2(0.15, 0.15)
 SimulateInput = false
 
 [node name="Healthbar" type="ProgressBar" parent="HUD"]
