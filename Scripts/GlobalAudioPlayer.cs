@@ -6,70 +6,45 @@ namespace CosmocrushGD;
 
 public partial class GlobalAudioPlayer : Node
 {
-	public static GlobalAudioPlayer Instance { get; private set; }
+	private static GlobalAudioPlayer _instance;
+	public static GlobalAudioPlayer Instance => _instance;
 
-	public AudioStream UiSound { get; private set; }
+	public AudioStream UiSound = ResourceLoader.Load<AudioStream>("res://Audio/SFX/Ui.mp3");
 
+	// Remove [Export] attributes
 	private PackedScene damageParticleScene;
 	private PackedScene deathParticleScene;
+	// Keep export for pool size if you want to configure it via scene (if using Solution 1)
+	// Or set it directly here if using Solution 2
 	private int initialParticlePoolSize = 20;
 
 	private const string SfxBusName = "SFX";
 	private const int InitialAudioPoolSize = 10;
-	private const string DamageParticleScenePath = "res://Scenes/DamageParticleEffect.tscn";
-	private const string DeathParticleScenePath = "res://Scenes/DeathParticleEffect.tscn";
-	private const string UiSoundPath = "res://Audio/SFX/Ui.mp3";
 
 	private Queue<AudioStreamPlayer> availablePlayers1D = new();
 	private Queue<AudioStreamPlayer2D> availablePlayers2D = new();
 	private Dictionary<PackedScene, Queue<PooledParticleEffect>> availableParticles = new();
-	private Node particleContainer;
+
 
 	public override void _EnterTree()
 	{
-		if (Instance is not null)
+		if (_instance is not null)
 		{
 			QueueFree();
 			return;
 		}
-		Instance = this;
+		_instance = this;
 		ProcessMode = ProcessModeEnum.Always;
 
-		LoadResources();
-		CreateParticleContainer(); // Call the method that now uses CallDeferred
+		// Load particle scenes here if not using exports
+		damageParticleScene = ResourceLoader.Load<PackedScene>("res://Scenes/DamageParticleEffect.tscn");
+		deathParticleScene = ResourceLoader.Load<PackedScene>("res://Scenes/DeathParticleEffect.tscn");
+		if (damageParticleScene is null) GD.PrintErr("Failed to load DamageParticleEffect.tscn");
+		if (deathParticleScene is null) GD.PrintErr("Failed to load DeathParticleEffect.tscn");
+
+
 		InitializeAudioPools();
-		InitializeParticlePools();
-	}
-
-	private void LoadResources()
-	{
-		UiSound = ResourceLoader.Load<AudioStream>(UiSoundPath);
-		if (UiSound is null)
-		{
-			GD.PrintErr($"GlobalAudioPlayer: Failed to load {UiSoundPath}");
-		}
-
-		damageParticleScene = ResourceLoader.Load<PackedScene>(DamageParticleScenePath);
-		if (damageParticleScene is null)
-		{
-			GD.PrintErr($"GlobalAudioPlayer: Failed to load {DamageParticleScenePath}");
-		}
-
-		deathParticleScene = ResourceLoader.Load<PackedScene>(DeathParticleScenePath);
-		if (deathParticleScene is null)
-		{
-			GD.PrintErr($"GlobalAudioPlayer: Failed to load {DeathParticleScenePath}");
-		}
-	}
-
-	private void CreateParticleContainer()
-	{
-		particleContainer = new Node2D
-		{
-			Name = "ParticleContainer"
-		};
-		// Use CallDeferred to add the child safely during _EnterTree
-		GetTree().Root.CallDeferred(Node.MethodName.AddChild, particleContainer);
+		InitializeParticlePools(); // Initialize particle pools
 	}
 
 	private void InitializeAudioPools()
@@ -83,82 +58,65 @@ public partial class GlobalAudioPlayer : Node
 
 	private void InitializeParticlePools()
 	{
-		// Need to ensure particleContainer exists before initializing particles
-		// Since AddChild is deferred, we should defer initialization too.
-		CallDeferred(nameof(DeferredInitializeParticlePools));
+		// Initialization logic remains the same, using the loaded scenes
+		if (damageParticleScene is not null)
+		{
+			InitializeSingleParticlePool(damageParticleScene);
+		}
+		else
+		{
+			GD.PrintErr("GlobalAudioPlayer: Damage Particle Scene could not be loaded!");
+		}
+
+		if (deathParticleScene is not null)
+		{
+			InitializeSingleParticlePool(deathParticleScene);
+		}
+		else
+		{
+			GD.PrintErr("GlobalAudioPlayer: Death Particle Scene could not be loaded!");
+		}
 	}
 
-	private void DeferredInitializeParticlePools()
-	{
-		if (particleContainer is null || !IsInstanceValid(particleContainer))
-		{
-			GD.PrintErr("GlobalAudioPlayer: ParticleContainer is null or invalid during deferred initialization. Cannot initialize particle pools.");
-			// This might happen if CreateParticleContainer failed severely, though unlikely with deferred call.
-			return;
-		}
-		GD.Print("GlobalAudioPlayer: Starting deferred particle pool initialization.");
-		InitializeSingleParticlePool(damageParticleScene);
-		InitializeSingleParticlePool(deathParticleScene);
-		GD.Print("GlobalAudioPlayer: Finished deferred particle pool initialization.");
-	}
+	// ... (rest of the script remains the same as the previous version with debug prints)
 
 
 	private void InitializeSingleParticlePool(PackedScene particleScene)
 	{
 		if (particleScene is null)
 		{
-			GD.PrintErr($"InitializeSingleParticlePool: Attempted to initialize with a null scene resource.");
+			GD.PrintErr("InitializeSingleParticlePool: Attempted to initialize with a null scene.");
 			return;
 		}
 
-		if (!IsInstanceValid(particleScene))
-		{
-			GD.PrintErr($"InitializeSingleParticlePool: Attempted to initialize with an invalid PackedScene instance for path: {particleScene.ResourcePath}");
-			return;
-		}
-
-		// Ensure particleContainer is ready before creating/adding particles
-		if (particleContainer is null || !IsInstanceValid(particleContainer))
-		{
-			GD.PrintErr($"InitializeSingleParticlePool: ParticleContainer is not ready for scene {particleScene.ResourcePath}. Aborting pool initialization for this scene.");
-			return;
-		}
-
-		string scenePath = particleScene.ResourcePath ?? "Unknown Scene";
-		GD.Print($"InitializeSingleParticlePool: Initializing pool for {scenePath}");
-
+		GD.Print($"InitializeSingleParticlePool: Attempting to initialize pool for {particleScene.ResourcePath}"); // Debug Print 1
 		if (!availableParticles.ContainsKey(particleScene))
 		{
+			GD.Print($"InitializeSingleParticlePool: Creating new queue for {particleScene.ResourcePath}"); // Debug Print 2
 			availableParticles.Add(particleScene, new Queue<PooledParticleEffect>());
+		}
+		else
+		{
+			GD.Print($"InitializeSingleParticlePool: Queue already exists for {particleScene.ResourcePath}"); // Debug Print 3
 		}
 
 		Queue<PooledParticleEffect> queue = availableParticles[particleScene];
 		int initialCount = queue.Count;
-		int createdCount = 0;
-
 		for (int i = 0; i < initialParticlePoolSize; i++)
 		{
 			var particle = CreateAndSetupParticle(particleScene);
 			if (particle is not null)
 			{
 				queue.Enqueue(particle);
-				createdCount++;
-			}
-			else
-			{
-				GD.PrintErr($"InitializeSingleParticlePool: Failed to create particle instance {i + 1} for {scenePath}");
 			}
 		}
-		GD.Print($"Initialized particle pool for {scenePath}. Added {createdCount} instances. Total in pool: {queue.Count}. Target size: {initialParticlePoolSize}");
+		GD.Print($"Initialized particle pool for {particleScene.ResourcePath}. Added {queue.Count - initialCount} instances. Total: {queue.Count}."); // Debug Print 4
 	}
+
 
 	private AudioStreamPlayer CreateAndSetupPlayer1D()
 	{
-		AudioStreamPlayer audioPlayer = new()
-		{
-			Bus = SfxBusName,
-			ProcessMode = ProcessModeEnum.Always // Ensure player works when paused if needed
-		};
+		AudioStreamPlayer audioPlayer = new() { Bus = SfxBusName };
 		AddChild(audioPlayer);
 		audioPlayer.Finished += () => ReturnPlayerToPool(audioPlayer);
 		return audioPlayer;
@@ -166,11 +124,7 @@ public partial class GlobalAudioPlayer : Node
 
 	private AudioStreamPlayer2D CreateAndSetupPlayer2D()
 	{
-		AudioStreamPlayer2D audioPlayer = new()
-		{
-			Bus = SfxBusName,
-			ProcessMode = ProcessModeEnum.Always // Ensure player works when paused if needed
-		};
+		AudioStreamPlayer2D audioPlayer = new() { Bus = SfxBusName };
 		AddChild(audioPlayer);
 		audioPlayer.Finished += () => ReturnPlayerToPool(audioPlayer);
 		return audioPlayer;
@@ -180,30 +134,13 @@ public partial class GlobalAudioPlayer : Node
 	{
 		if (scene is null)
 		{
-			GD.PrintErr("CreateAndSetupParticle: Provided scene was null.");
 			return null;
 		}
-		if (!IsInstanceValid(scene))
-		{
-			GD.PrintErr($"CreateAndSetupParticle: Provided scene resource is invalid: {scene?.ResourcePath ?? "Path unknown"}");
-			return null;
-		}
-
-		Node instance = scene.Instantiate();
-		if (instance is not PooledParticleEffect particle)
-		{
-			GD.PrintErr($"CreateAndSetupParticle: Failed to instantiate scene {scene.ResourcePath} as PooledParticleEffect.");
-			instance?.QueueFree(); // Clean up if it instantiated as something else
-			return null;
-		}
-
-		particle.SourceScene = scene;
-		particle.Visible = false;
-		particle.ProcessMode = ProcessModeEnum.Disabled;
-		particle.Emitting = false;
-
-		// Add to the GlobalAudioPlayer itself initially, it will be reparented when activated.
-		AddChild(particle);
+		PooledParticleEffect particle = scene.Instantiate<PooledParticleEffect>();
+		particle.SourceScene = scene; // Store the source scene
+		particle.Visible = false; // Start invisible
+		particle.ProcessMode = ProcessModeEnum.Disabled; // Start disabled
+		AddChild(particle); // Add to the GlobalAudioPlayer node initially
 		return particle;
 	}
 
@@ -211,7 +148,6 @@ public partial class GlobalAudioPlayer : Node
 	{
 		if (stream is null)
 		{
-			GD.PrintErr("PlaySound2D: Attempted to play a null AudioStream.");
 			return;
 		}
 
@@ -219,11 +155,6 @@ public partial class GlobalAudioPlayer : Node
 		if (availablePlayers2D.Count > 0)
 		{
 			audioPlayer = availablePlayers2D.Dequeue();
-			if (audioPlayer is null || !IsInstanceValid(audioPlayer))
-			{
-				GD.Print("GlobalAudioPlayer: Dequeued invalid 2D player, creating new.");
-				audioPlayer = CreateAndSetupPlayer2D();
-			}
 		}
 		else
 		{
@@ -241,7 +172,6 @@ public partial class GlobalAudioPlayer : Node
 	{
 		if (stream is null)
 		{
-			GD.PrintErr("PlaySound: Attempted to play a null AudioStream.");
 			return;
 		}
 
@@ -249,11 +179,6 @@ public partial class GlobalAudioPlayer : Node
 		if (availablePlayers1D.Count > 0)
 		{
 			audioPlayer = availablePlayers1D.Dequeue();
-			if (audioPlayer is null || !IsInstanceValid(audioPlayer))
-			{
-				GD.Print("GlobalAudioPlayer: Dequeued invalid 1D player, creating new.");
-				audioPlayer = CreateAndSetupPlayer1D();
-			}
 		}
 		else
 		{
@@ -270,116 +195,70 @@ public partial class GlobalAudioPlayer : Node
 	{
 		if (scene is null)
 		{
-			GD.PrintErr("GetParticleEffect: Attempted to get particle with null scene resource.");
-			return null;
-		}
-		if (!IsInstanceValid(scene))
-		{
-			GD.PrintErr($"GetParticleEffect: Attempted to get particle with an invalid PackedScene instance (Path: {scene.ResourcePath}).");
-			return null;
-		}
-		if (particleContainer is null || !IsInstanceValid(particleContainer))
-		{
-			GD.PrintErr("GetParticleEffect: ParticleContainer node is invalid or null. Cannot place particle.");
+			GD.PrintErr("GetParticleEffect: Attempted to get particle with null scene.");
 			return null;
 		}
 
-		string scenePath = scene.ResourcePath ?? "Unknown Scene";
+		GD.Print($"GetParticleEffect: Attempting to get {scene.ResourcePath}. Available keys: [{string.Join(", ", availableParticles.Keys.Select(k => k?.ResourcePath ?? "NULL"))}]"); // Debug Print 5
 
 		if (!availableParticles.TryGetValue(scene, out Queue<PooledParticleEffect> queue))
 		{
-			GD.PrintErr($"GetParticleEffect: Pool not found for scene {scenePath}. Was it loaded/initialized correctly? Attempting to create a new one as fallback.");
-			return CreateAndActivateFallbackParticle(scene, position, color);
-		}
-
-		PooledParticleEffect particle = null;
-		while (queue.Count > 0 && (particle is null || !IsInstanceValid(particle)))
-		{
-			if (particle is not null) // It was invalid
+			GD.PrintErr($"GetParticleEffect: Pool not found for scene {scene.ResourcePath}. Was it loaded/initialized in GlobalAudioPlayer?");
+			// Fallback: Create a new one, but don't add to pool management here
+			var newParticle = CreateAndSetupParticle(scene);
+			if (newParticle is not null)
 			{
-				GD.Print($"GetParticleEffect: Found invalid particle in pool for {scenePath}. Discarding.");
-				// Don't QueueFree here, let GC handle it or it might interfere if return is pending
+				GetTree().Root.AddChild(newParticle); // Add to root so it's not child of player
+				newParticle.GlobalPosition = position;
+				newParticle.ProcessMode = ProcessModeEnum.Inherit;
+				newParticle.Visible = true;
+				if (color.HasValue) { newParticle.Color = color.Value; }
+				newParticle.PlayEffect();
+				return newParticle; // Return the fallback instance
 			}
-			particle = queue.Dequeue();
-		}
-
-
-		if (particle is null || !IsInstanceValid(particle))
-		{
-			GD.Print($"GetParticleEffect: Particle pool empty or contained only invalid instances for {scenePath}. Creating new instance as fallback.");
-			return CreateAndActivateFallbackParticle(scene, position, color);
-		}
-
-
-		ReparentParticle(particle, particleContainer);
-
-		particle.GlobalPosition = position;
-		if (color.HasValue)
-		{
-			particle.Color = color.Value;
-		}
-		particle.Visible = true;
-		particle.ProcessMode = ProcessModeEnum.Inherit;
-		particle.PlayEffect();
-
-		return particle;
-	}
-
-	private PooledParticleEffect CreateAndActivateFallbackParticle(PackedScene scene, Vector2 position, Color? color)
-	{
-		GD.Print($"CreateAndActivateFallbackParticle: Creating fallback particle for {scene.ResourcePath ?? "Unknown Scene"}");
-		var particle = CreateAndSetupParticle(scene);
-		if (particle is null)
-		{
-			GD.PrintErr($"CreateAndActivateFallbackParticle: Failed to create fallback instance for {scene.ResourcePath ?? "Unknown Scene"}.");
 			return null; // Creation failed
 		}
 
-		if (particleContainer is null || !IsInstanceValid(particleContainer))
+		PooledParticleEffect particle;
+		if (queue.Count > 0)
 		{
-			GD.PrintErr("CreateAndActivateFallbackParticle: ParticleContainer is null. Cannot add fallback particle to scene tree.");
-			particle.QueueFree(); // Clean up the newly created particle
-			return null;
+			particle = queue.Dequeue();
+			if (particle is null || !IsInstanceValid(particle))
+			{
+				GD.PrintErr($"GetParticleEffect: Found invalid particle in pool for {scene.ResourcePath}. Creating new.");
+				particle = CreateAndSetupParticle(scene);
+				if (particle is null) return null; // Failed to create fallback
+			}
+		}
+		else
+		{
+			GD.Print($"GetParticleEffect: Particle pool empty for {scene.ResourcePath}. Creating new instance.");
+			particle = CreateAndSetupParticle(scene);
+			if (particle is null) return null; // Failed to create fallback
 		}
 
-		ReparentParticle(particle, particleContainer);
+		// Reparent to the root node (or a dedicated particle container if you prefer)
+		// This prevents particles from moving with the enemy/player
+		if (particle.GetParent() != GetTree().Root)
+		{
+			particle.GetParent()?.RemoveChild(particle);
+			GetTree().Root.AddChild(particle);
+		}
+
 
 		particle.GlobalPosition = position;
-		if (color.HasValue)
-		{
-			particle.Color = color.Value;
-		}
+		if (color.HasValue) { particle.Color = color.Value; }
 		particle.Visible = true;
-		particle.ProcessMode = ProcessModeEnum.Inherit;
+		particle.ProcessMode = ProcessModeEnum.Inherit; // Enable processing
 		particle.PlayEffect(); // Start emitting and the return timer
 
-		GD.Print($"CreateAndActivateFallbackParticle: Fallback particle created and activated for {scene.ResourcePath ?? "Unknown Scene"}. This might indicate pool depletion or initialization issues.");
-		return particle; // Return the fallback instance
-	}
-
-	private void ReparentParticle(Node particle, Node newParent)
-	{
-		if (particle is null || !IsInstanceValid(particle) || newParent is null || !IsInstanceValid(newParent))
-		{
-			GD.PrintErr("ReparentParticle: Invalid node provided for reparenting.");
-			return;
-		}
-
-		Node currentParent = particle.GetParent();
-		if (currentParent != newParent)
-		{
-			// Need to defer RemoveChild/AddChild if the tree might be locked
-			// Using CallDeferred for both ensures the sequence happens correctly in the next idle frame
-			currentParent?.CallDeferred(Node.MethodName.RemoveChild, particle);
-			newParent.CallDeferred(Node.MethodName.AddChild, particle);
-		}
+		return particle;
 	}
 
 	private void ReturnPlayerToPool(AudioStreamPlayer audioPlayer)
 	{
 		if (audioPlayer is null || !IsInstanceValid(audioPlayer))
 		{
-			GD.Print("ReturnPlayerToPool (1D): Attempted to return invalid player.");
 			return;
 		}
 		audioPlayer.Stream = null;
@@ -390,7 +269,6 @@ public partial class GlobalAudioPlayer : Node
 	{
 		if (audioPlayer is null || !IsInstanceValid(audioPlayer))
 		{
-			GD.Print("ReturnPlayerToPool (2D): Attempted to return invalid player.");
 			return;
 		}
 		audioPlayer.Stream = null;
@@ -398,66 +276,38 @@ public partial class GlobalAudioPlayer : Node
 		availablePlayers2D.Enqueue(audioPlayer);
 	}
 
-	public void ReturnParticleToPool(PooledParticleEffect particle)
+	public void ReturnParticleToPool(PooledParticleEffect particle, PackedScene sourceScene)
 	{
-		if (particle is null || !IsInstanceValid(particle))
+		if (particle is null || !IsInstanceValid(particle) || sourceScene is null)
 		{
-			GD.PrintErr("ReturnParticleToPool: Attempted to return a null or invalid particle instance.");
+			GD.PrintErr("ReturnParticleToPool: Invalid particle or sourceScene.");
+			particle?.QueueFree(); // Clean up invalid particle
 			return;
 		}
 
-		PackedScene sourceScene = particle.SourceScene;
-		if (sourceScene is null || !IsInstanceValid(sourceScene))
-		{
-			GD.PrintErr($"ReturnParticleToPool: Particle '{particle.Name}' has a null or invalid SourceScene. Cannot return to pool. Freeing.");
-			particle.QueueFree();
-			return;
-		}
-
-		string scenePath = sourceScene.ResourcePath ?? "Unknown Scene";
+		GD.Print($"ReturnParticleToPool: Attempting to return for {sourceScene.ResourcePath}. Available keys: [{string.Join(", ", availableParticles.Keys.Select(k => k?.ResourcePath ?? "NULL"))}]"); // Debug Print 6
 
 		if (!availableParticles.TryGetValue(sourceScene, out Queue<PooledParticleEffect> queue))
 		{
-			GD.PrintErr($"ReturnParticleToPool: Pool not found for scene {scenePath}. Freeing particle '{particle.Name}'.");
+			GD.PrintErr($"ReturnParticleToPool: Pool not found for scene {sourceScene.ResourcePath}. Freeing particle.");
 			particle.QueueFree();
 			return;
 		}
 
+		// Reset state
 		particle.Visible = false;
 		particle.ProcessMode = ProcessModeEnum.Disabled;
-		particle.Emitting = false;
-		particle.GlobalPosition = Vector2.Zero;
+		particle.Emitting = false; // Ensure it stops emitting if somehow still active
+		particle.GlobalPosition = Vector2.Zero; // Reset position
 
-		// Also defer reparenting when returning to the pool
-		ReparentParticle(particle, this);
+		// Reparent back to the GlobalAudioPlayer node
+		if (particle.GetParent() != this)
+		{
+			particle.GetParent()?.RemoveChild(particle);
+			AddChild(particle);
+		}
+
 
 		queue.Enqueue(particle);
-	}
-
-	public override void _ExitTree()
-	{
-		if (particleContainer is not null && IsInstanceValid(particleContainer))
-		{
-			particleContainer.QueueFree();
-			particleContainer = null;
-		}
-
-		// Clean up remaining pooled objects
-		foreach (var player in availablePlayers1D) { player?.QueueFree(); }
-		foreach (var player in availablePlayers2D) { player?.QueueFree(); }
-		foreach (var queue in availableParticles.Values)
-		{
-			foreach (var particle in queue) { particle?.QueueFree(); }
-		}
-		availablePlayers1D.Clear();
-		availablePlayers2D.Clear();
-		availableParticles.Clear();
-
-
-		if (Instance == this)
-		{
-			Instance = null;
-		}
-		base._ExitTree();
 	}
 }
