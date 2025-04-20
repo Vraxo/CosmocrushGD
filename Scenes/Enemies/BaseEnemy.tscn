@@ -1,8 +1,10 @@
-[gd_scene load_steps=11 format=3 uid="uid://cyx6s25635vxa"]
+[gd_scene load_steps=12 format=3 uid="uid://cyx6s25635vxa"]
 
 [ext_resource type="Script" path="res://Scripts/Enemy/BaseEnemy.cs" id="1_base_script"]
 [ext_resource type="Shader" path="res://Shaders/EnemyHitFlash.gdshader" id="2_hit_flash_shader"]
 [ext_resource type="PackedScene" uid="uid://1jkhq6d44qfr" path="res://Scenes/DamageIndicator.tscn" id="3_damage_indicator"]
+[ext_resource type="PackedScene" path="res://Scenes/DamageParticleEffect.tscn" id="4_6hgar"]
+[ext_resource type="PackedScene" path="res://Scenes/DeathParticleEffect.tscn" id="5_ucnk6"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_root_mat"]
 shader = ExtResource("2_hit_flash_shader")
@@ -53,35 +55,24 @@ _data = {
 "RESET": SubResource("Animation_reset")
 }
 
-[sub_resource type="Curve" id="Curve_particle_scale"]
-_data = [Vector2(0.00433911, 0.993671), 0.0, 0.0, 0, 0, Vector2(0.998999, 0.00219095), 0.0, 0.0, 0, 0]
-point_count = 2
-
-[node name="BaseEnemy" type="CharacterBody2D" node_paths=PackedStringArray("Navigator", "Sprite", "DeathTimer", "DamageCooldownTimer", "NavigationUpdateTimer", "Collider", "DamageParticles", "DeathParticles", "HitAnimationPlayer")]
+[node name="BaseEnemy" type="CharacterBody2D" node_paths=PackedStringArray("Sprite", "DeathTimer", "DamageCooldownTimer", "Collider", "HitAnimationPlayer")]
 material = SubResource("ShaderMaterial_root_mat")
 collision_layer = 2
 collision_mask = 7
 input_pickable = true
 motion_mode = 1
 script = ExtResource("1_base_script")
-Navigator = NodePath("Navigator")
 Sprite = NodePath("Sprite")
 DeathTimer = NodePath("DeathTimer")
 DamageCooldownTimer = NodePath("DamageCooldownTimer")
-NavigationUpdateTimer = NodePath("NavigationUpdateTimer")
 Collider = NodePath("Collider")
-DamageParticles = NodePath("DamageParticles")
-DeathParticles = NodePath("DeathParticles")
 DamageIndicatorScene = ExtResource("3_damage_indicator")
 HitAnimationPlayer = NodePath("Sprite/AnimationPlayer")
+damageParticleEffectScene = ExtResource("4_6hgar")
+deathParticleEffectScene = ExtResource("5_ucnk6")
 
 [node name="Collider" type="CollisionShape2D" parent="."]
 shape = SubResource("RectangleShape2D_collider")
-
-[node name="Navigator" type="NavigationAgent2D" parent="."]
-path_desired_distance = 5.0
-target_desired_distance = 5.0
-path_max_distance = 10.0
 
 [node name="Sprite" type="Sprite2D" parent="."]
 material = SubResource("ShaderMaterial_sprite_mat")
@@ -96,37 +87,3 @@ one_shot = true
 
 [node name="DamageCooldownTimer" type="Timer" parent="."]
 one_shot = true
-
-[node name="NavigationUpdateTimer" type="Timer" parent="."]
-autostart = true
-
-[node name="DamageParticles" type="CPUParticles2D" parent="."]
-position = Vector2(0, -1)
-emitting = false
-amount = 25
-lifetime = 0.5
-one_shot = true
-explosiveness = 1.0
-spread = 180.0
-gravity = Vector2(0, 0)
-initial_velocity_min = 50.0
-initial_velocity_max = 100.0
-scale_amount_min = 4.0
-scale_amount_max = 4.0
-scale_amount_curve = SubResource("Curve_particle_scale")
-
-[node name="DeathParticles" type="CPUParticles2D" parent="."]
-position = Vector2(0, -1)
-emitting = false
-amount = 25
-one_shot = true
-explosiveness = 1.0
-emission_shape = 3
-emission_rect_extents = Vector2(1, 1)
-spread = 180.0
-gravity = Vector2(0, 0)
-initial_velocity_min = 100.0
-initial_velocity_max = 150.0
-scale_amount_min = 8.0
-scale_amount_max = 8.0
-scale_amount_curve = SubResource("Curve_particle_scale")

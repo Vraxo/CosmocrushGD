@@ -26,22 +26,20 @@ public partial class SettingsMenu : CenterContainer
 		menuShell = GetParent()?.GetParent<MenuShell>();
 		if (menuShell is null)
 		{
-			GD.PrintErr("SettingsMenu: Could not find MenuShell parent!");
 		}
 
 		bool initializationFailed = false;
 
-		if (titleLabel is null) { GD.PrintErr("SettingsMenu: Title Label not assigned!"); initializationFailed = true; }
-		if (musicSlider is null) { GD.PrintErr("SettingsMenu: Music Slider not assigned!"); initializationFailed = true; }
-		if (sfxSlider is null) { GD.PrintErr("SettingsMenu: SFX Slider not assigned!"); initializationFailed = true; }
-		if (musicLabel is null) { GD.PrintErr("SettingsMenu: Music Label not assigned!"); initializationFailed = true; }
-		if (sfxLabel is null) { GD.PrintErr("SettingsMenu: SFX Label not assigned!"); initializationFailed = true; }
-		if (applyButton is null) { GD.PrintErr("SettingsMenu: Apply Button not assigned!"); initializationFailed = true; }
-		if (returnButton is null) { GD.PrintErr("SettingsMenu: Return Button not assigned!"); initializationFailed = true; }
+		if (titleLabel is null) { initializationFailed = true; }
+		if (musicSlider is null) { initializationFailed = true; }
+		if (sfxSlider is null) { initializationFailed = true; }
+		if (musicLabel is null) { initializationFailed = true; }
+		if (sfxLabel is null) { initializationFailed = true; }
+		if (applyButton is null) { initializationFailed = true; }
+		if (returnButton is null) { initializationFailed = true; }
 
 		if (initializationFailed)
 		{
-			GD.PrintErr("SettingsMenu: Initialization failed due to missing node references. Aborting setup.");
 			return;
 		}
 
@@ -146,7 +144,6 @@ public partial class SettingsMenu : CenterContainer
 			return;
 		}
 
-		// Ensure pivots are set before animating, called deferred but good practice
 		SetupPivots();
 
 		Tween tween = CreateTween();
@@ -172,7 +169,7 @@ public partial class SettingsMenu : CenterContainer
 		{
 			tween.SetParallel(true);
 			tween.TweenProperty(musicLabel, "modulate:a", 1.0f, FadeInDuration);
-			tween.TweenProperty(musicLabel, "scale", finalScale, FadeInDuration).From(initialScaleValue); // Enabled scale
+			tween.TweenProperty(musicLabel, "scale", finalScale, FadeInDuration).From(initialScaleValue);
 			tween.TweenProperty(musicSlider, "modulate:a", 1.0f, FadeInDuration);
 			tween.TweenProperty(musicSlider, "scale", finalScale, FadeInDuration).From(initialScaleValue);
 			tween.SetParallel(false);
@@ -183,7 +180,7 @@ public partial class SettingsMenu : CenterContainer
 		{
 			tween.SetParallel(true);
 			tween.TweenProperty(sfxLabel, "modulate:a", 1.0f, FadeInDuration);
-			tween.TweenProperty(sfxLabel, "scale", finalScale, FadeInDuration).From(initialScaleValue); // Enabled scale
+			tween.TweenProperty(sfxLabel, "scale", finalScale, FadeInDuration).From(initialScaleValue);
 			tween.TweenProperty(sfxSlider, "modulate:a", 1.0f, FadeInDuration);
 			tween.TweenProperty(sfxSlider, "scale", finalScale, FadeInDuration).From(initialScaleValue);
 			tween.SetParallel(false);

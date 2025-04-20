@@ -1,4 +1,4 @@
-[gd_scene load_steps=8 format=3 uid="uid://bqu24huyyxf2h"]
+[gd_scene load_steps=7 format=3 uid="uid://bqu24huyyxf2h"]
 
 [ext_resource type="Script" path="res://Scripts/EnemySpawner.cs" id="1_raqvy"]
 [ext_resource type="PackedScene" uid="uid://dckpb03kuu5e0" path="res://Scenes/Enemies/MeleeEnemy.tscn" id="2_ciyca"]
@@ -6,6 +6,7 @@
 [ext_resource type="PackedScene" uid="uid://ycjuiag28aml" path="res://Scenes/Enemies/ExplodingEnemy.tscn" id="4_exploding"]
 [ext_resource type="PackedScene" uid="uid://brifun4nf7fd2" path="res://Scenes/Enemies/TankEnemy.tscn" id="5_tank"]
 [ext_resource type="PackedScene" uid="uid://cjwdwplrovln5" path="res://Scenes/Enemies/SwiftEnemy.tscn" id="6_swift"]
+
 
 [node name="EnemySpawner" type="Node2D" node_paths=PackedStringArray("spawnTimer", "rateIncreaseTimer")]
 script = ExtResource("1_raqvy")

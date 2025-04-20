@@ -1,0 +1,26 @@
+[gd_scene load_steps=3 format=3 uid="uid://b8wgsgjf7w88x"]
+
+[ext_resource type="Script" path="res://Scripts/PooledParticleEffect.cs" id="1_particle_script"]
+
+[sub_resource type="Curve" id="Curve_particle_scale"]
+_data = [Vector2(0.00433911, 0.993671), 0.0, 0.0, 0, 0, Vector2(0.998999, 0.00219095), 0.0, 0.0, 0, 0]
+point_count = 2
+
+[node name="DamageParticleEffect" type="CPUParticles2D" node_paths=PackedStringArray("returnTimer")]
+emitting = false
+amount = 25
+lifetime = 0.5
+one_shot = true
+explosiveness = 1.0
+spread = 180.0
+gravity = Vector2(0, 0)
+initial_velocity_min = 50.0
+initial_velocity_max = 100.0
+scale_amount_min = 4.0
+scale_amount_max = 4.0
+scale_amount_curve = SubResource("Curve_particle_scale")
+script = ExtResource("1_particle_script")
+returnTimer = NodePath("ReturnTimer")
+
+[node name="ReturnTimer" type="Timer" parent="."]
+one_shot = true

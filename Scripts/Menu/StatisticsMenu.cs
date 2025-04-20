@@ -9,8 +9,8 @@ namespace CosmocrushGD
 		[Export] private RichTextLabel totalScoreLabel;
 		[Export] private RichTextLabel topScoreLabel;
 		[Export] private RichTextLabel averageScoreLabel;
-		[Export] private UIButton clearButton; // Changed type to UIButton
-		[Export] private UIButton returnButton; // Changed type to UIButton
+		[Export] private UIButton clearButton;
+		[Export] private UIButton returnButton;
 		[Export] private ConfirmationDialog confirmationDialog;
 
 		private const string GamesPlayedDescColor = "#FFE000";
@@ -30,22 +30,20 @@ namespace CosmocrushGD
 			menuShell = GetParent()?.GetParent<MenuShell>();
 			if (menuShell is null)
 			{
-				GD.PrintErr("StatisticsMenu: Could not find MenuShell parent!");
 			}
 
 			bool initializationFailed = false;
-			if (titleLabel == null) { GD.PrintErr("StatisticsMenu: titleLabel is NULL!"); initializationFailed = true; }
-			if (gamesPlayedLabel == null) { GD.PrintErr("StatisticsMenu: gamesPlayedLabel is NULL!"); initializationFailed = true; }
-			if (totalScoreLabel == null) { GD.PrintErr("StatisticsMenu: totalScoreLabel is NULL!"); initializationFailed = true; }
-			if (topScoreLabel == null) { GD.PrintErr("StatisticsMenu: topScoreLabel is NULL!"); initializationFailed = true; }
-			if (averageScoreLabel == null) { GD.PrintErr("StatisticsMenu: averageScoreLabel is NULL!"); initializationFailed = true; }
-			if (clearButton == null) { GD.PrintErr("StatisticsMenu: clearButton is NULL!"); initializationFailed = true; }
-			if (returnButton == null) { GD.PrintErr("StatisticsMenu: returnButton is NULL!"); initializationFailed = true; }
-			if (confirmationDialog == null) { GD.PrintErr("StatisticsMenu: confirmationDialog is NULL!"); initializationFailed = true; }
+			if (titleLabel == null) { initializationFailed = true; }
+			if (gamesPlayedLabel == null) { initializationFailed = true; }
+			if (totalScoreLabel == null) { initializationFailed = true; }
+			if (topScoreLabel == null) { initializationFailed = true; }
+			if (averageScoreLabel == null) { initializationFailed = true; }
+			if (clearButton == null) { initializationFailed = true; }
+			if (returnButton == null) { initializationFailed = true; }
+			if (confirmationDialog == null) { initializationFailed = true; }
 
 			if (initializationFailed)
 			{
-				GD.PrintErr("StatisticsMenu: Initialization failed due to missing UI node references.");
 				return;
 			}
 
@@ -68,8 +66,6 @@ namespace CosmocrushGD
 
 		private void SetupPivots()
 		{
-			// Important: GetSize() on RichTextLabel might not be reliable immediately
-			// if FitContent is true. Ensure layout is settled. CallDeferred helps.
 			if (titleLabel is not null) titleLabel.PivotOffset = titleLabel.Size / 2;
 			if (gamesPlayedLabel is not null) gamesPlayedLabel.PivotOffset = gamesPlayedLabel.Size / 2;
 			if (totalScoreLabel is not null) totalScoreLabel.PivotOffset = totalScoreLabel.Size / 2;
@@ -101,7 +97,6 @@ namespace CosmocrushGD
 				return;
 			}
 
-			// Ensure pivots are set before animating
 			SetupPivots();
 
 			Tween tween = CreateTween();
@@ -112,9 +107,8 @@ namespace CosmocrushGD
 			Vector2 initialScaleValue = Vector2.One * InitialScaleMultiplier;
 			Vector2 finalScale = Vector2.One;
 
-			tween.TweenInterval(StaggerDelay); // Initial delay
+			tween.TweenInterval(StaggerDelay);
 
-			// Title
 			if (titleLabel is not null)
 			{
 				tween.SetParallel(true);
@@ -124,7 +118,6 @@ namespace CosmocrushGD
 				tween.TweenInterval(StaggerDelay);
 			}
 
-			// Games Played
 			if (gamesPlayedLabel is not null)
 			{
 				tween.SetParallel(true);
@@ -134,7 +127,6 @@ namespace CosmocrushGD
 				tween.TweenInterval(StaggerDelay);
 			}
 
-			// Total Score
 			if (totalScoreLabel is not null)
 			{
 				tween.SetParallel(true);
@@ -144,7 +136,6 @@ namespace CosmocrushGD
 				tween.TweenInterval(StaggerDelay);
 			}
 
-			// Top Score
 			if (topScoreLabel is not null)
 			{
 				tween.SetParallel(true);
@@ -154,7 +145,6 @@ namespace CosmocrushGD
 				tween.TweenInterval(StaggerDelay);
 			}
 
-			// Average Score
 			if (averageScoreLabel is not null)
 			{
 				tween.SetParallel(true);
@@ -164,7 +154,6 @@ namespace CosmocrushGD
 				tween.TweenInterval(StaggerDelay);
 			}
 
-			// Buttons
 			if (clearButton is not null && returnButton is not null)
 			{
 				tween.SetParallel(true);
@@ -188,7 +177,6 @@ namespace CosmocrushGD
 			var statsManager = StatisticsManager.Instance;
 			var stats = statsManager.StatsData;
 
-			// Using PushColor/Pop prevents BBCode parsing issues if values contain special chars
 			if (gamesPlayedLabel != null)
 			{
 				gamesPlayedLabel.Clear();
@@ -240,7 +228,6 @@ namespace CosmocrushGD
 			}
 			else
 			{
-				GD.PrintErr("Cannot show confirmation dialog because confirmationDialog reference is NULL!");
 			}
 		}
 
@@ -248,8 +235,7 @@ namespace CosmocrushGD
 		{
 			StatisticsManager.Instance.ResetStats();
 			StatisticsManager.Instance.Save();
-			LoadAndDisplayStats(); // Reload to show the reset values
-								   // Optional: Re-run fade-in animation for the labels? Might be jarring.
+			LoadAndDisplayStats();
 		}
 
 

@@ -15,10 +15,6 @@ shader_parameter/flash_value = 0.0
 script = ExtResource("2_p2ur1")
 meleeKnockbackForce = 500.0
 
-[node name="Sprite" parent="." index="2"]
+[node name="Sprite" parent="." index="1"]
 material = SubResource("ShaderMaterial_c0udt")
 texture = ExtResource("2_y6omx")
-
-[node name="NavigationUpdateTimer" parent="." index="5"]
-process_callback = 0
-wait_time = 0.25

@@ -18,6 +18,6 @@ projectileScene = ExtResource("3_a16a5")
 projectileCount = 8
 meleeKnockbackForce = 500.0
 
-[node name="Sprite" parent="." index="2"]
+[node name="Sprite" parent="." index="1"]
 material = SubResource("ShaderMaterial_mwxbo")
 texture = ExtResource("5_15nkj")

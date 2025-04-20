@@ -1,9 +1,3 @@
-using CosmocrushGD;
-using Godot;
-using System.Diagnostics;
-using System.Xml.Linq;
-using System;
-
 using Godot;
 using System;
 
@@ -11,90 +5,54 @@ namespace CosmocrushGD;
 
 public partial class BaseEnemy : CharacterBody2D
 {
-	// Removed: Navigator, NavigationUpdateTimer
+	[Signal]
+	public delegate void EnemyDiedEventHandler(BaseEnemy enemy);
+
 	[Export] protected Sprite2D Sprite;
 	[Export] protected Timer DeathTimer;
 	[Export] protected Timer DamageCooldownTimer;
 	[Export] public CollisionShape2D Collider;
-	[Export] public CpuParticles2D DamageParticles;
-	[Export] public CpuParticles2D DeathParticles;
 	[Export] protected PackedScene DamageIndicatorScene;
 	[Export] protected AnimationPlayer HitAnimationPlayer;
+
+	// Export particle scenes for the pool manager to use
+	[Export] private PackedScene damageParticleEffectScene;
+	[Export] private PackedScene deathParticleEffectScene;
 
 	protected int Health;
 	protected bool Dead = false;
 	protected bool CanShoot = true;
 	protected Vector2 Knockback = Vector2.Zero;
 	protected Player TargetPlayer;
-	// Removed: _navigationMapReady, _navigationDesiredVelocity
-
-	public EnemyPoolManager PoolManager { get; set; }
-	public PackedScene SourceScene { get; set; }
 
 	protected virtual float KnockbackResistanceMultiplier => 0.1f;
 	protected virtual int MaxHealth => 20;
 	protected virtual int Damage => 1;
 	protected virtual float Speed => 100f;
-	protected virtual float DamageRadius => 50f; // Used for attack range
-	protected virtual float ProximityThreshold => 32f; // Distance at which to stop moving closer
+	protected virtual float DamageRadius => 50f;
+	protected virtual float ProximityThreshold => 32f;
 	protected virtual float KnockbackRecovery => 0.1f;
 	protected virtual float AttackCooldown => 0.5f;
-	// Removed: NavigationReachedThreshold
 
 	public override void _Ready()
 	{
 		TargetPlayer = GetNode<Player>("/root/World/Player");
-		DeathTimer.Timeout += OnDeathTimerTimeout;
-		DamageCooldownTimer.WaitTime = AttackCooldown;
-		DamageCooldownTimer.Timeout += OnDamageCooldownTimerTimeout;
-		// Removed: NavigationUpdateTimer connection
-		// Removed: Navigator signal connection
-	}
+		if (TargetPlayer is null)
+		{
+			GD.PrintErr($"BaseEnemy ({Name}): Could not find Player node at /root/World/Player");
+		}
 
-	// Removed: _Notification method for map setting
+		if (DeathTimer is not null)
+		{
+			DeathTimer.Timeout += OnDeathTimerTimeout;
+		}
+		if (DamageCooldownTimer is not null)
+		{
+			DamageCooldownTimer.WaitTime = AttackCooldown;
+			DamageCooldownTimer.Timeout += OnDamageCooldownTimerTimeout;
+		}
 
-	public virtual void ResetState(Vector2 spawnPosition)
-	{
-		GlobalPosition = spawnPosition;
 		Health = MaxHealth;
-		Dead = false;
-		Velocity = Vector2.Zero;
-		Knockback = Vector2.Zero;
-		CanShoot = true;
-		// Removed: _navigationMapReady reset
-
-		Visible = true;
-		if (Sprite is not null)
-		{
-			Sprite.Visible = true;
-		}
-		if (Collider is not null)
-		{
-			Collider.Disabled = false;
-		}
-
-		if (DamageParticles is not null)
-		{
-			DamageParticles.Emitting = false;
-			DamageParticles.Restart();
-		}
-		if (DeathParticles is not null)
-		{
-			DeathParticles.Emitting = false;
-			DeathParticles.Restart();
-		}
-
-		DeathTimer.Stop();
-		DamageCooldownTimer.Stop();
-		// Removed: NavigationUpdateTimer start/stop
-		// Removed: Navigator state reset
-
-		if (HitAnimationPlayer is not null && HitAnimationPlayer.IsPlaying())
-		{
-			HitAnimationPlayer.Stop(true);
-		}
-
-		ProcessMode = ProcessModeEnum.Inherit;
 	}
 
 	public override void _Process(double delta)
@@ -112,12 +70,20 @@ public partial class BaseEnemy : CharacterBody2D
 	{
 		if (Dead)
 		{
-			Velocity = Knockback.Lerp(Vector2.Zero, KnockbackRecovery); // Still apply knockback decay
-			if (Velocity != Vector2.Zero) { MoveAndSlide(); }
+			// Apply knockback decay even when dead until velocity is near zero
+			if (Knockback.LengthSquared() > 0.1f)
+			{
+				Knockback = Knockback.Lerp(Vector2.Zero, KnockbackRecovery * 2.0f * (float)delta); // Faster decay when dead
+				Velocity = Knockback;
+				MoveAndSlide();
+			}
+			else if (Velocity != Vector2.Zero)
+			{
+				Velocity = Vector2.Zero; // Stop completely once knockback is negligible
+			}
 			return;
 		}
 
-		// Apply knockback decay
 		Knockback = Knockback.Lerp(Vector2.Zero, KnockbackRecovery);
 
 		Vector2 desiredMovement = Vector2.Zero;
@@ -127,28 +93,20 @@ public partial class BaseEnemy : CharacterBody2D
 			Vector2 directionToPlayer = (TargetPlayer.GlobalPosition - GlobalPosition).Normalized();
 			float distanceToPlayer = GlobalPosition.DistanceTo(TargetPlayer.GlobalPosition);
 
-			// Only move if further than the proximity threshold
 			if (distanceToPlayer > ProximityThreshold)
 			{
 				desiredMovement = directionToPlayer * Speed;
 			}
 		}
 
-		// Set the final velocity for the CharacterBody2D
 		Velocity = desiredMovement + Knockback;
 
-		// Move the character
 		if (Velocity != Vector2.Zero)
 		{
 			MoveAndSlide();
 		}
 	}
 
-	// Removed: OnSafeVelocityComputed
-	// Removed: TrySetNavigationMap
-	// Removed: OnNavigationUpdateTimerTimeout
-	// Removed: RequestNavigationUpdate
-	// Removed: CalculateDesiredVelocity
 
 	private void OnDamageCooldownTimerTimeout()
 	{
@@ -157,7 +115,7 @@ public partial class BaseEnemy : CharacterBody2D
 
 	private void OnDeathTimerTimeout()
 	{
-		ReturnToPool();
+		QueueFree();
 	}
 
 	public void TakeDamage(int damage)
@@ -178,13 +136,16 @@ public partial class BaseEnemy : CharacterBody2D
 		}
 		else
 		{
-			GD.PrintErr($"Could not find World node at /root/World to grant score in {Name}.TakeDamage.");
+			GD.PrintErr($"BaseEnemy ({Name}): Could not find World node to add score.");
 		}
 
-		if (DamageParticles is not null)
+
+		if (damageParticleEffectScene is not null && GlobalAudioPlayer.Instance is not null)
 		{
-			DamageParticles.Emitting = true;
+			// Request damage particle effect from pool
+			GlobalAudioPlayer.Instance.GetParticleEffect(damageParticleEffectScene, GlobalPosition);
 		}
+
 
 		if (Health <= 0)
 		{
@@ -198,7 +159,6 @@ public partial class BaseEnemy : CharacterBody2D
 		{
 			return;
 		}
-		// No navigation velocity to reset anymore
 		Knockback += force * KnockbackResistanceMultiplier;
 	}
 
@@ -209,16 +169,16 @@ public partial class BaseEnemy : CharacterBody2D
 			return;
 		}
 
-		// Base flipping on the current velocity or player position if stationary
 		if (Math.Abs(Velocity.X) > 0.1f)
 		{
 			Sprite.FlipH = Velocity.X < 0;
 		}
-		else // If not moving horizontally, base flip on player position relative to enemy
+		else if (TargetPlayer is not null && IsInstanceValid(TargetPlayer)) // Check again for safety
 		{
 			Sprite.FlipH = GlobalPosition.X > TargetPlayer.GlobalPosition.X;
 		}
 	}
+
 
 	protected virtual void AttemptAttack()
 	{
@@ -229,32 +189,33 @@ public partial class BaseEnemy : CharacterBody2D
 
 		float distance = GlobalPosition.DistanceTo(TargetPlayer.GlobalPosition);
 
-		// Use DamageRadius for attack range check
 		if (distance > DamageRadius)
 		{
 			return;
 		}
 
-		PerformAttackAction(); // Call a method to perform the specific attack
+		PerformAttackAction();
 
 		CanShoot = false;
-		DamageCooldownTimer.Start();
+		if (DamageCooldownTimer is not null)
+		{
+			DamageCooldownTimer.Start();
+		}
 	}
 
-	// Renamed from PerformMeleeAttack for generality, derived classes implement specifics
+
 	protected virtual void PerformAttackAction()
 	{
-		// Base implementation could be empty or a default melee attack
-		// Example: Melee damage + knockback
 		if (TargetPlayer is not null && IsInstanceValid(TargetPlayer))
 		{
 			TargetPlayer.TakeDamage(Damage);
 			Vector2 knockbackDir = (TargetPlayer.GlobalPosition - GlobalPosition).Normalized();
-			TargetPlayer.ApplyKnockback(knockbackDir * meleeKnockbackForce); // Ensure meleeKnockbackForce is defined
+			TargetPlayer.ApplyKnockback(knockbackDir * MeleeKnockbackForce); // Use property
 		}
 	}
-	// Add a placeholder for meleeKnockbackForce if PerformAttackAction uses it in BaseEnemy
-	protected virtual float meleeKnockbackForce => 500f;
+
+
+	protected virtual float MeleeKnockbackForce => 500f; // Keep consistent naming
 
 
 	protected virtual void Die()
@@ -264,28 +225,42 @@ public partial class BaseEnemy : CharacterBody2D
 			return;
 		}
 
+		EmitSignal(SignalName.EnemyDied, this);
 		Dead = true;
-		Velocity = Vector2.Zero;
-		Knockback = Vector2.Zero;
-		// Removed: NavigationUpdateTimer.Stop();
-		// Removed: Navigator state reset
+		// Keep knockback active, but stop seeking player
+		Velocity = Knockback; // Initial velocity is remaining knockback
+		SetPhysicsProcess(true); // Keep physics process active for knockback decay
+		SetProcess(false); // Disable AI processing (_Process)
+
 
 		if (Collider is not null)
 		{
-			Collider.Disabled = true;
+			Collider.SetDeferred(CollisionShape2D.PropertyName.Disabled, true);
 		}
+
 
 		if (Sprite is not null)
 		{
 			Sprite.Visible = false;
 		}
-		if (DeathParticles is not null)
+
+
+		if (deathParticleEffectScene is not null && GlobalAudioPlayer.Instance is not null)
 		{
-			DeathParticles.Emitting = true;
+			// Request death particle effect from pool
+			GlobalAudioPlayer.Instance.GetParticleEffect(deathParticleEffectScene, GlobalPosition);
 		}
 
-		DeathTimer.Start();
+		if (DeathTimer is not null)
+		{
+			DeathTimer.Start(); // Timer to eventually QueueFree
+		}
+		else
+		{
+			QueueFree(); // Fallback if no timer
+		}
 	}
+
 
 	private void ShowDamageIndicator(int damage)
 	{
@@ -302,7 +277,7 @@ public partial class BaseEnemy : CharacterBody2D
 		float verticalOffset = -20f;
 		if (Sprite is not null && Sprite.Texture is not null)
 		{
-			verticalOffset = -Sprite.Texture.GetHeight() / 2f * Scale.Y;
+			verticalOffset = -Sprite.Texture.GetHeight() / 2f * Scale.Y - 10f; // Add a bit more offset
 		}
 
 		indicator.Position = new(0, verticalOffset);
@@ -310,34 +285,25 @@ public partial class BaseEnemy : CharacterBody2D
 		AddChild(indicator);
 	}
 
-	private void ReturnToPool()
-	{
-		if (PoolManager is null)
-		{
-			GD.PushError("Enemy cannot return to pool: PoolManager reference missing!");
-			QueueFree(); // Free if pool manager is gone
-			return;
-		}
-
-		PoolManager.ReturnEnemy(this);
-	}
-
 	public override void _ExitTree()
 	{
-		// Ensure timers are stopped if the node exits prematurely
 		DeathTimer?.Stop();
 		DamageCooldownTimer?.Stop();
 
 		if (DeathTimer is not null && IsInstanceValid(DeathTimer))
 		{
-			DeathTimer.Timeout -= OnDeathTimerTimeout;
+			if (DeathTimer.IsConnected(Timer.SignalName.Timeout, Callable.From(OnDeathTimerTimeout)))
+			{
+				DeathTimer.Timeout -= OnDeathTimerTimeout;
+			}
 		}
 		if (DamageCooldownTimer is not null && IsInstanceValid(DamageCooldownTimer))
 		{
-			DamageCooldownTimer.Timeout -= OnDamageCooldownTimerTimeout;
+			if (DamageCooldownTimer.IsConnected(Timer.SignalName.Timeout, Callable.From(OnDamageCooldownTimerTimeout)))
+			{
+				DamageCooldownTimer.Timeout -= OnDamageCooldownTimerTimeout;
+			}
 		}
-		// Removed: NavigationUpdateTimer disconnect
-		// Removed: Navigator signal disconnect
 		base._ExitTree();
 	}
 }

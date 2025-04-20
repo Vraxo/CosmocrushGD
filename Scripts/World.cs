@@ -9,28 +9,31 @@ public partial class World : WorldEnvironment
 	[Export] private Button pauseButton;
 	[Export] private CanvasLayer hudLayer;
 	[Export] private Label scoreLabel;
+	[Export] private Label enemyCountLabel;
 	[Export] private NodePath playerPath;
+	[Export] private NodePath enemySpawnerPath;
 	[Export] private AnimationPlayer scoreAnimationPlayer;
 
 	public int Score { get; private set; } = 0;
+	private int _currentEnemyCount = 0;
 	private PauseMenu pauseMenu;
 	private GameOverMenu gameOverMenu;
 	private Player player;
+	private EnemySpawner enemySpawner;
 
 	public override void _Ready()
 	{
-		GD.Print("World._Ready: Start");
 		if (hudLayer is null)
 		{
-			GD.PrintErr("World._Ready: HUD Layer reference not set!");
 		}
 		if (scoreLabel is null)
 		{
-			GD.PrintErr("World._Ready: Score Label reference not set!");
+		}
+		if (enemyCountLabel is null)
+		{
 		}
 		if (scoreAnimationPlayer is null)
 		{
-			GD.PrintErr("World._Ready: Score Animation Player reference not set!");
 		}
 		if (pauseButton is not null)
 		{
@@ -38,28 +41,32 @@ public partial class World : WorldEnvironment
 		}
 		else
 		{
-			GD.PrintErr("World._Ready: Pause Button reference not set!");
 		}
 		if (gameOverMenuScene is null)
 		{
-			GD.PrintErr("World._Ready: GameOverMenuScene is not assigned in the inspector!");
 		}
 
-		GD.Print($"World._Ready: Attempting to get player from path: {playerPath}");
 		player = GetNode<Player>(playerPath);
 		if (player is not null)
 		{
-			GD.Print("World._Ready: Player node found. Subscribing to GameOver event.");
 			player.GameOver += OnGameOver;
 		}
 		else
 		{
-			GD.PrintErr("World._Ready: Player node NOT found or path incorrect!");
+		}
+
+		enemySpawner = GetNode<EnemySpawner>(enemySpawnerPath);
+		if (enemySpawner is not null)
+		{
+			enemySpawner.EnemySpawned += OnEnemySpawned;
+		}
+		else
+		{
 		}
 
 		StatisticsManager.Instance.IncrementGamesPlayed();
 		UpdateScoreLabel();
-		GD.Print("World._Ready: End");
+		UpdateEnemyCountLabel();
 	}
 
 	public override void _Process(double delta)
@@ -72,14 +79,16 @@ public partial class World : WorldEnvironment
 
 	public override void _ExitTree()
 	{
-		GD.Print("World._ExitTree: Start");
 		if (player is not null)
 		{
-			GD.Print("World._ExitTree: Unsubscribing from player GameOver event.");
 			player.GameOver -= OnGameOver;
 		}
+		if (enemySpawner is not null)
+		{
+			enemySpawner.EnemySpawned -= OnEnemySpawned;
+		}
+
 		base._ExitTree();
-		GD.Print("World._ExitTree: End");
 	}
 
 	public void AddScore(int amount)
@@ -101,6 +110,42 @@ public partial class World : WorldEnvironment
 			scoreLabel.Text = $"Score: {Score}";
 		}
 	}
+
+	private void UpdateEnemyCountLabel()
+	{
+		if (enemyCountLabel is not null)
+		{
+			enemyCountLabel.Text = $"Enemies: {_currentEnemyCount}";
+		}
+	}
+
+	private void OnEnemySpawned(BaseEnemy enemy)
+	{
+		if (enemy is null || !IsInstanceValid(enemy))
+		{
+			return;
+		}
+		_currentEnemyCount++;
+		enemy.EnemyDied += OnEnemyDied;
+		UpdateEnemyCountLabel();
+	}
+
+	private void OnEnemyDied(BaseEnemy enemy)
+	{
+		if (enemy is null || !IsInstanceValid(enemy))
+		{
+			return;
+		}
+
+		if (enemy.IsConnected(BaseEnemy.SignalName.EnemyDied, Callable.From<BaseEnemy>(OnEnemyDied)))
+		{
+			enemy.EnemyDied -= OnEnemyDied;
+		}
+
+		_currentEnemyCount = Mathf.Max(0, _currentEnemyCount - 1);
+		UpdateEnemyCountLabel();
+	}
+
 
 	private void OnPauseButtonPressed()
 	{
@@ -130,13 +175,11 @@ public partial class World : WorldEnvironment
 		{
 			if (pauseMenuScene is null)
 			{
-				GD.PrintErr("World.Pause: PauseMenuScene is not set!");
 				return;
 			}
 
 			if (hudLayer is null)
 			{
-				GD.PrintErr("World.Pause: HUD Layer is not set or found!");
 				return;
 			}
 
@@ -150,27 +193,21 @@ public partial class World : WorldEnvironment
 
 	private void OnGameOver()
 	{
-		GD.Print("World.OnGameOver: Game Over event received!");
-
 		if (gameOverMenu is not null && IsInstanceValid(gameOverMenu))
 		{
-			GD.Print("World.OnGameOver: Game Over menu already exists. Aborting.");
 			return;
 		}
 
 		if (gameOverMenuScene is null)
 		{
-			GD.PrintErr("World.OnGameOver: GameOverMenuScene is not set in World script!");
 			return;
 		}
 
 		if (hudLayer is null)
 		{
-			GD.PrintErr("World.OnGameOver: HUD Layer is not set or found!");
 			return;
 		}
 
-		GD.Print($"World.OnGameOver: Updating statistics with final score: {Score}");
 		StatisticsManager.Instance.UpdateScores(Score);
 
 		gameOverMenu = gameOverMenuScene.Instantiate<GameOverMenu>();
@@ -181,7 +218,6 @@ public partial class World : WorldEnvironment
 		if (pauseButton is not null)
 		{
 			pauseButton.Disabled = true;
-			GD.Print("World.OnGameOver: Pause button disabled.");
 		}
 	}
 }

@@ -5,23 +5,23 @@ namespace CosmocrushGD;
 
 public partial class EnemySpawner : Node
 {
+	[Signal]
+	public delegate void EnemySpawnedEventHandler(BaseEnemy enemy);
+
 	[Export] private Timer spawnTimer;
 	[Export] private Timer rateIncreaseTimer;
 	[Export] private PackedScene meleeEnemyScene;
 	[Export] private PackedScene rangedEnemyScene;
 	[Export] private PackedScene explodingEnemyScene;
 	[Export] private PackedScene tankEnemyScene;
-	[Export] private PackedScene swiftEnemyScene; // Added SwiftEnemy scene export
+	[Export] private PackedScene swiftEnemyScene;
 	[Export] private NodePath playerPath;
 	[Export] private float baseSpawnRate = 2.0f;
 	[Export] private float minSpawnInterval = 0.5f;
 	[Export] private float timeMultiplier = 0.1f;
 	[Export] private float minPlayerDistance = 500.0f;
-
 	[Export] private NodePath spawnAreaNodePath;
-
-	[Export] private EnemyPoolManager enemyPoolManager;
-	[Export] private int initialSpawnCount = 3;
+	[Export] private int maxInitialSpawns = 3;
 
 	private Player player;
 	private float timeElapsed;
@@ -40,12 +40,6 @@ public partial class EnemySpawner : Node
 		}
 		if (player is null)
 		{
-			GD.PrintErr("EnemySpawner: Player node not found! Spawner disabled.");
-			SetProcess(false); SetPhysicsProcess(false); return;
-		}
-		if (enemyPoolManager is null)
-		{
-			GD.PrintErr("EnemySpawner: EnemyPoolManager reference not set in Inspector! Spawner disabled.");
 			SetProcess(false); SetPhysicsProcess(false); return;
 		}
 
@@ -61,29 +55,25 @@ public partial class EnemySpawner : Node
 					Vector2 extents = shapeSize / 2.0f;
 					Vector2 globalCenter = _spawnAreaNode.GlobalPosition;
 					_spawnAreaRect = new Rect2(globalCenter - extents, shapeSize);
-					GD.Print($"EnemySpawner: Calculated Spawn Area Rect: Position={_spawnAreaRect.Position}, Size={_spawnAreaRect.Size}");
+
 
 					if (_spawnAreaRect.Size.X <= 1 || _spawnAreaRect.Size.Y <= 1)
 					{
-						GD.PrintErr($"EnemySpawner: Calculated spawn area has minimal or negative size ({_spawnAreaRect.Size}). Check Area2D scale and shape size. Spawner disabled.");
 						SetProcess(false); SetPhysicsProcess(false); return;
 					}
 				}
 				else
 				{
-					GD.PrintErr($"EnemySpawner: Assigned Area2D '{_spawnAreaNode.Name}' does not have a valid RectangleShape2D child. Spawner disabled.");
 					SetProcess(false); SetPhysicsProcess(false); return;
 				}
 			}
 			else
 			{
-				GD.PrintErr($"EnemySpawner: Could not find Area2D node at path: {spawnAreaNodePath}. Spawner disabled.");
 				SetProcess(false); SetPhysicsProcess(false); return;
 			}
 		}
 		else
 		{
-			GD.PrintErr("EnemySpawner: Spawn Area Node Path not assigned in Inspector! Spawner disabled.");
 			SetProcess(false); SetPhysicsProcess(false); return;
 		}
 
@@ -95,7 +85,6 @@ public partial class EnemySpawner : Node
 	{
 		if (spawnTimer is null || rateIncreaseTimer is null)
 		{
-			GD.PrintErr("EnemySpawner: Timer references not set! Make sure Timers are assigned in the Inspector.");
 			SetProcess(false); SetPhysicsProcess(false); return;
 		}
 
@@ -108,22 +97,19 @@ public partial class EnemySpawner : Node
 
 	private void SpawnInitialEnemies()
 	{
-		if (meleeEnemyScene is null && rangedEnemyScene is null && explodingEnemyScene is null && tankEnemyScene is null && swiftEnemyScene is null) // Added SwiftEnemy check
+		if (meleeEnemyScene is null && rangedEnemyScene is null && explodingEnemyScene is null && tankEnemyScene is null && swiftEnemyScene is null)
 		{
-			GD.PrintErr("EnemySpawner: No enemy scenes assigned. Cannot perform initial spawn.");
 			return;
 		}
 
-		GD.Print("EnemySpawner: Starting initial enemy spawn...");
 		int spawnedCount = 0;
-		for (int i = 0; i < initialSpawnCount; i++)
+		for (int i = 0; i < maxInitialSpawns; i++)
 		{
 			if (SpawnRandomEnemy())
 			{
 				spawnedCount++;
 			}
 		}
-		GD.Print($"EnemySpawner: Initial spawn attempt finished. Successfully spawned {spawnedCount} enemies.");
 	}
 
 	private void RateIncrease()
@@ -145,21 +131,19 @@ public partial class EnemySpawner : Node
 
 	private bool SpawnRandomEnemy()
 	{
-		if (meleeEnemyScene is null && rangedEnemyScene is null && explodingEnemyScene is null && tankEnemyScene is null && swiftEnemyScene is null) // Added SwiftEnemy check
+		if (meleeEnemyScene is null && rangedEnemyScene is null && explodingEnemyScene is null && tankEnemyScene is null && swiftEnemyScene is null)
 		{
-			GD.PrintErr("EnemySpawner: Cannot spawn random enemy, no scenes are assigned.");
 			return false;
 		}
 
 		PackedScene selectedScene = SelectRandomEnemyScene();
 		if (selectedScene is not null)
 		{
-			TrySpawnEnemyFromPool(selectedScene);
+			TrySpawnEnemy(selectedScene);
 			return true;
 		}
 		else
 		{
-			GD.PrintErr("EnemySpawner: SelectRandomEnemyScene returned null. This shouldn't happen if at least one scene is assigned.");
 			return false;
 		}
 	}
@@ -171,7 +155,7 @@ public partial class EnemySpawner : Node
 		if (rangedEnemyScene is not null) availableScenes.Add(rangedEnemyScene);
 		if (explodingEnemyScene is not null) availableScenes.Add(explodingEnemyScene);
 		if (tankEnemyScene is not null) availableScenes.Add(tankEnemyScene);
-		if (swiftEnemyScene is not null) availableScenes.Add(swiftEnemyScene); // Added SwiftEnemy to selection
+		if (swiftEnemyScene is not null) availableScenes.Add(swiftEnemyScene);
 
 		if (availableScenes.Count == 0)
 		{
@@ -182,7 +166,7 @@ public partial class EnemySpawner : Node
 		return availableScenes[randomIndex];
 	}
 
-	private void TrySpawnEnemyFromPool(PackedScene enemyScene)
+	private void TrySpawnEnemy(PackedScene enemyScene)
 	{
 		bool foundValidPosition = false;
 		int attempts = 0;
@@ -201,33 +185,14 @@ public partial class EnemySpawner : Node
 
 		if (foundValidPosition)
 		{
-			if (enemyPoolManager is null || !IsInstanceValid(enemyPoolManager))
-			{
-				GD.PrintErr("EnemySpawner: EnemyPoolManager became invalid before spawning. Aborting spawn.");
-				return;
-			}
-
-			BaseEnemy enemy = enemyPoolManager.GetEnemy(enemyScene);
+			BaseEnemy enemy = enemyScene.Instantiate<BaseEnemy>();
 
 			if (enemy is not null)
 			{
-				if (IsInstanceValid(enemy))
-				{
-					enemy.ResetState(spawnPosition);
-				}
-				else
-				{
-					GD.PrintErr($"EnemySpawner: Got an invalid enemy instance from pool for scene {enemyScene.ResourcePath}.");
-				}
+				enemy.GlobalPosition = spawnPosition;
+				AddChild(enemy);
+				EmitSignal(SignalName.EnemySpawned, enemy);
 			}
-			else
-			{
-				GD.Print($"EnemySpawner: Failed to get enemy of type {enemyScene.ResourcePath} from pool (PoolManager returned null).");
-			}
-		}
-		else
-		{
-			GD.Print($"EnemySpawner: Failed to find valid spawn position (far enough from player) within Area2D for {enemyScene.ResourcePath} after {MaxSpawnAttempts} attempts.");
 		}
 	}
 

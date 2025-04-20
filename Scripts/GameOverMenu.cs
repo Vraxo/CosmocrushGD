@@ -43,23 +43,18 @@ public partial class GameOverMenu : ColorRect
     {
         if (gameOverLabel is null)
         {
-            GD.PrintErr("GameOverMenu: Game Over Label not assigned!");
         }
         if (scoreLabel is null)
         {
-            GD.PrintErr("GameOverMenu: Score Label not assigned!");
         }
         if (playAgainButton is null)
         {
-            GD.PrintErr("GameOverMenu: Play Again Button not assigned!");
         }
         if (returnButton is null)
         {
-            GD.PrintErr("GameOverMenu: Return Button not assigned!");
         }
         if (scoreAnimationPlayer is null)
         {
-            GD.PrintErr("GameOverMenu: Score Animation Player not assigned!");
         }
 
         if (playAgainButton is not null)
@@ -171,7 +166,6 @@ public partial class GameOverMenu : ColorRect
     {
         if (gameOverLabel is null || scoreLabel is null || playAgainButton is null || returnButton is null)
         {
-            GD.PrintErr("GameOverMenu: Cannot start animation, one or more nodes are null.");
             return;
         }
 
