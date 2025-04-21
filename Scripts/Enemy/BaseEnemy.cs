@@ -1,5 +1,7 @@
 using Godot;
 using System;
+using static System.Formats.Asn1.AsnWriter;
+using System.Xml.Linq;
 
 namespace CosmocrushGD;
 
@@ -15,7 +17,6 @@ public partial class BaseEnemy : CharacterBody2D
 	[Export] protected PackedScene DamageIndicatorScene;
 	[Export] protected AnimationPlayer HitAnimationPlayer;
 
-	// Export particle scenes for the pool manager to use
 	[Export] private PackedScene damageParticleEffectScene;
 	[Export] private PackedScene deathParticleEffectScene;
 
@@ -70,16 +71,15 @@ public partial class BaseEnemy : CharacterBody2D
 	{
 		if (Dead)
 		{
-			// Apply knockback decay even when dead until velocity is near zero
 			if (Knockback.LengthSquared() > 0.1f)
 			{
-				Knockback = Knockback.Lerp(Vector2.Zero, KnockbackRecovery * 2.0f * (float)delta); // Faster decay when dead
+				Knockback = Knockback.Lerp(Vector2.Zero, KnockbackRecovery * 2.0f * (float)delta);
 				Velocity = Knockback;
 				MoveAndSlide();
 			}
 			else if (Velocity != Vector2.Zero)
 			{
-				Velocity = Vector2.Zero; // Stop completely once knockback is negligible
+				Velocity = Vector2.Zero;
 			}
 			return;
 		}
@@ -139,12 +139,11 @@ public partial class BaseEnemy : CharacterBody2D
 			GD.PrintErr($"BaseEnemy ({Name}): Could not find World node to add score.");
 		}
 
-
-		if (damageParticleEffectScene is not null && GlobalAudioPlayer.Instance is not null)
-		{
-			// Request damage particle effect from pool
-			GlobalAudioPlayer.Instance.GetParticleEffect(damageParticleEffectScene, GlobalPosition);
-		}
+		// Temporarily disabled damage particles
+		// if (damageParticleEffectScene is not null && GlobalAudioPlayer.Instance is not null)
+		// {
+		//	 GlobalAudioPlayer.Instance.GetParticleEffect(damageParticleEffectScene, GlobalPosition);
+		// }
 
 
 		if (Health <= 0)
@@ -173,7 +172,7 @@ public partial class BaseEnemy : CharacterBody2D
 		{
 			Sprite.FlipH = Velocity.X < 0;
 		}
-		else if (TargetPlayer is not null && IsInstanceValid(TargetPlayer)) // Check again for safety
+		else if (TargetPlayer is not null && IsInstanceValid(TargetPlayer))
 		{
 			Sprite.FlipH = GlobalPosition.X > TargetPlayer.GlobalPosition.X;
 		}
@@ -210,12 +209,12 @@ public partial class BaseEnemy : CharacterBody2D
 		{
 			TargetPlayer.TakeDamage(Damage);
 			Vector2 knockbackDir = (TargetPlayer.GlobalPosition - GlobalPosition).Normalized();
-			TargetPlayer.ApplyKnockback(knockbackDir * MeleeKnockbackForce); // Use property
+			TargetPlayer.ApplyKnockback(knockbackDir * MeleeKnockbackForce);
 		}
 	}
 
 
-	protected virtual float MeleeKnockbackForce => 500f; // Keep consistent naming
+	protected virtual float MeleeKnockbackForce => 500f;
 
 
 	protected virtual void Die()
@@ -227,10 +226,9 @@ public partial class BaseEnemy : CharacterBody2D
 
 		EmitSignal(SignalName.EnemyDied, this);
 		Dead = true;
-		// Keep knockback active, but stop seeking player
-		Velocity = Knockback; // Initial velocity is remaining knockback
-		SetPhysicsProcess(true); // Keep physics process active for knockback decay
-		SetProcess(false); // Disable AI processing (_Process)
+		Velocity = Knockback;
+		SetPhysicsProcess(true);
+		SetProcess(false);
 
 
 		if (Collider is not null)
@@ -244,20 +242,19 @@ public partial class BaseEnemy : CharacterBody2D
 			Sprite.Visible = false;
 		}
 
-
-		if (deathParticleEffectScene is not null && GlobalAudioPlayer.Instance is not null)
-		{
-			// Request death particle effect from pool
-			GlobalAudioPlayer.Instance.GetParticleEffect(deathParticleEffectScene, GlobalPosition);
-		}
+		// Temporarily disabled death particles
+		// if (deathParticleEffectScene is not null && GlobalAudioPlayer.Instance is not null)
+		// {
+		//	 GlobalAudioPlayer.Instance.GetParticleEffect(deathParticleEffectScene, GlobalPosition);
+		// }
 
 		if (DeathTimer is not null)
 		{
-			DeathTimer.Start(); // Timer to eventually QueueFree
+			DeathTimer.Start();
 		}
 		else
 		{
-			QueueFree(); // Fallback if no timer
+			QueueFree();
 		}
 	}
 
@@ -277,7 +274,7 @@ public partial class BaseEnemy : CharacterBody2D
 		float verticalOffset = -20f;
 		if (Sprite is not null && Sprite.Texture is not null)
 		{
-			verticalOffset = -Sprite.Texture.GetHeight() / 2f * Scale.Y - 10f; // Add a bit more offset
+			verticalOffset = -Sprite.Texture.GetHeight() / 2f * Scale.Y - 10f;
 		}
 
 		indicator.Position = new(0, verticalOffset);
