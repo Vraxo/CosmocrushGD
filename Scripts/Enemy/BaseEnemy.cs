@@ -23,7 +23,7 @@ public partial class BaseEnemy : CharacterBody2D
 	protected Vector2 Knockback = Vector2.Zero;
 	protected Player TargetPlayer;
 
-	protected virtual float KnockbackResistanceMultiplier => 0.1f;
+	protected virtual float KnockbackResistanceMultiplier => 0.5f;
 	protected virtual int MaxHealth => 20;
 	protected virtual int Damage => 1;
 	protected virtual float Speed => 100f;
@@ -168,16 +168,14 @@ public partial class BaseEnemy : CharacterBody2D
 		DamageIndicator indicator = GlobalAudioPlayer.Instance.GetDamageIndicator();
 		if (indicator is null) return;
 
-		// Calculate offset relative to GLOBAL position
 		float verticalOffset = -20f;
 		if (Sprite is not null && Sprite.Texture is not null)
 		{
 			verticalOffset = -Sprite.Texture.GetHeight() / 2f * Scale.Y - 10f;
 		}
-		// Calculate the target GLOBAL position for the indicator
+
 		Vector2 globalStartPosition = GlobalPosition + new Vector2(0, verticalOffset);
 
-		// No reparenting needed, just setup the indicator which is TopLevel
 		indicator.Setup(damage, currentHealth, maxHealth, globalStartPosition);
 	}
 

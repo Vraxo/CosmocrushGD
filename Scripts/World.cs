@@ -15,11 +15,13 @@ public partial class World : WorldEnvironment
 	[Export] private AnimationPlayer scoreAnimationPlayer;
 
 	public int Score { get; private set; } = 0;
+
 	private int _currentEnemyCount = 0;
 	private PauseMenu pauseMenu;
 	private GameOverMenu gameOverMenu;
 	private Player player;
 	private EnemySpawner enemySpawner;
+	private bool isPlayerDead = false;
 
 	public override void _Ready()
 	{
@@ -39,9 +41,7 @@ public partial class World : WorldEnvironment
 		{
 			pauseButton.Pressed += OnPauseButtonPressed;
 		}
-		else
-		{
-		}
+
 		if (gameOverMenuScene is null)
 		{
 		}
@@ -50,19 +50,16 @@ public partial class World : WorldEnvironment
 		if (player is not null)
 		{
 			player.GameOver += OnGameOver;
+			player.PlayerDied += OnPlayerDied;
 		}
-		else
-		{
-		}
+
 
 		enemySpawner = GetNode<EnemySpawner>(enemySpawnerPath);
 		if (enemySpawner is not null)
 		{
 			enemySpawner.EnemySpawned += OnEnemySpawned;
 		}
-		else
-		{
-		}
+
 
 		StatisticsManager.Instance.IncrementGamesPlayed();
 		UpdateScoreLabel();
@@ -71,7 +68,7 @@ public partial class World : WorldEnvironment
 
 	public override void _Process(double delta)
 	{
-		if (Input.IsActionJustPressed("ui_cancel") && !GetTree().Paused)
+		if (!isPlayerDead && Input.IsActionJustPressed("ui_cancel") && !GetTree().Paused)
 		{
 			Pause();
 		}
@@ -82,6 +79,7 @@ public partial class World : WorldEnvironment
 		if (player is not null)
 		{
 			player.GameOver -= OnGameOver;
+			player.PlayerDied -= OnPlayerDied;
 		}
 		if (enemySpawner is not null)
 		{
@@ -143,30 +141,31 @@ public partial class World : WorldEnvironment
 		}
 
 		_currentEnemyCount = Mathf.Max(0, _currentEnemyCount - 1);
+		AddScore(10);
 		UpdateEnemyCountLabel();
 	}
 
 
 	private void OnPauseButtonPressed()
 	{
-		if (gameOverMenu is not null && gameOverMenu.Visible)
+		if (isPlayerDead || GetTree().Paused)
 		{
 			return;
 		}
 
-		if (!GetTree().Paused)
-		{
-			Pause();
-		}
-		else if (pauseMenu is not null && IsInstanceValid(pauseMenu))
+		if (pauseMenu is not null && IsInstanceValid(pauseMenu))
 		{
 			pauseMenu.TriggerContinue();
+		}
+		else
+		{
+			Pause();
 		}
 	}
 
 	private void Pause()
 	{
-		if (GetTree().Paused)
+		if (isPlayerDead || GetTree().Paused)
 		{
 			return;
 		}
@@ -189,6 +188,11 @@ public partial class World : WorldEnvironment
 
 		GetTree().Paused = true;
 		pauseMenu.Show();
+	}
+
+	private void OnPlayerDied()
+	{
+		isPlayerDead = true;
 	}
 
 	private void OnGameOver()

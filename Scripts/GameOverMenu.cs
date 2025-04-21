@@ -232,7 +232,15 @@ public partial class GameOverMenu : ColorRect
 
     private void OnPlayAgainButtonPressed()
     {
-        SceneTransitionManager.Instance?.ChangeScene(GameScenePath);
+        SceneTree tree = GetTree();
+        if (tree is not null)
+        {
+            if (tree.Paused)
+            {
+                tree.Paused = false;
+            }
+            tree.ReloadCurrentScene();
+        }
     }
 
     private void OnReturnButtonPressed()

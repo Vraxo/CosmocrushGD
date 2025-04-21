@@ -15,12 +15,13 @@ public partial class GlobalAudioPlayer : Node
 	private PackedScene deathParticleScene;
 	private PackedScene damageIndicatorScene;
 
-	private int initialParticlePoolSize = 20;
-	private int initialIndicatorPoolSize = 30;
-	private int initialProjectilePoolSize = 20;
+	private int initialParticlePoolSize = 60;
+	private int initialIndicatorPoolSize = 90;
+	private int initialProjectilePoolSize = 60;
 
 	private const string SfxBusName = "SFX";
 	private const int InitialAudioPoolSize = 10;
+	private const int ParticleZIndex = 10;
 
 	private Queue<AudioStreamPlayer> availablePlayers1D = new();
 	private Queue<AudioStreamPlayer2D> availablePlayers2D = new();
@@ -129,10 +130,10 @@ public partial class GlobalAudioPlayer : Node
 		PooledParticleEffect particle = scene.Instantiate<PooledParticleEffect>();
 		if (particle is null) { GD.PrintErr($"Failed instantiate particle: {scene.ResourcePath}"); return null; }
 		particle.SourceScene = scene;
-		particle.TopLevel = true; // Particles should also be TopLevel
+		particle.TopLevel = true;
 		particle.Visible = false;
 		particle.ProcessMode = ProcessModeEnum.Disabled;
-		AddChild(particle); // Initially add to self (pool manager)
+		AddChild(particle);
 		return particle;
 	}
 
@@ -142,10 +143,10 @@ public partial class GlobalAudioPlayer : Node
 		DamageIndicator indicator = damageIndicatorScene.Instantiate<DamageIndicator>();
 		if (indicator is null) { GD.PrintErr($"Failed instantiate indicator: {damageIndicatorScene.ResourcePath}"); return null; }
 		indicator.SourceScene = damageIndicatorScene;
-		indicator.TopLevel = true; // Indicators should also be TopLevel
+		indicator.TopLevel = true;
 		indicator.Visible = false;
 		indicator.ProcessMode = ProcessModeEnum.Disabled;
-		AddChild(indicator); // Initially add to self
+		AddChild(indicator);
 		return indicator;
 	}
 
@@ -155,10 +156,10 @@ public partial class GlobalAudioPlayer : Node
 		Projectile projectile = scene.Instantiate<Projectile>();
 		if (projectile is null) { GD.PrintErr($"Failed to instantiate projectile from scene: {scene.ResourcePath}"); return null; }
 		projectile.SourceScene = scene;
-		projectile.TopLevel = true; // Make projectile independent of parent transform
+		projectile.TopLevel = true;
 		projectile.Visible = false;
 		projectile.ProcessMode = ProcessModeEnum.Disabled;
-		AddChild(projectile); // Initially add to self
+		AddChild(projectile);
 		return projectile;
 	}
 
@@ -168,8 +169,7 @@ public partial class GlobalAudioPlayer : Node
 		AudioStreamPlayer2D audioPlayer;
 		if (availablePlayers2D.Count > 0) audioPlayer = availablePlayers2D.Dequeue();
 		else audioPlayer = CreateAndSetupPlayer2D();
-		// Player is already child of this node, position will be relative unless TopLevel=true (which it isn't)
-		// For 2D sounds, GlobalPosition is better if the source might move (like the player)
+
 		audioPlayer.GlobalPosition = position;
 		audioPlayer.Stream = stream;
 		audioPlayer.VolumeDb = volumeDb;
@@ -192,16 +192,14 @@ public partial class GlobalAudioPlayer : Node
 		if (scene is null) { GD.PrintErr("GetParticleEffect: Null scene."); return null; }
 		if (!availableParticles.TryGetValue(scene, out Queue<PooledParticleEffect> queue))
 		{
-			// Fallback: Create, DO NOT add to pool management, parent to root
+
 			GD.PrintErr($"GetParticleEffect: Pool not found for {scene.ResourcePath}. Creating fallback.");
-			var newParticle = CreateAndSetupParticle(scene); // Will set TopLevel=true
+			var newParticle = CreateAndSetupParticle(scene);
 			if (newParticle is not null)
 			{
-				// Remove from pool manager, add to root (necessary for first time?)
-				// This seems counter-intuitive now with TopLevel. Let's keep it child of pool manager.
-				// newParticle.GetParent()?.RemoveChild(newParticle);
-				// GetTree().Root.AddChild(newParticle);
+
 				newParticle.GlobalPosition = position;
+				newParticle.ZIndex = ParticleZIndex;
 				newParticle.ProcessMode = ProcessModeEnum.Inherit;
 				newParticle.Visible = true;
 				if (color.HasValue) newParticle.Color = color.Value;
@@ -223,10 +221,9 @@ public partial class GlobalAudioPlayer : Node
 		}
 		if (particle is null) return null;
 
-		// No reparenting needed due to TopLevel = true
-		// if (particle.GetParent() != this) { ... }
 
-		particle.GlobalPosition = position; // Set global position directly
+		particle.GlobalPosition = position;
+		particle.ZIndex = ParticleZIndex;
 		if (color.HasValue) particle.Color = color.Value;
 		particle.Visible = true;
 		particle.ProcessMode = ProcessModeEnum.Inherit;
@@ -250,14 +247,13 @@ public partial class GlobalAudioPlayer : Node
 		}
 		if (indicator is null) return null;
 
-		// No reparenting needed due to TopLevel = true.
-		// Parent (enemy) will set GlobalPosition in its Setup call.
+
 		indicator.Visible = true;
 		indicator.ProcessMode = ProcessModeEnum.Inherit;
 		indicator.Modulate = Colors.White;
 		indicator.AnimatedAlpha = 1.0f;
 		indicator.Scale = Vector2.One;
-		// Position is set by the caller via indicator.Setup() or setting GlobalPosition
+
 		return indicator;
 	}
 
@@ -292,8 +288,6 @@ public partial class GlobalAudioPlayer : Node
 		}
 		if (projectile is null) return null;
 
-		// No reparenting needed due to TopLevel = true
-		// Caller sets GlobalPosition via projectile.Setup()
 
 		projectile.Visible = true;
 		projectile.ProcessMode = ProcessModeEnum.Inherit;
@@ -313,8 +307,7 @@ public partial class GlobalAudioPlayer : Node
 	{
 		if (audioPlayer is null || !IsInstanceValid(audioPlayer)) return;
 		audioPlayer.Stream = null;
-		// Reset GlobalPosition? Probably not needed as it's set on reuse.
-		// audioPlayer.GlobalPosition = Vector2.Zero;
+
 		availablePlayers2D.Enqueue(audioPlayer);
 	}
 
@@ -330,10 +323,8 @@ public partial class GlobalAudioPlayer : Node
 		particle.Visible = false;
 		particle.ProcessMode = ProcessModeEnum.Disabled;
 		particle.Emitting = false;
-		// No need to reset GlobalPosition if TopLevel=true and it's set on reuse
-		// particle.GlobalPosition = Vector2.Zero;
-		// No need to reparent if it stays child of this node
-		// if (particle.GetParent() != this) { particle.GetParent()?.RemoveChild(particle); AddChild(particle); }
+
+
 		queue.Enqueue(particle);
 	}
 
@@ -343,8 +334,7 @@ public partial class GlobalAudioPlayer : Node
 		indicator.Visible = false;
 		indicator.ProcessMode = ProcessModeEnum.Disabled;
 		indicator.ResetForPooling();
-		// No need to reparent
-		// if (indicator.GetParent() != this) { indicator.GetParent()?.RemoveChild(indicator); AddChild(indicator); }
+
 		availableIndicators.Enqueue(indicator);
 	}
 
@@ -360,8 +350,7 @@ public partial class GlobalAudioPlayer : Node
 		projectile.Visible = false;
 		projectile.ProcessMode = ProcessModeEnum.Disabled;
 		projectile.ResetForPooling();
-		// No need to reparent
-		// if (projectile.GetParent() != this) { projectile.GetParent()?.RemoveChild(projectile); AddChild(projectile); }
+
 		queue.Enqueue(projectile);
 	}
 }

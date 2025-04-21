@@ -5,7 +5,10 @@ namespace CosmocrushGD;
 
 public partial class Player : CharacterBody2D
 {
-	public int Health = 100;
+	[Signal] public delegate void GameOverEventHandler();
+	[Signal] public delegate void PlayerDiedEventHandler();
+
+	public int Health = 10;
 	public int MaxHealth = 100;
 	public Inventory Inventory = new();
 
@@ -32,7 +35,6 @@ public partial class Player : CharacterBody2D
 	private const float MobileDeathZoomAmount = 3.0f;
 	private const float DeathZoomDuration = 1.5f;
 
-	public event Action GameOver;
 
 	public override void _Ready()
 	{
@@ -48,25 +50,19 @@ public partial class Player : CharacterBody2D
 				camera = null;
 			}
 		}
-		else
-		{
-		}
+
 
 		if (regenerationTimer is not null)
 		{
 			regenerationTimer.Timeout += OnRegenTimerTimeout;
 		}
-		else
-		{
-		}
+
 
 		if (deathPauseTimer is not null)
 		{
 			deathPauseTimer.Timeout += OnDeathPauseTimerTimeout;
 		}
-		else
-		{
-		}
+
 
 
 		damageAudio = ResourceLoader.Load<AudioStream>("res://Audio/SFX/PlayerDamage.mp3");
@@ -148,6 +144,7 @@ public partial class Player : CharacterBody2D
 
 	private void Die()
 	{
+		EmitSignal(SignalName.PlayerDied);
 		regenerationTimer?.Stop();
 		ProcessMode = ProcessModeEnum.Disabled;
 		SetPhysicsProcess(false);
@@ -191,7 +188,7 @@ public partial class Player : CharacterBody2D
 			GetTree().Paused = true;
 		}
 
-		GameOver?.Invoke();
+		EmitSignal(SignalName.GameOver);
 	}
 
 	public void ApplyKnockback(Vector2 knockback)

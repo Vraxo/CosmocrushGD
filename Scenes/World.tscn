@@ -103,6 +103,7 @@ script = ExtResource("2_bvcjy")
 [node name="HUD" type="CanvasLayer" parent="."]
 
 [node name="Joystick" parent="HUD" instance=ExtResource("12_vbg6t")]
+visible = false
 anchors_preset = 2
 anchor_top = 1.0
 anchor_bottom = 1.0
@@ -114,6 +115,7 @@ grow_vertical = 0
 scale = Vector2(0.15, 0.15)
 
 [node name="FiringJoystick" parent="HUD" instance=ExtResource("12_vbg6t")]
+visible = false
 anchors_preset = 3
 anchor_left = 1.0
 anchor_top = 1.0

@@ -40,6 +40,11 @@ public partial class PauseMenu : CenterContainer
 
 		CallDeferred(nameof(SetupPivots));
 		SetInitialState();
+
+		if (continueButton is not null) { continueButton.TweenScale = true; }
+		if (returnButton is not null) { returnButton.TweenScale = true; }
+		if (quitButton is not null) { quitButton.TweenScale = true; }
+
 		CallDeferred(nameof(StartFadeInAnimation));
 	}
 
@@ -56,9 +61,9 @@ public partial class PauseMenu : CenterContainer
 		Vector2 initialScale = Vector2.One;
 
 		if (titleLabel is not null) { titleLabel.Modulate = Colors.Transparent; titleLabel.Scale = initialScale; }
-		if (continueButton is not null) { continueButton.Modulate = Colors.Transparent; continueButton.Scale = initialScale; continueButton.TweenScale = false; }
-		if (returnButton is not null) { returnButton.Modulate = Colors.Transparent; returnButton.Scale = initialScale; returnButton.TweenScale = false; }
-		if (quitButton is not null) { quitButton.Modulate = Colors.Transparent; quitButton.Scale = initialScale; quitButton.TweenScale = false; }
+		if (continueButton is not null) { continueButton.Modulate = Colors.Transparent; continueButton.Scale = initialScale; }
+		if (returnButton is not null) { returnButton.Modulate = Colors.Transparent; returnButton.Scale = initialScale; }
+		if (quitButton is not null) { quitButton.Modulate = Colors.Transparent; quitButton.Scale = initialScale; }
 	}
 
 	private void StartFadeInAnimation()
@@ -114,12 +119,6 @@ public partial class PauseMenu : CenterContainer
 			tween.TweenProperty(quitButton, "modulate:a", 1.0f, FadeInDuration);
 			tween.TweenProperty(quitButton, "scale", finalScale, FadeInDuration).From(initialScaleValue);
 			tween.SetParallel(false);
-			tween.TweenCallback(Callable.From(() =>
-			{
-				if (continueButton is not null) { continueButton.TweenScale = true; }
-				if (returnButton is not null) { returnButton.TweenScale = true; }
-				if (quitButton is not null) { quitButton.TweenScale = true; }
-			}));
 		}
 
 		tween.Play();
