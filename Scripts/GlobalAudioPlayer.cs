@@ -1,112 +1,178 @@
 using Godot;
 using System.Collections.Generic;
-using System.Xml.Linq;
+using System.Linq;
+using System.Threading.Tasks; // Added for Task
 
 namespace CosmocrushGD;
 
 public partial class GlobalAudioPlayer : Node
 {
-	private static GlobalAudioPlayer _instance;
-	public static GlobalAudioPlayer Instance => _instance;
+	// Instance and Basic Properties
+	public static GlobalAudioPlayer Instance { get; private set; }
+	public AudioStream UiSound { get; private set; }
 
-	public AudioStream UiSound = ResourceLoader.Load<AudioStream>("res://Audio/SFX/Ui.mp3");
-
+	// Resource Scenes (Loaded on demand during initialization)
 	private PackedScene damageParticleScene;
 	private PackedScene deathParticleScene;
 	private PackedScene damageIndicatorScene;
+	private PackedScene defaultProjectileScene;
 
-	private int initialParticlePoolSize = 60;
-	private int initialIndicatorPoolSize = 90;
-	private int initialProjectilePoolSize = 60;
+	// Pool Target Sizes
+	private int targetParticlePoolSize = 60;
+	private int targetIndicatorPoolSize = 90;
+	private int targetProjectilePoolSize = 60;
+	private const int TargetAudioPoolSize = 10; // Keep audio pool modest, initialize early
 
+	// Constants
 	private const string SfxBusName = "SFX";
-	private const int InitialAudioPoolSize = 10;
 	private const int ParticleZIndex = 10;
 
+	// Pool Queues
 	private Queue<AudioStreamPlayer> availablePlayers1D = new();
 	private Queue<AudioStreamPlayer2D> availablePlayers2D = new();
 	private Dictionary<PackedScene, Queue<PooledParticleEffect>> availableParticles = new();
 	private Queue<DamageIndicator> availableIndicators = new();
 	private Dictionary<PackedScene, Queue<Projectile>> availableProjectiles = new();
 
+	// Initialization State Flag
+	private bool _gameplayPoolsInitialized = false;
+
 
 	public override void _EnterTree()
 	{
-		if (_instance is not null)
+		if (Instance is not null)
 		{
+			GD.Print("GlobalAudioPlayer: Instance already exists, freeing new one.");
 			QueueFree();
 			return;
 		}
-		_instance = this;
-		ProcessMode = ProcessModeEnum.Always;
+		Instance = this;
+		GD.Print("GlobalAudioPlayer: Instance created.");
 
-		damageParticleScene = ResourceLoader.Load<PackedScene>("res://Scenes/DamageParticleEffect.tscn");
-		deathParticleScene = ResourceLoader.Load<PackedScene>("res://Scenes/DeathParticleEffect.tscn");
-		damageIndicatorScene = ResourceLoader.Load<PackedScene>("res://Scenes/DamageIndicator.tscn");
-
-		if (damageParticleScene is null) GD.PrintErr("Failed to load DamageParticleEffect.tscn");
-		if (deathParticleScene is null) GD.PrintErr("Failed to load DeathParticleEffect.tscn");
-		if (damageIndicatorScene is null) GD.PrintErr("Failed to load DamageIndicator.tscn");
-
-		InitializeAudioPools();
-		InitializeParticlePools();
-		InitializeIndicatorPool();
+		// Initialize basic things needed immediately (like UI sound and audio players)
+		LoadMinimalResources();
+		InitializeMinimalPools();
 	}
 
-	private void InitializeAudioPools()
+	private void LoadMinimalResources()
 	{
-		for (int i = 0; i < InitialAudioPoolSize; i++)
+		// Load only things needed potentially before main game (like UI sound)
+		UiSound = ResourceLoader.Load<AudioStream>("res://Audio/SFX/Ui.mp3");
+		if (UiSound is null) GD.PrintErr("Failed to load UiSound");
+	}
+
+	private void InitializeMinimalPools()
+	{
+		// Initialize only audio players synchronously, as they are lightweight
+		GD.Print("GlobalAudioPlayer: Initializing minimal (audio) pools...");
+		for (int i = 0; i < TargetAudioPoolSize; i++)
 		{
 			availablePlayers1D.Enqueue(CreateAndSetupPlayer1D());
 			availablePlayers2D.Enqueue(CreateAndSetupPlayer2D());
 		}
+		GD.Print($"- Audio Pools: {availablePlayers1D.Count}/{TargetAudioPoolSize}");
 	}
 
-	private void InitializeParticlePools()
+	// Method called by SceneTransitionManager during black screen
+	public async Task InitializeGameplayPoolsAsync()
 	{
-		if (damageParticleScene is not null) InitializeSingleParticlePool(damageParticleScene);
-		else GD.PrintErr("GlobalAudioPlayer: Damage Particle Scene could not be loaded!");
-
-		if (deathParticleScene is not null) InitializeSingleParticlePool(deathParticleScene);
-		else GD.PrintErr("GlobalAudioPlayer: Death Particle Scene could not be loaded!");
-	}
-
-	private void InitializeSingleParticlePool(PackedScene particleScene)
-	{
-		if (particleScene is null)
+		// Prevent re-initialization
+		if (_gameplayPoolsInitialized)
 		{
-			GD.PrintErr("InitializeSingleParticlePool: Null scene.");
 			return;
 		}
-		if (!availableParticles.ContainsKey(particleScene))
+
+		GD.Print("GlobalAudioPlayer: Initializing gameplay pools (Particles, Indicators, Projectiles)...");
+
+		// --- Load Resources Needed for Gameplay Pools ---
+		// Allow yielding briefly in case resource loading itself causes hitches
+		await Task.Yield();
+		damageParticleScene = ResourceLoader.Load<PackedScene>("res://Scenes/DamageParticleEffect.tscn");
+		await Task.Yield();
+		deathParticleScene = ResourceLoader.Load<PackedScene>("res://Scenes/DeathParticleEffect.tscn");
+		await Task.Yield();
+		damageIndicatorScene = ResourceLoader.Load<PackedScene>("res://Scenes/DamageIndicator.tscn");
+		await Task.Yield();
+		defaultProjectileScene = ResourceLoader.Load<PackedScene>("res://Scenes/Enemies/Projectile.tscn");
+		await Task.Yield();
+
+		if (damageParticleScene is null) GD.PrintErr("Failed to load DamageParticleEffect.tscn");
+		if (deathParticleScene is null) GD.PrintErr("Failed to load DeathParticleEffect.tscn");
+		if (damageIndicatorScene is null) GD.PrintErr("Failed to load DamageIndicator.tscn");
+		if (defaultProjectileScene is null) GD.PrintErr("Failed to load default Projectile.tscn");
+
+
+		// --- Initialize Pools Synchronously (Now safe during black screen) ---
+
+		// Indicators
+		int indicatorsCreated = 0;
+		if (damageIndicatorScene is not null)
 		{
-			availableParticles.Add(particleScene, new Queue<PooledParticleEffect>());
+			for (int i = 0; i < targetIndicatorPoolSize; i++)
+			{
+				var indicator = CreateAndSetupIndicator();
+				if (indicator is not null)
+				{
+					availableIndicators.Enqueue(indicator);
+					indicatorsCreated++;
+				}
+			}
 		}
-		var queue = availableParticles[particleScene];
-		int createdCount = 0;
-		for (int i = 0; i < initialParticlePoolSize; i++)
-		{
-			var particle = CreateAndSetupParticle(particleScene);
-			if (particle is not null) { queue.Enqueue(particle); createdCount++; }
-		}
-		GD.Print($"Initialized particle pool for {particleScene.ResourcePath}. Added {createdCount}. Total: {queue.Count}. Target: {initialParticlePoolSize}");
+		GD.Print($"- Indicator Pool: {indicatorsCreated}/{targetIndicatorPoolSize}");
+
+		// Particles
+		InitializeSinglePool(damageParticleScene, availableParticles, targetParticlePoolSize, "Damage Particles");
+		InitializeSinglePool(deathParticleScene, availableParticles, targetParticlePoolSize, "Death Particles");
+
+		// Projectiles
+		InitializeSinglePool(defaultProjectileScene, availableProjectiles, targetProjectilePoolSize, "Default Projectiles");
+
+		_gameplayPoolsInitialized = true;
+		GD.Print("GlobalAudioPlayer: Gameplay pools initialization complete.");
 	}
 
-	private void InitializeIndicatorPool()
+	// Generic Pool Initializer Helper (Modified to check if pool exists)
+	private void InitializeSinglePool<T>(PackedScene scene, Dictionary<PackedScene, Queue<T>> poolDict, int targetSize, string poolName) where T : Node
 	{
-		if (damageIndicatorScene is null)
+		if (scene is null)
 		{
-			GD.PrintErr("GlobalAudioPlayer: Damage Indicator Scene null!");
+			GD.PrintErr($"Cannot initialize pool '{poolName}': Scene is null.");
 			return;
 		}
-		int createdCount = 0;
-		for (int i = 0; i < initialIndicatorPoolSize; i++)
+
+		// Ensure the dictionary entry exists before adding to queue
+		if (!poolDict.TryGetValue(scene, out var queue))
 		{
-			var indicator = CreateAndSetupIndicator();
-			if (indicator is not null) { availableIndicators.Enqueue(indicator); createdCount++; }
+			queue = new Queue<T>(targetSize);
+			poolDict.Add(scene, queue);
 		}
-		GD.Print($"Initialized indicator pool. Added {createdCount}. Total: {availableIndicators.Count}. Target: {initialIndicatorPoolSize}");
+		else
+		{
+			// Pool might already exist if InitializeSinglePool is somehow called again,
+			// or if Get... created it on demand before full initialization.
+			// Clear it? Or just log? For now, log and continue adding.
+			GD.Print($"Pool '{poolName}' for scene {scene.ResourcePath} already existed. Adding items.");
+		}
+
+		int createdCount = 0;
+		for (int i = 0; i < targetSize; i++)
+		{
+			T instance = null;
+			if (typeof(T) == typeof(PooledParticleEffect)) instance = CreateAndSetupParticle(scene) as T;
+			else if (typeof(T) == typeof(Projectile)) instance = CreateAndSetupProjectile(scene) as T;
+			// Add other types here if needed
+
+			if (instance is not null)
+			{
+				queue.Enqueue(instance);
+				createdCount++;
+			}
+		}
+		GD.Print($"- {poolName} Pool ({scene.ResourcePath}): {queue.Count}/{targetSize} (Added {createdCount})");
 	}
+
+
+	// --- Create and Setup Methods (Unchanged) ---
 
 	private AudioStreamPlayer CreateAndSetupPlayer1D()
 	{
@@ -127,7 +193,7 @@ public partial class GlobalAudioPlayer : Node
 	private PooledParticleEffect CreateAndSetupParticle(PackedScene scene)
 	{
 		if (scene is null) return null;
-		PooledParticleEffect particle = scene.Instantiate<PooledParticleEffect>();
+		var particle = scene.Instantiate<PooledParticleEffect>();
 		if (particle is null) { GD.PrintErr($"Failed instantiate particle: {scene.ResourcePath}"); return null; }
 		particle.SourceScene = scene;
 		particle.TopLevel = true;
@@ -140,7 +206,7 @@ public partial class GlobalAudioPlayer : Node
 	private DamageIndicator CreateAndSetupIndicator()
 	{
 		if (damageIndicatorScene is null) { GD.PrintErr("Indicator scene null."); return null; }
-		DamageIndicator indicator = damageIndicatorScene.Instantiate<DamageIndicator>();
+		var indicator = damageIndicatorScene.Instantiate<DamageIndicator>();
 		if (indicator is null) { GD.PrintErr($"Failed instantiate indicator: {damageIndicatorScene.ResourcePath}"); return null; }
 		indicator.SourceScene = damageIndicatorScene;
 		indicator.TopLevel = true;
@@ -153,7 +219,7 @@ public partial class GlobalAudioPlayer : Node
 	private Projectile CreateAndSetupProjectile(PackedScene scene)
 	{
 		if (scene is null) { GD.PrintErr("Cannot create projectile: scene is null."); return null; }
-		Projectile projectile = scene.Instantiate<Projectile>();
+		var projectile = scene.Instantiate<Projectile>();
 		if (projectile is null) { GD.PrintErr($"Failed to instantiate projectile from scene: {scene.ResourcePath}"); return null; }
 		projectile.SourceScene = scene;
 		projectile.TopLevel = true;
@@ -163,13 +229,21 @@ public partial class GlobalAudioPlayer : Node
 		return projectile;
 	}
 
+	// --- Get/Return Methods (Remain largely the same, assuming pools are initialized) ---
+
 	public void PlaySound2D(AudioStream stream, Vector2 position = default, float volumeDb = 0f)
 	{
 		if (stream is null) return;
 		AudioStreamPlayer2D audioPlayer;
-		if (availablePlayers2D.Count > 0) audioPlayer = availablePlayers2D.Dequeue();
-		else audioPlayer = CreateAndSetupPlayer2D();
-
+		if (availablePlayers2D.Count > 0)
+		{
+			audioPlayer = availablePlayers2D.Dequeue();
+		}
+		else
+		{
+			GD.Print("AudioPlayer2D pool empty! Creating new.");
+			audioPlayer = CreateAndSetupPlayer2D(); // Fallback
+		}
 		audioPlayer.GlobalPosition = position;
 		audioPlayer.Stream = stream;
 		audioPlayer.VolumeDb = volumeDb;
@@ -180,8 +254,15 @@ public partial class GlobalAudioPlayer : Node
 	{
 		if (stream is null) return;
 		AudioStreamPlayer audioPlayer;
-		if (availablePlayers1D.Count > 0) audioPlayer = availablePlayers1D.Dequeue();
-		else audioPlayer = CreateAndSetupPlayer1D();
+		if (availablePlayers1D.Count > 0)
+		{
+			audioPlayer = availablePlayers1D.Dequeue();
+		}
+		else
+		{
+			GD.Print("AudioPlayer1D pool empty! Creating new.");
+			audioPlayer = CreateAndSetupPlayer1D(); // Fallback
+		}
 		audioPlayer.Stream = stream;
 		audioPlayer.VolumeDb = volumeDb;
 		audioPlayer.Play();
@@ -190,37 +271,41 @@ public partial class GlobalAudioPlayer : Node
 	public PooledParticleEffect GetParticleEffect(PackedScene scene, Vector2 position, Color? color = null)
 	{
 		if (scene is null) { GD.PrintErr("GetParticleEffect: Null scene."); return null; }
-		if (!availableParticles.TryGetValue(scene, out Queue<PooledParticleEffect> queue))
+
+		if (!_gameplayPoolsInitialized) GD.PushWarning("GetParticleEffect called before gameplay pools fully initialized!");
+
+		if (!availableParticles.TryGetValue(scene, out var queue))
 		{
-
-			GD.PrintErr($"GetParticleEffect: Pool not found for {scene.ResourcePath}. Creating fallback.");
-			var newParticle = CreateAndSetupParticle(scene);
-			if (newParticle is not null)
-			{
-
-				newParticle.GlobalPosition = position;
-				newParticle.ZIndex = ParticleZIndex;
-				newParticle.ProcessMode = ProcessModeEnum.Inherit;
-				newParticle.Visible = true;
-				if (color.HasValue) newParticle.Color = color.Value;
-				newParticle.PlayEffect();
-				return newParticle;
-			}
-			return null;
+			GD.PrintErr($"GetParticleEffect: Pool not found for {scene.ResourcePath}! Creating fallback instance.");
+			var fallbackParticle = CreateAndSetupParticle(scene);
+			if (fallbackParticle is null) return null;
+			// Don't add to dictionary here, let initialization handle it.
+			fallbackParticle.GlobalPosition = position;
+			fallbackParticle.ZIndex = ParticleZIndex;
+			if (color.HasValue) fallbackParticle.Color = color.Value;
+			fallbackParticle.Visible = true;
+			fallbackParticle.ProcessMode = ProcessModeEnum.Inherit;
+			fallbackParticle.PlayEffect();
+			return fallbackParticle;
 		}
+
 		PooledParticleEffect particle;
 		if (queue.Count > 0)
 		{
 			particle = queue.Dequeue();
-			if (particle is null || !IsInstanceValid(particle)) { GD.PrintErr("Invalid particle in pool."); particle = CreateAndSetupParticle(scene); }
+			if (particle is null || !IsInstanceValid(particle))
+			{
+				GD.PrintErr("Invalid particle in pool. Creating replacement.");
+				particle = CreateAndSetupParticle(scene); // Replace broken one
+				if (particle is null) return null;
+			}
 		}
 		else
 		{
-			GD.Print($"Particle pool empty for {scene.ResourcePath}. Creating new.");
-			particle = CreateAndSetupParticle(scene);
+			GD.Print($"Particle pool empty for {scene.ResourcePath}! Creating new instance.");
+			particle = CreateAndSetupParticle(scene); // Create if pool depleted
+			if (particle is null) return null;
 		}
-		if (particle is null) return null;
-
 
 		particle.GlobalPosition = position;
 		particle.ZIndex = ParticleZIndex;
@@ -233,68 +318,77 @@ public partial class GlobalAudioPlayer : Node
 
 	public DamageIndicator GetDamageIndicator()
 	{
-		if (damageIndicatorScene is null) { GD.PrintErr("Indicator scene null."); return null; }
+		if (damageIndicatorScene is null) { GD.PrintErr("Indicator scene null."); return null; } // Should be loaded by init
+
+		if (!_gameplayPoolsInitialized) GD.PushWarning("GetDamageIndicator called before gameplay pools fully initialized!");
+
 		DamageIndicator indicator;
 		if (availableIndicators.Count > 0)
 		{
 			indicator = availableIndicators.Dequeue();
-			if (indicator is null || !IsInstanceValid(indicator)) { GD.PrintErr("Invalid indicator in pool."); indicator = CreateAndSetupIndicator(); }
+			if (indicator is null || !IsInstanceValid(indicator))
+			{
+				GD.PrintErr("Invalid indicator in pool. Creating replacement.");
+				indicator = CreateAndSetupIndicator();
+				if (indicator is null) return null;
+			}
 		}
 		else
 		{
-			GD.Print("Indicator pool empty. Creating new.");
+			GD.Print("Indicator pool empty! Creating new instance.");
 			indicator = CreateAndSetupIndicator();
+			if (indicator is null) return null;
 		}
-		if (indicator is null) return null;
-
 
 		indicator.Visible = true;
 		indicator.ProcessMode = ProcessModeEnum.Inherit;
 		indicator.Modulate = Colors.White;
 		indicator.AnimatedAlpha = 1.0f;
 		indicator.Scale = Vector2.One;
-
 		return indicator;
 	}
 
 	public Projectile GetProjectile(PackedScene scene)
 	{
-		if (scene is null) { GD.PrintErr("GetProjectile: Null scene."); return null; }
+		if (scene is null) { GD.PrintErr("GetProjectile: Null scene provided."); return null; }
 
-		if (!availableProjectiles.TryGetValue(scene, out Queue<Projectile> queue))
+		if (!_gameplayPoolsInitialized) GD.PushWarning("GetProjectile called before gameplay pools fully initialized!");
+
+		if (!availableProjectiles.TryGetValue(scene, out var queue))
 		{
-			GD.Print($"GetProjectile: Creating new pool for scene {scene.ResourcePath}.");
-			queue = new Queue<Projectile>();
-			availableProjectiles.Add(scene, queue);
-			int createdCount = 0;
-			for (int i = 0; i < initialProjectilePoolSize; i++)
-			{
-				var proj = CreateAndSetupProjectile(scene);
-				if (proj is not null) { queue.Enqueue(proj); createdCount++; }
-			}
-			GD.Print($"Initialized projectile pool for {scene.ResourcePath}. Added {createdCount}. Target: {initialProjectilePoolSize}");
+			GD.PrintErr($"GetProjectile: Pool not found for {scene.ResourcePath}! Creating fallback instance.");
+			var fallbackProjectile = CreateAndSetupProjectile(scene);
+			if (fallbackProjectile is null) return null;
+			// Don't add to dictionary here, let initialization handle it.
+			fallbackProjectile.Visible = true;
+			fallbackProjectile.ProcessMode = ProcessModeEnum.Disabled;
+			return fallbackProjectile;
 		}
 
 		Projectile projectile;
 		if (queue.Count > 0)
 		{
 			projectile = queue.Dequeue();
-			if (projectile is null || !IsInstanceValid(projectile)) { GD.PrintErr("Invalid projectile in pool."); projectile = CreateAndSetupProjectile(scene); }
+			if (projectile is null || !IsInstanceValid(projectile))
+			{
+				GD.PrintErr($"Invalid projectile found in pool for {scene.ResourcePath}. Creating replacement.");
+				projectile = CreateAndSetupProjectile(scene); // Replace broken one
+				if (projectile is null) return null;
+			}
 		}
 		else
 		{
-			GD.Print($"Projectile pool empty for {scene.ResourcePath}. Creating new.");
-			projectile = CreateAndSetupProjectile(scene);
+			GD.Print($"Projectile pool empty for {scene.ResourcePath}! Creating new instance.");
+			projectile = CreateAndSetupProjectile(scene); // Create if pool depleted
+			if (projectile is null) return null;
 		}
-		if (projectile is null) return null;
-
 
 		projectile.Visible = true;
-		projectile.ProcessMode = ProcessModeEnum.Inherit;
-
+		projectile.ProcessMode = ProcessModeEnum.Disabled;
 		return projectile;
 	}
 
+	// --- Return Methods (Unchanged) ---
 
 	private void ReturnPlayerToPool(AudioStreamPlayer audioPlayer)
 	{
@@ -307,24 +401,23 @@ public partial class GlobalAudioPlayer : Node
 	{
 		if (audioPlayer is null || !IsInstanceValid(audioPlayer)) return;
 		audioPlayer.Stream = null;
-
 		availablePlayers2D.Enqueue(audioPlayer);
 	}
 
 	public void ReturnParticleToPool(PooledParticleEffect particle, PackedScene sourceScene)
 	{
-		if (particle is null || !IsInstanceValid(particle) || sourceScene is null) { particle?.QueueFree(); return; }
-		if (!availableParticles.TryGetValue(sourceScene, out Queue<PooledParticleEffect> queue))
+		if (particle is null || !IsInstanceValid(particle) || sourceScene is null)
 		{
-			GD.PrintErr($"Particle pool not found for {sourceScene.ResourcePath}. Freeing.");
-			particle.QueueFree();
-			return;
+			particle?.QueueFree(); return;
+		}
+		if (!availableParticles.TryGetValue(sourceScene, out var queue))
+		{
+			GD.PrintErr($"Particle pool not found for {sourceScene.ResourcePath} on return. Freeing particle.");
+			particle.QueueFree(); return;
 		}
 		particle.Visible = false;
 		particle.ProcessMode = ProcessModeEnum.Disabled;
 		particle.Emitting = false;
-
-
 		queue.Enqueue(particle);
 	}
 
@@ -334,23 +427,30 @@ public partial class GlobalAudioPlayer : Node
 		indicator.Visible = false;
 		indicator.ProcessMode = ProcessModeEnum.Disabled;
 		indicator.ResetForPooling();
-
 		availableIndicators.Enqueue(indicator);
 	}
 
 	public void ReturnProjectileToPool(Projectile projectile, PackedScene sourceScene)
 	{
-		if (projectile is null || !IsInstanceValid(projectile) || sourceScene is null) { projectile?.QueueFree(); return; }
-		if (!availableProjectiles.TryGetValue(sourceScene, out Queue<Projectile> queue))
+		if (projectile is null || !IsInstanceValid(projectile) || sourceScene is null)
 		{
-			GD.PrintErr($"Projectile pool not found for {sourceScene.ResourcePath}. Freeing.");
-			projectile.QueueFree();
-			return;
+			projectile?.QueueFree(); return;
 		}
-		projectile.Visible = false;
-		projectile.ProcessMode = ProcessModeEnum.Disabled;
+		if (!availableProjectiles.TryGetValue(sourceScene, out var queue))
+		{
+			GD.PrintErr($"Projectile pool not found for {sourceScene.ResourcePath} on return. Freeing projectile.");
+			projectile.QueueFree(); return;
+		}
 		projectile.ResetForPooling();
-
 		queue.Enqueue(projectile);
+	}
+
+	public override void _ExitTree()
+	{
+		if (Instance == this)
+		{
+			Instance = null;
+		}
+		base._ExitTree();
 	}
 }
