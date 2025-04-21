@@ -1,76 +1,68 @@
+// MODIFIED: Enemy/ExplodingEnemy.cs
+// Summary: Removed projectile reparenting in Die method. Setup now uses GlobalPosition.
+// - Removed the code block that reparented the projectile to the root node inside the loop.
+// - Projectile stays child of GlobalAudioPlayer but uses TopLevel=true.
+// - Called projectile.Setup with the enemy's GlobalPosition.
 using Godot;
-using System; // Required for Math
+using System;
 
 namespace CosmocrushGD;
 
 public partial class ExplodingEnemy : BaseEnemy
 {
-	[Export] private PackedScene projectileScene; // Need this to spawn projectiles
-	[Export] private int projectileCount = 8; // Number of projectiles to spawn on death
-	[Export] private float meleeKnockbackForce = 500f; // Same as MeleeEnemy
+	[Export] private PackedScene projectileScene;
+	[Export] private int projectileCount = 8;
+	[Export] private float meleeKnockbackForce = 500f;
 
-	// Inherit most properties like Speed, Damage, Health from BaseEnemy
-	// We can override them here if needed, e.g., make it slower or tougher
+	protected override int MaxHealth => 15;
+	protected override float Speed => 80f;
+	protected override int Damage => 1;
+	protected override float AttackCooldown => 0.6f;
+
+	private static readonly Color ExplosionProjectileColor = new(1.0f, 0.5f, 0.15f);
 
 	protected override void AttemptAttack()
 	{
-		// Standard melee attack logic
-		if (!CanShoot || TargetPlayer is null || !IsInstanceValid(TargetPlayer))
-		{
-			return;
-		}
-
+		if (!CanShoot || TargetPlayer is null || !IsInstanceValid(TargetPlayer)) return;
 		float distance = GlobalPosition.DistanceTo(TargetPlayer.GlobalPosition);
-
-		if (distance > DamageRadius) // Use DamageRadius from BaseEnemy or override
-		{
-			return;
-		}
-
-		TargetPlayer.TakeDamage(Damage); // Use Damage from BaseEnemy or override
-
+		if (distance > DamageRadius) return;
+		TargetPlayer.TakeDamage(Damage);
 		Vector2 knockbackDir = (TargetPlayer.GlobalPosition - GlobalPosition).Normalized();
 		TargetPlayer.ApplyKnockback(knockbackDir * meleeKnockbackForce);
-
 		CanShoot = false;
-		DamageCooldownTimer.Start(); // Use AttackCooldown from BaseEnemy or override
+		DamageCooldownTimer?.Start();
 	}
 
 	protected override void Die()
 	{
-		// Call the base Die() method first to handle standard death logic
-		// (disable collider, hide sprite, start death timer, etc.)
 		base.Die();
 
-		// Now, spawn projectiles in a circle
-		if (projectileScene is null || projectileCount <= 0)
+		if (projectileScene is null || projectileCount <= 0 || GlobalAudioPlayer.Instance is null)
 		{
+			GD.PrintErr("ExplodingEnemy: Cannot spawn projectiles on death.");
 			return;
 		}
 
-		float angleStep = (float)(2 * Math.PI / projectileCount); // Angle between projectiles
+		float angleStep = (float)(2 * Math.PI / projectileCount);
+		Vector2 spawnPosition = GlobalPosition; // Cache enemy position
+		Texture2D enemyTexture = Sprite?.Texture; // Cache texture
 
 		for (int i = 0; i < projectileCount; i++)
 		{
-			var projectile = projectileScene.Instantiate<Projectile>();
-
+			Projectile projectile = GlobalAudioPlayer.Instance.GetProjectile(projectileScene);
 			if (projectile is null)
 			{
+				GD.PrintErr($"ExplodingEnemy: Failed to get projectile {i + 1}/{projectileCount} from pool.");
 				continue;
 			}
 
-			projectile.Sprite.Texture = Sprite.Texture;
-			projectile.DestructionParticles.Color = new(255, 127, 39);
+			// No reparenting needed due to TopLevel = true
 
 			float angle = i * angleStep;
 			Vector2 direction = new Vector2((float)Math.Cos(angle), (float)Math.Sin(angle)).Normalized();
 
-			projectile.GlobalPosition = GlobalPosition; // Spawn at enemy's death position
-			projectile.Direction = direction;
-
-			// Add projectile to the main scene tree
-			GetTree().Root.AddChild(projectile);
+			// Setup the projectile using GlobalPosition
+			projectile.Setup(spawnPosition, direction, enemyTexture, ExplosionProjectileColor);
 		}
-		// The base.Die() already starts the DeathTimer which calls ReturnToPool
 	}
 }
