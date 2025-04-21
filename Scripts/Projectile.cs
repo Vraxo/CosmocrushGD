@@ -1,6 +1,3 @@
-// MODIFIED: Projectile.cs
-// Summary: Explicitly set a positive ZIndex in the Setup method to ensure projectiles render above the background.
-// - Added `ZIndex = 5;` within the Setup method. (Value 5 is arbitrary, just needs to be > 0).
 using Godot;
 
 namespace CosmocrushGD;
@@ -13,7 +10,7 @@ public partial class Projectile : Area2D
 	[Export] public Sprite2D Sprite;
 	[Export] public CpuParticles2D DestructionParticles;
 
-	private bool active = true;
+	private bool active = false; // Start inactive
 	private Timer lifeTimer;
 	private Timer destructionTimer;
 
@@ -21,7 +18,7 @@ public partial class Projectile : Area2D
 	private const float KnockbackForce = 300f;
 	private const float DefaultLifetime = 10.0f;
 	private const float DestructionDuration = 1.0f;
-	private const int ProjectileZIndex = 5; // Ensure projectiles draw above default background
+	private const int ProjectileZIndex = 5;
 
 	public override void _Ready()
 	{
@@ -55,28 +52,34 @@ public partial class Projectile : Area2D
 
 	public override void _PhysicsProcess(double delta)
 	{
-		if (ProcessMode == ProcessModeEnum.Disabled || !active || Direction == Vector2.Zero)
+		// No need to check ProcessMode here as it's implicitly handled by the engine
+		// if (ProcessMode == ProcessModeEnum.Disabled || !active || Direction == Vector2.Zero)
+		if (!active || Direction == Vector2.Zero)
 		{
 			return;
 		}
 		GlobalPosition += Direction * Speed * (float)delta;
 	}
 
+	// Setup initial state WITHOUT activating
 	public void Setup(Vector2 startPosition, Vector2 direction, Texture2D spriteTexture = null, Color? particleColor = null)
 	{
 		GlobalPosition = startPosition;
 		Direction = direction;
-		active = true;
-		ZIndex = ProjectileZIndex; // Ensure rendering order
+		active = false; // Ensure inactive
+		ZIndex = ProjectileZIndex;
 
-		SetProcess(true);
-		SetPhysicsProcess(true);
-		SetDeferred(Area2D.PropertyName.Monitoring, true);
-		SetDeferred(Area2D.PropertyName.Monitorable, true);
+		// Ensure starts disabled and invisible
+		Visible = false;
+		SetProcess(false);
+		SetPhysicsProcess(false);
+		SetDeferred(Area2D.PropertyName.Monitoring, false);
+		SetDeferred(Area2D.PropertyName.Monitorable, false);
+
 
 		if (Sprite is not null)
 		{
-			Sprite.Visible = true;
+			// Sprite visibility controlled by root Visible property
 			if (spriteTexture is not null) Sprite.Texture = spriteTexture;
 		}
 
@@ -87,8 +90,24 @@ public partial class Projectile : Area2D
 		}
 
 		lifeTimer?.Stop();
+		destructionTimer?.Stop();
+	}
+
+	// Activate the projectile (make visible, enable physics/processing, start timer)
+	public void Activate()
+	{
+		if (active) return; // Prevent double activation
+
+		active = true;
+		Visible = true;
+		SetProcess(true);
+		SetPhysicsProcess(true);
+		SetDeferred(Area2D.PropertyName.Monitoring, true);
+		SetDeferred(Area2D.PropertyName.Monitorable, true);
+
 		lifeTimer?.Start(DefaultLifetime);
 	}
+
 
 	private void OnBodyEntered(Node2D body)
 	{
@@ -112,9 +131,12 @@ public partial class Projectile : Area2D
 		SetDeferred(Area2D.PropertyName.Monitoring, false);
 		SetDeferred(Area2D.PropertyName.Monitorable, false);
 		SetPhysicsProcess(false);
-		if (Sprite != null) Sprite.Visible = false;
+		// Keep process true briefly for destruction particle visibility? No, let timer handle return.
+		// SetProcess(false);
+		Visible = false; // Hide immediately
+		if (Sprite != null) Sprite.Visible = false; // Should be redundant if Visible = false works
 		Direction = Vector2.Zero;
-		DestructionParticles?.Restart();
+		DestructionParticles?.Restart(); // Should still work even if parent is hidden? Test needed.
 		destructionTimer?.Stop();
 		destructionTimer?.Start(DestructionDuration);
 	}
@@ -137,6 +159,7 @@ public partial class Projectile : Area2D
 		active = false;
 		lifeTimer?.Stop();
 		destructionTimer?.Stop();
+		Visible = false;
 		SetProcess(false);
 		SetPhysicsProcess(false);
 		SetDeferred(Area2D.PropertyName.Monitoring, false);
@@ -144,8 +167,7 @@ public partial class Projectile : Area2D
 		if (Sprite is not null) Sprite.Visible = false;
 		if (DestructionParticles is not null) DestructionParticles.Emitting = false;
 		Direction = Vector2.Zero;
-		// Reset ZIndex? Or assume Setup will always set it? Let Setup handle it.
-		// ZIndex = 0;
+		GlobalPosition = Vector2.Zero; // Reset position
 	}
 
 	public override void _ExitTree()

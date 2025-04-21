@@ -11,6 +11,7 @@ _data = [Vector2(0.00433911, 0.993671), 0.0, 0.0, 0, 0, Vector2(0.998999, 0.0021
 point_count = 2
 
 [node name="Projectile" type="Area2D" node_paths=PackedStringArray("Sprite", "DestructionParticles")]
+top_level = true
 scale = Vector2(0.25, 0.25)
 script = ExtResource("1_jqlnh")
 Sprite = NodePath("Sprite")
