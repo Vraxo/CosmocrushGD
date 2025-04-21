@@ -13,7 +13,7 @@ public partial class SceneTransitionManager : CanvasLayer
     private bool isTransitioning = false;
     private Tween activeTween;
     private string currentScenePath = "";
-    private const string GameScenePath = "res://Scenes/World.tscn";
+    // No longer needed here: private const string GameScenePath = "res://Scenes/World.tscn";
 
 
     public override void _EnterTree()
@@ -46,14 +46,18 @@ public partial class SceneTransitionManager : CanvasLayer
 
     public async void ChangeScene(string scenePath)
     {
+        // Prevent transitions if already transitioning, fadeRect is missing, or to the same scene
         if (fadeRect is null || isTransitioning || scenePath == currentScenePath)
         {
-            GD.Print($"SceneTransitionManager: Transition blocked (In progress: {isTransitioning}, FadeRect null: {fadeRect is null}, Same scene: {scenePath == currentScenePath}).");
+            // Log why transition is blocked for debugging
+            string reason = fadeRect is null ? "FadeRect null" : isTransitioning ? "Transition in progress" : "Same scene requested";
+            GD.Print($"SceneTransitionManager: Transition to {scenePath} blocked ({reason}). Current: {currentScenePath}");
             return;
         }
 
+
         isTransitioning = true;
-        GD.Print($"SceneTransitionManager: Starting transition to {scenePath}");
+        GD.Print($"SceneTransitionManager: Starting transition from {currentScenePath} to {scenePath}");
 
 
         activeTween?.Kill();
@@ -62,9 +66,8 @@ public partial class SceneTransitionManager : CanvasLayer
         activeTween = CreateTween();
         activeTween.SetParallel(false);
         activeTween.SetProcessMode(Tween.TweenProcessMode.Idle);
-        // Corrected EaseType: Use InOut for consistent behavior (though effect is minimal with Linear trans)
         activeTween.SetEase(Tween.EaseType.InOut);
-        activeTween.SetTrans(Tween.TransitionType.Linear); // Keep Linear transition for constant speed fade
+        activeTween.SetTrans(Tween.TransitionType.Linear);
         activeTween.TweenProperty(fadeRect, "modulate:a", 1.0f, fadeDuration); // Fade Out
 
 
@@ -72,17 +75,8 @@ public partial class SceneTransitionManager : CanvasLayer
         GD.Print("SceneTransitionManager: Fade out finished.");
 
 
-        // --- Perform Heavy Initialization During Black Screen ---
-        if (scenePath == GameScenePath && GlobalAudioPlayer.Instance is not null)
-        {
-            GD.Print("SceneTransitionManager: Initializing GlobalAudioPlayer gameplay pools...");
-            await GlobalAudioPlayer.Instance.InitializeGameplayPoolsAsync();
-            GD.Print("SceneTransitionManager: GlobalAudioPlayer gameplay pools initialized.");
-        }
-        else
-        {
-            GD.Print($"SceneTransitionManager: Skipping gameplay pool initialization for scene: {scenePath}");
-        }
+        // --- Heavy Initialization is NO LONGER done here ---
+        // It's handled by LoadingScreen.cs before the menu even shows up.
 
 
         // --- Load Scene Asynchronously ---
@@ -92,7 +86,7 @@ public partial class SceneTransitionManager : CanvasLayer
         if (loadedScene is null)
         {
             GD.PrintErr($"SceneTransitionManager: Failed to load scene {scenePath} asynchronously.");
-            ResetFade();
+            ResetFade(); // Reset fade state on failure
             isTransitioning = false;
             return;
         }
@@ -107,14 +101,14 @@ public partial class SceneTransitionManager : CanvasLayer
         }
 
         Node currentScene = GetTree().CurrentScene;
-        GetTree().CurrentScene = null;
-        currentScene?.QueueFree();
+        GetTree().CurrentScene = null; // Detach first
+        currentScene?.QueueFree(); // Then free
 
 
         Node newSceneInstance = loadedScene.Instantiate();
         GetTree().Root.AddChild(newSceneInstance);
         GetTree().CurrentScene = newSceneInstance;
-        currentScenePath = scenePath;
+        currentScenePath = scenePath; // Update current path tracking
         GD.Print($"SceneTransitionManager: Instantiated and set current scene to {scenePath}");
 
 
@@ -123,9 +117,8 @@ public partial class SceneTransitionManager : CanvasLayer
         activeTween = CreateTween();
         activeTween.SetParallel(false);
         activeTween.SetProcessMode(Tween.TweenProcessMode.Idle);
-        // Corrected EaseType: Use InOut for consistent behavior
         activeTween.SetEase(Tween.EaseType.InOut);
-        activeTween.SetTrans(Tween.TransitionType.Linear); // Keep Linear transition
+        activeTween.SetTrans(Tween.TransitionType.Linear);
         activeTween.TweenProperty(fadeRect, "modulate:a", 0.0f, fadeDuration); // Fade In
         await ToSignal(activeTween, Tween.SignalName.Finished);
         GD.Print("SceneTransitionManager: Fade in finished.");
@@ -134,6 +127,7 @@ public partial class SceneTransitionManager : CanvasLayer
         isTransitioning = false;
     }
 
+    // LoadSceneAsync remains the same
     private async Task<PackedScene> LoadSceneAsync(string path)
     {
         ResourceLoader.LoadThreadedRequest(path);
@@ -141,7 +135,7 @@ public partial class SceneTransitionManager : CanvasLayer
 
         while (ResourceLoader.LoadThreadedGetStatus(path) == ResourceLoader.ThreadLoadStatus.InProgress)
         {
-            await Task.Delay(16);
+            await Task.Delay(16); // Use Task.Delay for waiting
         }
 
         if (ResourceLoader.LoadThreadedGetStatus(path) == ResourceLoader.ThreadLoadStatus.Loaded)
