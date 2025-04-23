@@ -1,12 +1,13 @@
 using Godot;
 using System;
-using System.Collections.Generic; // Keep using List temporarily if needed
+using System.Collections.Generic; // Use Generic List for easier handling before CallDeferred
+// No Task needed here anymore
 
 namespace CosmocrushGD;
 
 public partial class ExplodingEnemy : BaseEnemy
 {
-	[Export] private PackedScene projectileScene; // This ensures the scene resource is preloaded
+	[Export] private PackedScene projectileScene;
 	[Export] private int projectileCount = 8;
 	[Export] private float meleeKnockbackForce = 500f;
 
@@ -38,59 +39,60 @@ public partial class ExplodingEnemy : BaseEnemy
 		DamageCooldownTimer?.Start();
 	}
 
-	protected override void Die() // No longer needs async
+	protected override void Die() // No longer async
 	{
-		base.Die(); // Call base Die first to handle common death logic
+		base.Die();
 
-		if (projectileScene is null || projectileCount <= 0)
+		if (projectileScene is null || projectileCount <= 0 || GlobalAudioPlayer.Instance is null)
 		{
-			GD.PrintErr("ExplodingEnemy: Cannot spawn projectiles on death - missing scene or count <= 0.");
+			GD.PrintErr("ExplodingEnemy: Cannot spawn projectiles on death - missing scene, count <= 0, or GlobalAudioPlayer.");
 			return;
 		}
-
-		// Get a reference to a node suitable for adding children (e.g., the main World node)
-		// Adjust the path if your scene structure is different.
-		Node worldNode = GetNode<Node>("/root/World");
-		if (worldNode is null)
-		{
-			GD.PrintErr("ExplodingEnemy: Could not find '/root/World' node to add projectiles. Aborting explosion.");
-			return;
-		}
-
 
 		float angleStep = (float)(2 * Math.PI / projectileCount);
 		Vector2 spawnPosition = GlobalPosition;
 		Texture2D enemyTexture = Sprite?.Texture;
 
+		// Use a standard List for easy adding during the loop
+		var projectilesToActivate = new List<Projectile>(projectileCount);
 
 		for (int i = 0; i < projectileCount; i++)
 		{
-			// --- Instantiate directly instead of getting from pool ---
-			Projectile projectile = projectileScene.Instantiate<Projectile>();
+			Projectile projectile = GlobalAudioPlayer.Instance.GetProjectile(projectileScene);
 			if (projectile is null)
 			{
-				GD.PrintErr($"ExplodingEnemy: Failed to instantiate projectile {i + 1}/{projectileCount}.");
+				GD.PrintErr($"ExplodingEnemy: Failed to get projectile {i + 1}/{projectileCount} from pool.");
 				continue;
 			}
-
-			// --- Add the projectile to the scene tree ---
-			// Important: Add before setup/activate if it relies on being in the tree
-			worldNode.AddChild(projectile);
 
 			float angle = i * angleStep;
 			Vector2 direction = new Vector2((float)Math.Cos(angle), (float)Math.Sin(angle)).Normalized();
 
-			// Call Setup (leaves it inactive, positioned, potentially textured)
+			// Call Setup, which now leaves the projectile inactive
 			projectile.Setup(spawnPosition, direction, enemyTexture, ExplosionProjectileColor);
 
-			// --- Activate the projectile ---
-			projectile.Activate(); // Activate immediately after setup
+			projectilesToActivate.Add(projectile);
+
+			// No await here anymore
 		}
-		// No deferred activation or pooling logic needed here anymore.
+
+		// Convert the List to a Godot Array for CallDeferred
+		var godotArray = new Godot.Collections.Array<Projectile>(projectilesToActivate);
+
+		// Defer the activation of all collected projectiles to the next frame
+		CallDeferred(nameof(ActivateProjectiles), godotArray);
 	}
 
-	// Remove the ActivateProjectiles method as it's no longer used.
-	// private void ActivateProjectiles(Godot.Collections.Array<Projectile> projectilesToActivate)
-	// { ... }
+	private void ActivateProjectiles(Godot.Collections.Array<Projectile> projectilesToActivate)
+	{
+		if (projectilesToActivate is null) return;
+
+		foreach (Projectile projectile in projectilesToActivate)
+		{
+			if (projectile is not null && IsInstanceValid(projectile))
+			{
+				projectile.Activate();
+			}
+		}
+	}
 }
-// </file>
