@@ -1,3 +1,4 @@
+// File: Enemy/BaseEnemy.cs
 using Godot;
 using System;
 
@@ -23,6 +24,10 @@ public partial class BaseEnemy : CharacterBody2D
 	protected Vector2 Knockback = Vector2.Zero;
 	protected Player TargetPlayer;
 
+	// ---- NEW: Add AudioStream field for damage sound ----
+	[Export] private AudioStream _damageAudio;
+	// ----------------------------------------------------
+
 	protected virtual float KnockbackResistanceMultiplier => 0.5f;
 	protected virtual int MaxHealth => 20;
 	protected virtual int Damage => 1;
@@ -40,6 +45,9 @@ public partial class BaseEnemy : CharacterBody2D
 			GD.PrintErr($"BaseEnemy ({Name}): Could not find Player node. Disabling AI.");
 			SetProcess(false);
 			SetPhysicsProcess(false);
+			// ---- Also return here if player is null ----
+			return;
+			// -------------------------------------------
 		}
 
 		if (DeathTimer is not null) DeathTimer.Timeout += OnDeathTimerTimeout;
@@ -92,12 +100,18 @@ public partial class BaseEnemy : CharacterBody2D
 	public void TakeDamage(int damage)
 	{
 		if (Dead) return;
+
+		// ---- NEW: Play damage sound early ----
+		PlayDamageSound();
+		// ------------------------------------
+
 		Health -= damage;
 		Health = Math.Max(Health, 0);
 		HitAnimationPlayer?.Play("HitFlash");
 		ShowDamageIndicator(damage, Health, MaxHealth);
 
 		var worldNode = GetNode<World>("/root/World");
+		// Consider moving score addition to Die() method if score is for kill, not hit.
 		worldNode?.AddScore(damage);
 
 		if (damageParticleEffectScene is not null)
@@ -106,6 +120,17 @@ public partial class BaseEnemy : CharacterBody2D
 		}
 		if (Health <= 0) Die();
 	}
+
+	// ---- NEW: Helper method to play the sound ----
+	private void PlayDamageSound()
+	{
+		if (_damageAudio is not null && GlobalAudioPlayer.Instance is not null)
+		{
+			// Use PlaySound2D to play the sound at the enemy's location
+			GlobalAudioPlayer.Instance.PlaySound2D(_damageAudio, GlobalPosition);
+		}
+	}
+	// ------------------------------------------
 
 	public void ApplyKnockback(Vector2 force)
 	{

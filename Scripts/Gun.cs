@@ -83,7 +83,7 @@ public partial class Gun : Sprite2D
 
 	private void Fire()
 	{
-		PlayGunshotSound();
+		//PlayGunshotSound();
 		//camera.Shake(shakeStrength, shakeDuration);
 		cooldownTimer.Start();
 		DamageEnemyIfHit();
