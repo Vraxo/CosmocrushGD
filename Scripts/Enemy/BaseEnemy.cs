@@ -1,3 +1,4 @@
+// File: Enemy/BaseEnemy.cs
 using Godot;
 using System;
 
@@ -35,6 +36,7 @@ public partial class BaseEnemy : CharacterBody2D
 	protected virtual Color ParticleColor => Colors.White;
 	protected virtual float MeleeKnockbackForce => 500f;
 
+
 	public override void _Ready()
 	{
 		TargetPlayer = GetNode<Player>("/root/World/Player");
@@ -46,10 +48,16 @@ public partial class BaseEnemy : CharacterBody2D
 			return;
 		}
 
-		DeathTimer.Timeout += OnDeathTimerTimeout;
-		DamageCooldownTimer.WaitTime = AttackCooldown;
-		DamageCooldownTimer.Timeout += OnDamageCooldownTimerTimeout;
+		if (DeathTimer is not null)
+		{
+			DeathTimer.Timeout += OnDeathTimerTimeout;
+		}
 
+		if (DamageCooldownTimer is not null)
+		{
+			DamageCooldownTimer.WaitTime = AttackCooldown;
+			DamageCooldownTimer.Timeout += OnDamageCooldownTimerTimeout;
+		}
 		Health = MaxHealth;
 	}
 
@@ -109,9 +117,21 @@ public partial class BaseEnemy : CharacterBody2D
 	{
 		DeathTimer?.Stop();
 		DamageCooldownTimer?.Stop();
-		DeathTimer.Timeout -= OnDeathTimerTimeout;
-		DamageCooldownTimer.Timeout -= OnDamageCooldownTimerTimeout;
-		
+
+		if (DeathTimer is not null && IsInstanceValid(DeathTimer))
+		{
+			if (DeathTimer.IsConnected(Timer.SignalName.Timeout, Callable.From(OnDeathTimerTimeout)))
+			{
+				DeathTimer.Timeout -= OnDeathTimerTimeout;
+			}
+		}
+		if (DamageCooldownTimer is not null && IsInstanceValid(DamageCooldownTimer))
+		{
+			if (DamageCooldownTimer.IsConnected(Timer.SignalName.Timeout, Callable.From(OnDamageCooldownTimerTimeout)))
+			{
+				DamageCooldownTimer.Timeout -= OnDamageCooldownTimerTimeout;
+			}
+		}
 		base._ExitTree();
 	}
 
@@ -128,6 +148,11 @@ public partial class BaseEnemy : CharacterBody2D
 		Health = Math.Max(Health, 0);
 		HitAnimationPlayer?.Play("HitFlash");
 		ShowDamageIndicator(damage, Health, MaxHealth);
+
+		// --- ADD SCORE ON DAMAGE ---
+		var worldNode = GetNode<World>("/root/World");
+		worldNode?.AddScore(damage);
+		// ---------------------------
 
 		if (damageParticleEffectScene is not null)
 		{
@@ -186,14 +211,12 @@ public partial class BaseEnemy : CharacterBody2D
 
 	protected virtual void PerformAttackAction()
 	{
-		if (TargetPlayer is null || !IsInstanceValid(TargetPlayer))
+		if (TargetPlayer is not null && IsInstanceValid(TargetPlayer))
 		{
-			return;
+			TargetPlayer.TakeDamage(Damage);
+			Vector2 knockbackDir = (TargetPlayer.GlobalPosition - GlobalPosition).Normalized();
+			TargetPlayer.ApplyKnockback(knockbackDir * MeleeKnockbackForce);
 		}
-
-		TargetPlayer.TakeDamage(Damage);
-		Vector2 knockbackDir = (TargetPlayer.GlobalPosition - GlobalPosition).Normalized();
-		TargetPlayer.ApplyKnockback(knockbackDir * MeleeKnockbackForce);
 	}
 
 	protected virtual void Die()
@@ -261,11 +284,9 @@ public partial class BaseEnemy : CharacterBody2D
 
 	private void PlayDamageSound()
 	{
-		if (damageAudio is null || GlobalAudioPlayer.Instance is null)
+		if (damageAudio is not null && GlobalAudioPlayer.Instance is not null)
 		{
-			return;
+			GlobalAudioPlayer.Instance.PlaySound2D(damageAudio, GlobalPosition);
 		}
-
-		GlobalAudioPlayer.Instance.PlaySound2D(damageAudio, GlobalPosition);
 	}
 }

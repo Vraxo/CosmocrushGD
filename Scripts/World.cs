@@ -16,7 +16,7 @@ public partial class World : WorldEnvironment
 
 	public int Score { get; private set; } = 0;
 
-	private int _currentEnemyCount = 0;
+	private int currentEnemyCount = 0;
 	private PauseMenu pauseMenu;
 	private GameOverMenu gameOverMenu;
 	private Player player;
@@ -27,15 +27,19 @@ public partial class World : WorldEnvironment
 	{
 		if (hudLayer is null)
 		{
+			GD.PrintErr("World: HUD Layer node not assigned!");
 		}
 		if (scoreLabel is null)
 		{
+			GD.PrintErr("World: Score Label node not assigned!");
 		}
 		if (enemyCountLabel is null)
 		{
+			GD.PrintErr("World: Enemy Count Label node not assigned!");
 		}
 		if (scoreAnimationPlayer is null)
 		{
+			GD.PrintErr("World: Score Animation Player node not assigned!");
 		}
 		if (pauseButton is not null)
 		{
@@ -44,6 +48,7 @@ public partial class World : WorldEnvironment
 
 		if (gameOverMenuScene is null)
 		{
+			GD.PrintErr("World: Game Over Menu Scene not assigned!");
 		}
 
 		player = GetNode<Player>(playerPath);
@@ -52,14 +57,20 @@ public partial class World : WorldEnvironment
 			player.GameOver += OnGameOver;
 			player.PlayerDied += OnPlayerDied;
 		}
-
+		else
+		{
+			GD.PrintErr("World: Player node not found or path invalid!");
+		}
 
 		enemySpawner = GetNode<EnemySpawner>(enemySpawnerPath);
 		if (enemySpawner is not null)
 		{
 			enemySpawner.EnemySpawned += OnEnemySpawned;
 		}
-
+		else
+		{
+			GD.PrintErr("World: Enemy Spawner node not found or path invalid!");
+		}
 
 		StatisticsManager.Instance.IncrementGamesPlayed();
 		UpdateScoreLabel();
@@ -76,14 +87,30 @@ public partial class World : WorldEnvironment
 
 	public override void _ExitTree()
 	{
-		if (player is not null)
+		if (player is not null && IsInstanceValid(player))
 		{
-			player.GameOver -= OnGameOver;
-			player.PlayerDied -= OnPlayerDied;
+			if (player.IsConnected(Player.SignalName.GameOver, Callable.From(OnGameOver)))
+			{
+				player.GameOver -= OnGameOver;
+			}
+			if (player.IsConnected(Player.SignalName.PlayerDied, Callable.From(OnPlayerDied)))
+			{
+				player.PlayerDied -= OnPlayerDied;
+			}
 		}
-		if (enemySpawner is not null)
+		if (enemySpawner is not null && IsInstanceValid(enemySpawner))
 		{
-			enemySpawner.EnemySpawned -= OnEnemySpawned;
+			if (enemySpawner.IsConnected(EnemySpawner.SignalName.EnemySpawned, Callable.From<BaseEnemy>(OnEnemySpawned)))
+			{
+				enemySpawner.EnemySpawned -= OnEnemySpawned;
+			}
+		}
+		if (pauseButton is not null && IsInstanceValid(pauseButton))
+		{
+			if (pauseButton.IsConnected(Button.SignalName.Pressed, Callable.From(OnPauseButtonPressed)))
+			{
+				pauseButton.Pressed -= OnPauseButtonPressed;
+			}
 		}
 
 		base._ExitTree();
@@ -96,7 +123,7 @@ public partial class World : WorldEnvironment
 
 		if (scoreAnimationPlayer is not null)
 		{
-			scoreAnimationPlayer.Stop();
+			scoreAnimationPlayer.Stop(true); // Reset animation before playing
 			scoreAnimationPlayer.Play("ScorePunch");
 		}
 	}
@@ -113,7 +140,7 @@ public partial class World : WorldEnvironment
 	{
 		if (enemyCountLabel is not null)
 		{
-			enemyCountLabel.Text = $"Enemies: {_currentEnemyCount}";
+			enemyCountLabel.Text = $"Enemies: {currentEnemyCount}";
 		}
 	}
 
@@ -123,7 +150,7 @@ public partial class World : WorldEnvironment
 		{
 			return;
 		}
-		_currentEnemyCount++;
+		currentEnemyCount++;
 		enemy.EnemyDied += OnEnemyDied;
 		UpdateEnemyCountLabel();
 	}
@@ -135,13 +162,15 @@ public partial class World : WorldEnvironment
 			return;
 		}
 
-		if (enemy.IsConnected(BaseEnemy.SignalName.EnemyDied, Callable.From<BaseEnemy>(OnEnemyDied)))
+		// Ensure signal is disconnected only if connected
+		var callable = Callable.From<BaseEnemy>(OnEnemyDied);
+		if (enemy.IsConnected(BaseEnemy.SignalName.EnemyDied, callable))
 		{
 			enemy.EnemyDied -= OnEnemyDied;
 		}
 
-		_currentEnemyCount = Mathf.Max(0, _currentEnemyCount - 1);
-		AddScore(10);
+		currentEnemyCount = Mathf.Max(0, currentEnemyCount - 1);
+		// AddScore(10); // REMOVED: Do not add fixed score on death
 		UpdateEnemyCountLabel();
 	}
 
@@ -174,20 +203,26 @@ public partial class World : WorldEnvironment
 		{
 			if (pauseMenuScene is null)
 			{
+				GD.PrintErr("World: Pause Menu Scene not assigned, cannot pause!");
 				return;
 			}
 
 			if (hudLayer is null)
 			{
+				GD.PrintErr("World: HUD Layer is null, cannot add Pause Menu!");
 				return;
 			}
 
 			pauseMenu = pauseMenuScene.Instantiate<PauseMenu>();
 			hudLayer.AddChild(pauseMenu);
+			pauseMenu.Show(); // Show immediately after adding
+			GetTree().Paused = true;
 		}
-
-		GetTree().Paused = true;
-		pauseMenu.Show();
+		else // If menu exists but isn't visible (shouldn't happen often with this logic)
+		{
+			pauseMenu.Show();
+			GetTree().Paused = true;
+		}
 	}
 
 	private void OnPlayerDied()
@@ -199,16 +234,18 @@ public partial class World : WorldEnvironment
 	{
 		if (gameOverMenu is not null && IsInstanceValid(gameOverMenu))
 		{
-			return;
+			return; // Already showing
 		}
 
 		if (gameOverMenuScene is null)
 		{
+			GD.PrintErr("World: Game Over Menu Scene is null!");
 			return;
 		}
 
 		if (hudLayer is null)
 		{
+			GD.PrintErr("World: HUD Layer is null, cannot add Game Over Menu!");
 			return;
 		}
 
