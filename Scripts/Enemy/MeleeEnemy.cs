@@ -6,16 +6,12 @@ public partial class MeleeEnemy : BaseEnemy
 {
     [Export] private float meleeKnockbackForce = 500f;
 
-    protected override void AttemptAttack()
+    protected override Color ParticleColor => new(237f / 255f, 28f / 255f, 36f / 255f);
+    protected override float MeleeKnockbackForce => meleeKnockbackForce;
+
+    protected override void PerformAttackAction()
     {
-        if (!CanShoot || TargetPlayer == null)
-        {
-            return;
-        }
-
-        float distance = GlobalPosition.DistanceTo(TargetPlayer.GlobalPosition);
-
-        if (distance > DamageRadius)
+        if (TargetPlayer is null || !IsInstanceValid(TargetPlayer))
         {
             return;
         }
@@ -23,9 +19,6 @@ public partial class MeleeEnemy : BaseEnemy
         TargetPlayer.TakeDamage(Damage);
 
         Vector2 knockbackDir = (TargetPlayer.GlobalPosition - GlobalPosition).Normalized();
-        TargetPlayer.ApplyKnockback(knockbackDir * meleeKnockbackForce);
-
-        CanShoot = false;
-        DamageCooldownTimer.Start();
+        TargetPlayer.ApplyKnockback(knockbackDir * MeleeKnockbackForce);
     }
 }

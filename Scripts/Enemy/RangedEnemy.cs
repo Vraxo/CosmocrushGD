@@ -9,6 +9,7 @@ public partial class RangedEnemy : BaseEnemy
 	protected override float ProximityThreshold => 320f;
 	protected override float DamageRadius => 320f;
 	protected override float AttackCooldown => 1.5f;
+	protected override Color ParticleColor => new(163f / 255f, 73f / 255f, 164f / 255f);
 
 	public override void _PhysicsProcess(double delta)
 	{
@@ -20,7 +21,10 @@ public partial class RangedEnemy : BaseEnemy
 				Velocity = Knockback;
 				MoveAndSlide();
 			}
-			else if (Velocity != Vector2.Zero) Velocity = Vector2.Zero;
+			else if (Velocity != Vector2.Zero)
+			{
+				Velocity = Vector2.Zero;
+			}
 			return;
 		}
 
@@ -30,24 +34,31 @@ public partial class RangedEnemy : BaseEnemy
 		{
 			Vector2 directionToPlayer = (TargetPlayer.GlobalPosition - GlobalPosition).Normalized();
 			float distanceToPlayer = GlobalPosition.DistanceTo(TargetPlayer.GlobalPosition);
-			if (distanceToPlayer > DamageRadius) desiredMovement = directionToPlayer * Speed;
-			else if (distanceToPlayer < ProximityThreshold) desiredMovement = -directionToPlayer * Speed;
+
+			if (distanceToPlayer > DamageRadius)
+			{
+				desiredMovement = directionToPlayer * Speed;
+			}
+			else if (distanceToPlayer < ProximityThreshold)
+			{
+				desiredMovement = -directionToPlayer * Speed;
+			}
 		}
+
 		Velocity = desiredMovement + Knockback;
-		if (Velocity.LengthSquared() > 0.01f) MoveAndSlide();
-		else if (Velocity != Vector2.Zero) Velocity = Vector2.Zero;
+		if (Velocity.LengthSquared() > 0.01f)
+		{
+			MoveAndSlide();
+		}
+		else if (Velocity != Vector2.Zero)
+		{
+			Velocity = Vector2.Zero;
+		}
 	}
 
-	protected override void AttemptAttack()
+	protected override void PerformAttackAction()
 	{
-		if (TargetPlayer is null || !IsInstanceValid(TargetPlayer) || !CanShoot || projectileScene is null) return;
-		float distance = GlobalPosition.DistanceTo(TargetPlayer.GlobalPosition);
-		if (distance <= DamageRadius)
-		{
-			ShootProjectile();
-			CanShoot = false;
-			DamageCooldownTimer?.Start();
-		}
+		ShootProjectile();
 	}
 
 	private void ShootProjectile()

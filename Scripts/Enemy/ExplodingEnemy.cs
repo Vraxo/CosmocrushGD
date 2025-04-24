@@ -1,7 +1,6 @@
 using Godot;
 using System;
-using System.Collections.Generic; // Use Generic List for easier handling before CallDeferred
-// No Task needed here anymore
+using System.Collections.Generic;
 
 namespace CosmocrushGD;
 
@@ -15,31 +14,24 @@ public partial class ExplodingEnemy : BaseEnemy
 	protected override float Speed => 80f;
 	protected override int Damage => 1;
 	protected override float AttackCooldown => 0.6f;
+	protected override Color ParticleColor => new(255f / 255f, 127f / 255f, 39f / 255f);
+	protected override float MeleeKnockbackForce => meleeKnockbackForce;
 
 	private static readonly Color ExplosionProjectileColor = new(1.0f, 0.5f, 0.15f);
 
-	protected override void AttemptAttack()
+	protected override void PerformAttackAction()
 	{
-		if (!CanShoot || TargetPlayer is null || !IsInstanceValid(TargetPlayer))
-		{
-			return;
-		}
-
-		float distance = GlobalPosition.DistanceTo(TargetPlayer.GlobalPosition);
-
-		if (distance > DamageRadius)
+		if (TargetPlayer is null || !IsInstanceValid(TargetPlayer))
 		{
 			return;
 		}
 
 		TargetPlayer.TakeDamage(Damage);
 		Vector2 knockbackDir = (TargetPlayer.GlobalPosition - GlobalPosition).Normalized();
-		TargetPlayer.ApplyKnockback(knockbackDir * meleeKnockbackForce);
-		CanShoot = false;
-		DamageCooldownTimer?.Start();
+		TargetPlayer.ApplyKnockback(knockbackDir * MeleeKnockbackForce);
 	}
 
-	protected override void Die() // No longer async
+	protected override void Die()
 	{
 		base.Die();
 
@@ -53,7 +45,6 @@ public partial class ExplodingEnemy : BaseEnemy
 		Vector2 spawnPosition = GlobalPosition;
 		Texture2D enemyTexture = Sprite?.Texture;
 
-		// Use a standard List for easy adding during the loop
 		var projectilesToActivate = new List<Projectile>(projectileCount);
 
 		for (int i = 0; i < projectileCount; i++)
@@ -66,26 +57,22 @@ public partial class ExplodingEnemy : BaseEnemy
 			}
 
 			float angle = i * angleStep;
-			Vector2 direction = new Vector2((float)Math.Cos(angle), (float)Math.Sin(angle)).Normalized();
+			var direction = new Vector2((float)Math.Cos(angle), (float)Math.Sin(angle)).Normalized();
 
-			// Call Setup, which now leaves the projectile inactive
 			projectile.Setup(spawnPosition, direction, enemyTexture, ExplosionProjectileColor);
-
 			projectilesToActivate.Add(projectile);
-
-			// No await here anymore
 		}
 
-		// Convert the List to a Godot Array for CallDeferred
 		var godotArray = new Godot.Collections.Array<Projectile>(projectilesToActivate);
-
-		// Defer the activation of all collected projectiles to the next frame
 		CallDeferred(nameof(ActivateProjectiles), godotArray);
 	}
 
 	private void ActivateProjectiles(Godot.Collections.Array<Projectile> projectilesToActivate)
 	{
-		if (projectilesToActivate is null) return;
+		if (projectilesToActivate is null)
+		{
+			return;
+		}
 
 		foreach (Projectile projectile in projectilesToActivate)
 		{

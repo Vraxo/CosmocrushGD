@@ -17,12 +17,12 @@ public partial class Projectile : Area2D
 	private const float Speed = 300f;
 	private const float KnockbackForce = 300f;
 	private const float DefaultLifetime = 10.0f;
-	private const float DestructionDuration = 1.0f;
-	private const int ProjectileZIndex = 5;
+	private const float DestructionDuration = 1.0f; // Matches particle lifetime ideally
+	public const int ProjectileZIndex = 5; // Made public const
+
 
 	public override void _Ready()
 	{
-		// Use += syntax for signal connection
 		BodyEntered += OnBodyEntered;
 
 		lifeTimer = GetNodeOrNull<Timer>("LifeTimer");
@@ -39,12 +39,12 @@ public partial class Projectile : Area2D
 			destructionTimer = new Timer { Name = "DestructionTimer", OneShot = true };
 			AddChild(destructionTimer);
 		}
-		destructionTimer.Timeout += ReturnToPool;
+		// Connect later, only when destruction starts
+		// destructionTimer.Timeout += ReturnToPool;
 	}
 
 	public override void _PhysicsProcess(double delta)
 	{
-		// Early exit if not active or no direction
 		if (!active || Direction == Vector2.Zero)
 		{
 			return;
@@ -52,48 +52,82 @@ public partial class Projectile : Area2D
 		GlobalPosition += Direction * Speed * (float)delta;
 	}
 
+	public override void _ExitTree()
+	{
+		BodyEntered -= OnBodyEntered;
+
+		if (lifeTimer is not null && IsInstanceValid(lifeTimer))
+		{
+			if (lifeTimer.IsConnected(Timer.SignalName.Timeout, Callable.From(OnLifeTimerTimeout)))
+			{
+				lifeTimer.Timeout -= OnLifeTimerTimeout;
+			}
+		}
+		if (destructionTimer is not null && IsInstanceValid(destructionTimer))
+		{
+			if (destructionTimer.IsConnected(Timer.SignalName.Timeout, Callable.From(ReturnToPool)))
+			{
+				destructionTimer.Timeout -= ReturnToPool;
+			}
+		}
+		base._ExitTree();
+	}
+
 	public void Setup(Vector2 startPosition, Vector2 direction, Texture2D spriteTexture = null, Color? particleColor = null)
 	{
 		GlobalPosition = startPosition;
-		Direction = direction;
-		active = false; // Ensure inactive initially
-		ZIndex = ProjectileZIndex;
+		Direction = direction.Normalized(); // Ensure normalized
+		active = false;
+		// ZIndex = ProjectileZIndex; // ZIndex should be set once by GlobalAudioPlayer
 
-		// Ensure starts disabled and invisible
 		Visible = false;
-		ProcessMode = ProcessModeEnum.Disabled; // Explicitly disable processing
+		ProcessMode = ProcessModeEnum.Disabled;
 		SetDeferred(Area2D.PropertyName.Monitoring, false);
 		SetDeferred(Area2D.PropertyName.Monitorable, false);
 
 
 		if (Sprite is not null)
 		{
-			// Sprite visibility controlled by root Visible property
-			if (spriteTexture is not null) Sprite.Texture = spriteTexture;
-			Sprite.Visible = true; // Ensure sprite itself is marked visible within the invisible parent
+			if (spriteTexture is not null)
+			{
+				Sprite.Texture = spriteTexture;
+			}
+			Sprite.Visible = true; // Internal sprite should be ready
 		}
 
 		if (DestructionParticles is not null)
 		{
 			DestructionParticles.Emitting = false;
-			if (particleColor.HasValue) DestructionParticles.Color = particleColor.Value;
+			if (particleColor.HasValue)
+			{
+				DestructionParticles.Color = particleColor.Value;
+			}
+			// Reset particle position to projectile origin for next emission
+			DestructionParticles.Position = Vector2.Zero;
 		}
 
 		lifeTimer?.Stop();
 		destructionTimer?.Stop();
+		// Ensure destruction timer signal is disconnected if it was connected previously
+		if (destructionTimer is not null && destructionTimer.IsConnected(Timer.SignalName.Timeout, Callable.From(ReturnToPool)))
+		{
+			destructionTimer.Timeout -= ReturnToPool;
+		}
 	}
 
 	public void Activate()
 	{
-		if (active) return; // Prevent double activation
+		if (active)
+		{
+			return;
+		}
 
 		active = true;
-		Visible = true; // Make the whole node visible
+		Visible = true;
 
-		// Explicitly enable physics processing and potentially regular process if needed
-		ProcessMode = ProcessModeEnum.Inherit; // Allow _Process and _PhysicsProcess if parent does
-		SetPhysicsProcess(true); // **Explicitly enable physics**
-								 // SetProcess(true); // Enable if _Process logic exists
+		// Use Pausable mode for consistency with other pooled items
+		ProcessMode = ProcessModeEnum.Pausable;
+		// SetPhysicsProcess(true); // ProcessMode implies physics process
 
 		SetDeferred(Area2D.PropertyName.Monitoring, true);
 		SetDeferred(Area2D.PropertyName.Monitorable, true);
@@ -104,7 +138,10 @@ public partial class Projectile : Area2D
 
 	private void OnBodyEntered(Node2D body)
 	{
-		if (!active) return; // Check if active before processing collision
+		if (!active)
+		{
+			return;
+		}
 
 		if (body is Player player)
 		{
@@ -112,8 +149,7 @@ public partial class Projectile : Area2D
 			player.ApplyKnockback(Direction * KnockbackForce);
 			StartDestructionSequence();
 		}
-		// Optional: Check for collisions with other things like walls if needed
-		// else if (body is StaticBody2D || body is TileMap)
+		// else if (body is StaticBody2D || body is TileMap) // Example: Hit wall
 		// {
 		//     StartDestructionSequence();
 		// }
@@ -121,45 +157,73 @@ public partial class Projectile : Area2D
 
 	private void OnLifeTimerTimeout()
 	{
-		if (!active) return; // Check if active before timing out
+		if (!active)
+		{
+			return;
+		}
 		StartDestructionSequence();
 	}
 
 	private void StartDestructionSequence()
 	{
-		if (!active) return; // Prevent double destruction calls
+		if (!active)
+		{
+			return;
+		}
 
 		active = false;
 		lifeTimer?.Stop();
 		SetDeferred(Area2D.PropertyName.Monitoring, false);
 		SetDeferred(Area2D.PropertyName.Monitorable, false);
-		SetPhysicsProcess(false); // Disable physics processing immediately
-		Visible = false; // Hide visually
+		ProcessMode = ProcessModeEnum.Disabled; // Disable processing immediately
+		Visible = false;
 
-		if (Sprite is not null)
+		// Sprite handled by Visible = false;
+
+		Direction = Vector2.Zero;
+
+		// Connect the timer signal *only* when destruction starts
+		if (destructionTimer is not null)
 		{
-			Sprite.Visible = false; // Should be redundant now
+			if (!destructionTimer.IsConnected(Timer.SignalName.Timeout, Callable.From(ReturnToPool)))
+			{
+				destructionTimer.Timeout += ReturnToPool;
+			}
+			destructionTimer.Start(DestructionDuration);
+		}
+		else
+		{
+			// Fallback if timer node is missing somehow
+			GetTree().CreateTimer(DestructionDuration, false, true).Timeout += ReturnToPool; // ProcessMode=Always for timer
 		}
 
-		Direction = Vector2.Zero; // Stop any potential residual movement calculation attempt
-
+		// Emit particles *after* disabling processing/visibility
 		if (DestructionParticles is not null)
 		{
-			DestructionParticles.GlobalPosition = this.GlobalPosition; // Ensure particles emit at the right spot
-			DestructionParticles.Restart(); // Restart particle emission
+			// Ensure particles emit at the correct final location
+			DestructionParticles.GlobalPosition = this.GlobalPosition;
+			DestructionParticles.Restart(); // Reset and emit particles
 		}
-
-		destructionTimer?.Stop(); // Ensure no previous timer is running
-		destructionTimer?.Start(DestructionDuration);
 	}
 
 	private void ReturnToPool()
 	{
-		// Stop particles just before returning, in case timer was shorter than lifetime
+		// Stop particles before returning
 		if (DestructionParticles is not null)
 		{
 			DestructionParticles.Emitting = false;
 		}
+
+		// Disconnect timer signal before returning to pool
+		if (destructionTimer is not null && IsInstanceValid(destructionTimer))
+		{
+			if (destructionTimer.IsConnected(Timer.SignalName.Timeout, Callable.From(ReturnToPool)))
+			{
+				destructionTimer.Timeout -= ReturnToPool;
+			}
+			destructionTimer.Stop(); // Ensure timer is stopped
+		}
+
 
 		if (GlobalAudioPlayer.Instance is not null && SourceScene is not null)
 		{
@@ -167,7 +231,7 @@ public partial class Projectile : Area2D
 		}
 		else
 		{
-			GD.PrintErr($"Projectile: Cannot return to pool. Freeing. GAP: {GlobalAudioPlayer.Instance}, Scene: {SourceScene}");
+			GD.PrintErr($"Projectile {GetInstanceId()}: Cannot return to pool. Freeing. GAP: {GlobalAudioPlayer.Instance}, Scene: {SourceScene}");
 			QueueFree();
 		}
 	}
@@ -177,39 +241,27 @@ public partial class Projectile : Area2D
 		active = false;
 		lifeTimer?.Stop();
 		destructionTimer?.Stop();
+		// Disconnect timer signal during reset as well, just in case
+		if (destructionTimer is not null && destructionTimer.IsConnected(Timer.SignalName.Timeout, Callable.From(ReturnToPool)))
+		{
+			destructionTimer.Timeout -= ReturnToPool;
+		}
+
 		Visible = false;
-		ProcessMode = ProcessModeEnum.Disabled; // Ensure processing is fully disabled
-		SetPhysicsProcess(false); // Explicitly disable physics
-								  // SetProcess(false); // Explicitly disable process if it was ever enabled
+		ProcessMode = ProcessModeEnum.Disabled;
 
 		SetDeferred(Area2D.PropertyName.Monitoring, false);
 		SetDeferred(Area2D.PropertyName.Monitorable, false);
 
 		if (Sprite is not null)
 		{
-			Sprite.Visible = true; // Reset sprite visibility for next use
+			Sprite.Visible = true; // Reset internal sprite visibility
 		}
 		if (DestructionParticles is not null)
 		{
-			DestructionParticles.Emitting = false; // Stop emitting
+			DestructionParticles.Emitting = false;
 		}
 		Direction = Vector2.Zero;
-		GlobalPosition = Vector2.Zero; // Reset position
-	}
-
-	public override void _ExitTree()
-	{
-		// Use -= syntax for signal disconnection
-		BodyEntered -= OnBodyEntered;
-
-		if (lifeTimer is not null && IsInstanceValid(lifeTimer))
-		{
-			lifeTimer.Timeout -= OnLifeTimerTimeout;
-		}
-		if (destructionTimer is not null && IsInstanceValid(destructionTimer))
-		{
-			destructionTimer.Timeout -= ReturnToPool;
-		}
-		base._ExitTree();
+		GlobalPosition = Vector2.Zero;
 	}
 }
