@@ -5,9 +5,9 @@ namespace CosmocrushGD;
 
 public partial class ThemePlayer : AudioStreamPlayer
 {
-	private Random random = new();
 	private int currentThemeIndex = -1;
-	private string themePathTemplate = "res://Audio/Songs/CombatTheme/CombatTheme{0}.mp3";
+	private readonly Random random = new();
+	private const string themePathTemplate = "res://Audio/Songs/CombatTheme/CombatTheme{0}.mp3";
 
 	public override void _Ready()
 	{
@@ -15,9 +15,17 @@ public partial class ThemePlayer : AudioStreamPlayer
 		Finished += OnThemeFinished;
 	}
 
+	public override void _ExitTree()
+	{
+		Finished -= OnThemeFinished;
+
+		base._ExitTree();
+	}
+
 	private void PlayRandomTheme()
 	{
 		int nextThemeIndex;
+
 		do
 		{
 			nextThemeIndex = random.Next(1, 7);
