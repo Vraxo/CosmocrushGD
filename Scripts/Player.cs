@@ -5,13 +5,30 @@ namespace CosmocrushGD;
 
 public partial class Player : CharacterBody2D
 {
+	// --- Signals ---
 	[Signal] public delegate void GameOverEventHandler();
 	[Signal] public delegate void PlayerDiedEventHandler();
 
-	public int Health = 10;
-	public int MaxHealth = 100;
-	public Inventory Inventory = new();
+	// --- Fields ---
+	private ShakeyCamera camera;
+	private Vector2 knockbackVelocity = Vector2.Zero;
+	private AudioStream damageAudio;
+	private const float Speed = 300.0f;
+	private const float KnockbackRecoverySpeed = 0.1f;
+	private const float DamageShakeMinStrength = 0.8f;
+	private const float DamageShakeMaxStrength = 2.5f;
+	private const float DamageShakeDuration = 0.3f;
+	private const float DesktopDeathZoomAmount = 2.0f;
+	private const float MobileDeathZoomAmount = 3.0f;
+	private const float DeathZoomDuration = 1.5f;
+	private const int RegenerationRate = 0; // Keep const separate
 
+	// --- Properties ---
+	public int Health { get; set; } = 3; // Initialize with MaxHealth potential
+	public int MaxHealth { get; set; } = 3;
+	public Inventory Inventory { get; set; } = new();
+
+	// --- Exports ---
 	[Export] private Gun gun;
 	[Export] private Sprite2D sprite;
 	[Export] private CpuParticles2D damageParticles;
@@ -21,75 +38,54 @@ public partial class Player : CharacterBody2D
 	[Export] private Timer deathPauseTimer;
 	[Export] private AudioStreamPlayer deathAudioPlayer;
 
-	private ShakeyCamera camera;
-	private Vector2 knockbackVelocity = Vector2.Zero;
-	private AudioStream damageAudio;
 
-	private const int RegenerationRate = 0;
-	private const float Speed = 300.0f;
-	private const float KnockbackRecoverySpeed = 0.1f;
-	private const float DamageShakeMinStrength = 0.8f;
-	private const float DamageShakeMaxStrength = 2.5f;
-	private const float DamageShakeDuration = 0.3f;
-	private const float DesktopDeathZoomAmount = 2.0f;
-	private const float MobileDeathZoomAmount = 3.0f;
-	private const float DeathZoomDuration = 1.5f;
-
-
+	// --- Methods ---
 	public override void _Ready()
 	{
 		if (cameraPath is not null)
 		{
 			camera = GetNode<ShakeyCamera>(cameraPath);
-			if (IsInstanceValid(camera))
-			{
-				camera.ResetZoom();
-			}
-			else
-			{
-				camera = null;
-			}
+			camera?.ResetZoom(); // Use null propagation
 		}
 
-
-		if (regenerationTimer is not null)
+		if (regenerationTimer?.IsConnected(Timer.SignalName.Timeout, Callable.From(OnRegenTimerTimeout)) is false)
 		{
 			regenerationTimer.Timeout += OnRegenTimerTimeout;
 		}
 
-
-		if (deathPauseTimer is not null)
+		if (deathPauseTimer?.IsConnected(Timer.SignalName.Timeout, Callable.From(OnDeathPauseTimerTimeout)) is false)
 		{
 			deathPauseTimer.Timeout += OnDeathPauseTimerTimeout;
 		}
-
-
 
 		damageAudio = ResourceLoader.Load<AudioStream>("res://Audio/SFX/PlayerDamage.mp3");
 	}
 
 	public override void _PhysicsProcess(double delta)
 	{
-		if (GetTree().Paused || (deathPauseTimer is not null && !deathPauseTimer.IsStopped()))
+		// Early return if paused or death timer active
+		if (GetTree().Paused || deathPauseTimer?.IsStopped() is false)
 		{
 			return;
 		}
 
 		knockbackVelocity = knockbackVelocity.Lerp(Vector2.Zero, KnockbackRecoverySpeed);
 
-		Vector2 direction = Input.GetVector("left", "right", "up", "down");
-		Vector2 movement = direction * Speed + knockbackVelocity;
+		var direction = Input.GetVector("left", "right", "up", "down");
+		var movement = direction * Speed + knockbackVelocity;
+
 		Velocity = movement;
 		MoveAndSlide();
 	}
 
 	public override void _ExitTree()
 	{
-		if (regenerationTimer is not null && regenerationTimer.IsConnected(Timer.SignalName.Timeout, Callable.From(OnRegenTimerTimeout)))
+		if (regenerationTimer?.IsConnected(Timer.SignalName.Timeout, Callable.From(OnRegenTimerTimeout)) ?? false)
 		{
 			regenerationTimer.Timeout -= OnRegenTimerTimeout;
 		}
-		if (deathPauseTimer is not null && deathPauseTimer.IsConnected(Timer.SignalName.Timeout, Callable.From(OnDeathPauseTimerTimeout)))
+
+		if (deathPauseTimer?.IsConnected(Timer.SignalName.Timeout, Callable.From(OnDeathPauseTimerTimeout)) ?? false)
 		{
 			deathPauseTimer.Timeout -= OnDeathPauseTimerTimeout;
 		}
@@ -99,14 +95,19 @@ public partial class Player : CharacterBody2D
 
 	public void TakeDamage(int damage)
 	{
-		if (Health <= 0) return;
+		if (Health <= 0)
+		{
+			return;
+		}
 
 		Health -= damage;
-		Health = Math.Max(Health, 0);
+		Health = Mathf.Max(Health, 0); // Use Mathf.Max
 
+		// Restart damage particles at current location (now TopLevel)
 		if (damageParticles is not null)
 		{
-			damageParticles.Emitting = true;
+			damageParticles.GlobalPosition = GlobalPosition;
+			damageParticles.Restart(); // Use Restart() for one-shot TopLevel particles
 		}
 
 		PlayDamageSound();
@@ -118,28 +119,34 @@ public partial class Player : CharacterBody2D
 		}
 	}
 
+	public void ApplyKnockback(Vector2 knockback)
+	{
+		// Apply stronger knockback if the new one is larger, otherwise add
+		knockbackVelocity = knockbackVelocity.LengthSquared() < knockback.LengthSquared()
+			? knockback
+			: knockbackVelocity + knockback;
+	}
+
+	// --- Private Methods ---
 	private void TriggerDamageShake()
 	{
-		if (camera is null || !IsInstanceValid(camera))
+		if (camera is null) // No need for IsInstanceValid check here if camera is assigned in _Ready
 		{
 			return;
 		}
 
-		float healthRatio = MaxHealth > 0
-			? Mathf.Clamp((float)Health / MaxHealth, 0f, 1f)
+		var healthRatio = MaxHealth > 0
+			? float.Clamp((float)Health / MaxHealth, 0f, 1f) // Use float.Clamp
 			: 0f;
 
-		float shakeStrength = Mathf.Lerp(DamageShakeMaxStrength, DamageShakeMinStrength, healthRatio);
+		var shakeStrength = Mathf.Lerp(DamageShakeMaxStrength, DamageShakeMinStrength, healthRatio);
 
 		camera.Shake(shakeStrength, DamageShakeDuration);
 	}
 
 	private void PlayDamageSound()
 	{
-		if (damageAudio is not null && GlobalAudioPlayer.Instance is not null)
-		{
-			GlobalAudioPlayer.Instance.PlaySound(damageAudio);
-		}
+		GlobalAudioPlayer.Instance?.PlaySound(damageAudio); // Use null propagation
 	}
 
 	private void Die()
@@ -149,53 +156,39 @@ public partial class Player : CharacterBody2D
 		ProcessMode = ProcessModeEnum.Disabled;
 		SetPhysicsProcess(false);
 
-		if (sprite is not null)
-		{
-			sprite.Visible = false;
-		}
-		if (gun is not null)
-		{
-			gun.Visible = false;
-		}
+		sprite?.QueueFree(); // Remove sprite immediately
+		gun?.QueueFree();   // Remove gun immediately
+
+		// Restart death particles at current location (now TopLevel)
 		if (deathParticles is not null)
 		{
-			deathParticles.Emitting = true;
+			deathParticles.GlobalPosition = GlobalPosition;
+			deathParticles.Restart(); // Use Restart() for one-shot TopLevel particles
 		}
 
-		if (deathAudioPlayer is not null)
-		{
-			deathAudioPlayer.Play();
-		}
+		deathAudioPlayer?.Play();
 
 		if (camera is not null)
 		{
-			float zoomAmount = OS.HasFeature("mobile")
+			var zoomAmount = OS.HasFeature("mobile")
 				? MobileDeathZoomAmount
 				: DesktopDeathZoomAmount;
 			camera.ZoomToPoint(zoomAmount, DeathZoomDuration);
 		}
 
-		if (deathPauseTimer is not null)
-		{
-			deathPauseTimer.Start();
-		}
+		deathPauseTimer?.Start();
 	}
 
+	// --- Event Handlers ---
 	private void OnDeathPauseTimerTimeout()
 	{
+		// Only pause if not already paused (safety check)
 		if (!GetTree().Paused)
 		{
 			GetTree().Paused = true;
 		}
 
 		EmitSignal(SignalName.GameOver);
-	}
-
-	public void ApplyKnockback(Vector2 knockback)
-	{
-		knockbackVelocity = knockbackVelocity.LengthSquared() < knockback.LengthSquared()
-			? knockback
-			: knockbackVelocity + knockback;
 	}
 
 	private void OnRegenTimerTimeout()

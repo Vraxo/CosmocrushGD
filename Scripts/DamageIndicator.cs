@@ -1,37 +1,30 @@
 using Godot;
-using System;
 using System.Collections.Generic;
-using static System.Formats.Asn1.AsnWriter; // These seem unused, consider removing
-using static System.Net.Mime.MediaTypeNames; // These seem unused, consider removing
-using System.Diagnostics; // This seems unused, consider removing
 
 namespace CosmocrushGD;
 
 public partial class DamageIndicator : Label
 {
-	private static readonly Dictionary<int, string> damageStringCache = new(16);
-
 	public int Health { get; set; } = 0;
 	public int MaxHealth { get; set; } = 0;
-	public PackedScene SourceScene { get; set; } // Still useful for pool manager association
+	public PackedScene SourceScene { get; set; }
 
 	[Export] private Timer destructionTimer;
 	[Export] private AnimationPlayer player;
 
 	private const float Speed = 100;
+	private static readonly Dictionary<int, string> damageStringCache = new(100);
 
-	// Use auto-property for AnimatedAlpha
-	private float animatedAlpha = 1.0f;
 	public float AnimatedAlpha
 	{
-		get => animatedAlpha;
+		get;
 
 		set
 		{
-			animatedAlpha = Mathf.Clamp(value, 0f, 1f);
+			field = float.Clamp(value, 0f, 1f);
 			UpdateAlpha();
 		}
-	}
+	} = 1.0f;
 
 	public override void _Ready()
 	{
@@ -39,20 +32,18 @@ public partial class DamageIndicator : Label
 		{
 			destructionTimer.Timeout += OnTimerTimeout;
 		}
-		// Ensure pivot is centered for scaling animation
+
 		PivotOffset = Size / 2;
 	}
 
 	public override void _Process(double delta)
 	{
-		// Early exit if disabled
 		if (ProcessMode == ProcessModeEnum.Disabled)
 		{
 			return;
 		}
 
-		// Movement relative to global space since TopLevel = true
-		float movement = Speed * (float)delta;
+		var movement = Speed * (float)delta; // Use var
 
 		GlobalPosition = new(GlobalPosition.X, GlobalPosition.Y - movement);
 	}
@@ -62,25 +53,46 @@ public partial class DamageIndicator : Label
 		Text = GetDamageString(damageAmount);
 		Health = currentHealth;
 		MaxHealth = maxHealth;
-		GlobalPosition = globalStartPosition; // Use GlobalPosition
+		GlobalPosition = globalStartPosition;
 
 		Modulate = Colors.White;
 		Scale = Vector2.One;
 		AnimatedAlpha = 1.0f;
-		PivotOffset = Size / 2; // Recalculate pivot in case text changes size
+		PivotOffset = Size / 2;
 
 		SetOutlineColor();
 
-		if (player is not null)
+		player?.Stop(true);
+		player?.Play("DamageIndicator");
+
+		destructionTimer?.Start();
+	}
+
+	public void ResetForPooling()
+	{
+		destructionTimer?.Stop();
+		player?.Stop(true);
+		Text = "";
+		RemoveThemeColorOverride("font_color");
+		Modulate = Colors.White;
+		Scale = Vector2.One;
+		ProcessMode = ProcessModeEnum.Inherit;
+	}
+
+	public override void _ExitTree()
+	{
+		if (destructionTimer is null || !IsInstanceValid(destructionTimer))
 		{
-			player.Stop(true); // Reset animation state
-			player.Play("DamageIndicator");
+			base._ExitTree();
+			return;
 		}
 
-		if (destructionTimer is not null)
+		if (destructionTimer.IsConnected(Timer.SignalName.Timeout, Callable.From(OnTimerTimeout)))
 		{
-			destructionTimer.Start(); // Start or restart the timer
+			destructionTimer.Timeout -= OnTimerTimeout;
 		}
+
+		base._ExitTree();
 	}
 
 	private void SetOutlineColor()
@@ -91,54 +103,31 @@ public partial class DamageIndicator : Label
 			return;
 		}
 
-		float ratio = Mathf.Clamp((float)Health / MaxHealth, 0f, 1f);
-		var outlineColor = Color.FromHsv(Mathf.Lerp(0f, 0.333f, ratio), 1f, 1f); // Green (0.333) to Red (0)
+		var ratio = float.Clamp((float)Health / MaxHealth, 0f, 1f);
+
+		var outlineColor = Color.FromHsv(float.Lerp(0f, 0.333f, ratio), 1f, 1f);
 
 		AddThemeColorOverride("font_color", outlineColor);
 	}
 
 	private void UpdateAlpha()
 	{
-		// Modulate includes color and alpha
 		Modulate = new(Modulate.R, Modulate.G, Modulate.B, AnimatedAlpha);
 	}
 
 	private void OnTimerTimeout()
 	{
-		// Use the new DamageIndicatorPoolManager
-		if (DamageIndicatorPoolManager.Instance is not null)
+		var poolManager = DamageIndicatorPoolManager.Instance; // Use var
+
+		if (poolManager is null) // Check if instance exists first
 		{
-			DamageIndicatorPoolManager.Instance.ReturnIndicatorToPool(this);
-		}
-		else
-		{
-			// Fallback if the pool manager isn't available (should not happen if autoloaded)
 			GD.PrintErr("DamageIndicator: DamageIndicatorPoolManager instance not found. Freeing.");
-			QueueFree();
+			QueueFree(); // Fallback: free the node directly
+			return; // Early exit
 		}
-	}
 
-	// Reset state specifically for pooling
-	public void ResetForPooling()
-	{
-		destructionTimer?.Stop();
-		player?.Stop(true); // Reset animation
-		// GlobalPosition is reset/set by the Setup method when reused
-		// Resetting text or color overrides might be needed if they aren't always set in Setup
-		Text = "";
-		RemoveThemeColorOverride("font_color");
-	}
-
-	public override void _ExitTree()
-	{
-		if (destructionTimer is not null && IsInstanceValid(destructionTimer))
-		{
-			if (destructionTimer.IsConnected(Timer.SignalName.Timeout, Callable.From(OnTimerTimeout)))
-			{
-				destructionTimer.Timeout -= OnTimerTimeout;
-			}
-		}
-		base._ExitTree();
+		// Instance exists, return the indicator to the pool
+		poolManager.ReturnIndicatorToPool(this);
 	}
 
 	private static string GetDamageString(int damage)
@@ -147,15 +136,16 @@ public partial class DamageIndicator : Label
 		{
 			return cachedString;
 		}
-		else
+
+		string newString = damage.ToString();
+
+		if (damageStringCache.Count >= 100)
 		{
-			string newString = damage.ToString();
-			// Limit cache size to prevent unbounded growth
-			if (damageStringCache.Count < 100) // Example limit
-			{
-				damageStringCache.Add(damage, newString);
-			}
-			return newString;
+			return newString; // Don't add if cache is full
 		}
+
+		damageStringCache.Add(damage, newString);
+
+		return newString;
 	}
 }
