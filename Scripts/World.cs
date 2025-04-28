@@ -14,8 +14,6 @@ public partial class World : WorldEnvironment
 	[Export] private NodePath enemySpawnerPath;
 	[Export] private AnimationPlayer scoreAnimationPlayer;
 
-	public int Score { get; private set; } = 0;
-
 	private int currentEnemyCount = 0;
 	private PauseMenu pauseMenu;
 	private GameOverMenu gameOverMenu;
@@ -23,24 +21,25 @@ public partial class World : WorldEnvironment
 	private EnemySpawner enemySpawner;
 	private bool isPlayerDead = false;
 
+	private const int EnemyKillBonus = 10;
+
+	public int Score { get; private set; } = 0;
+
 	public override void _Ready()
 	{
 		if (hudLayer is null)
 		{
-			GD.PrintErr("World: HUD Layer node not assigned!");
 		}
 		if (scoreLabel is null)
 		{
-			GD.PrintErr("World: Score Label node not assigned!");
 		}
 		if (enemyCountLabel is null)
 		{
-			GD.PrintErr("World: Enemy Count Label node not assigned!");
 		}
 		if (scoreAnimationPlayer is null)
 		{
-			GD.PrintErr("World: Score Animation Player node not assigned!");
 		}
+
 		if (pauseButton is not null)
 		{
 			pauseButton.Pressed += OnPauseButtonPressed;
@@ -48,7 +47,6 @@ public partial class World : WorldEnvironment
 
 		if (gameOverMenuScene is null)
 		{
-			GD.PrintErr("World: Game Over Menu Scene not assigned!");
 		}
 
 		player = GetNode<Player>(playerPath);
@@ -59,7 +57,6 @@ public partial class World : WorldEnvironment
 		}
 		else
 		{
-			GD.PrintErr("World: Player node not found or path invalid!");
 		}
 
 		enemySpawner = GetNode<EnemySpawner>(enemySpawnerPath);
@@ -69,10 +66,9 @@ public partial class World : WorldEnvironment
 		}
 		else
 		{
-			GD.PrintErr("World: Enemy Spawner node not found or path invalid!");
 		}
 
-		StatisticsManager.Instance.IncrementGamesPlayed();
+		StatisticsManager.Instance?.IncrementGamesPlayed();
 		UpdateScoreLabel();
 		UpdateEnemyCountLabel();
 	}
@@ -121,27 +117,18 @@ public partial class World : WorldEnvironment
 		Score += amount;
 		UpdateScoreLabel();
 
-		if (scoreAnimationPlayer is not null)
-		{
-			scoreAnimationPlayer.Stop(true); // Reset animation before playing
-			scoreAnimationPlayer.Play("ScorePunch");
-		}
+		scoreAnimationPlayer?.Stop(true);
+		scoreAnimationPlayer?.Play("ScorePunch");
 	}
 
 	private void UpdateScoreLabel()
 	{
-		if (scoreLabel is not null)
-		{
-			scoreLabel.Text = $"Score: {Score}";
-		}
+		scoreLabel.Text = $"Score: {Score}";
 	}
 
 	private void UpdateEnemyCountLabel()
 	{
-		if (enemyCountLabel is not null)
-		{
-			enemyCountLabel.Text = $"Enemies: {currentEnemyCount}";
-		}
+		enemyCountLabel.Text = $"Enemies: {currentEnemyCount}";
 	}
 
 	private void OnEnemySpawned(BaseEnemy enemy)
@@ -150,6 +137,7 @@ public partial class World : WorldEnvironment
 		{
 			return;
 		}
+
 		currentEnemyCount++;
 		enemy.EnemyDied += OnEnemyDied;
 		UpdateEnemyCountLabel();
@@ -162,15 +150,15 @@ public partial class World : WorldEnvironment
 			return;
 		}
 
-		// Ensure signal is disconnected only if connected
 		var callable = Callable.From<BaseEnemy>(OnEnemyDied);
+
 		if (enemy.IsConnected(BaseEnemy.SignalName.EnemyDied, callable))
 		{
 			enemy.EnemyDied -= OnEnemyDied;
 		}
 
-		currentEnemyCount = Mathf.Max(0, currentEnemyCount - 1);
-		// AddScore(10); // REMOVED: Do not add fixed score on death
+		currentEnemyCount = int.Max(0, currentEnemyCount - 1);
+		AddScore(EnemyKillBonus);
 		UpdateEnemyCountLabel();
 	}
 
@@ -182,7 +170,7 @@ public partial class World : WorldEnvironment
 			return;
 		}
 
-		if (pauseMenu is not null && IsInstanceValid(pauseMenu))
+		if (pauseMenu?.IsInsideTree() ?? false)
 		{
 			pauseMenu.TriggerContinue();
 		}
@@ -203,22 +191,20 @@ public partial class World : WorldEnvironment
 		{
 			if (pauseMenuScene is null)
 			{
-				GD.PrintErr("World: Pause Menu Scene not assigned, cannot pause!");
 				return;
 			}
 
 			if (hudLayer is null)
 			{
-				GD.PrintErr("World: HUD Layer is null, cannot add Pause Menu!");
 				return;
 			}
 
 			pauseMenu = pauseMenuScene.Instantiate<PauseMenu>();
 			hudLayer.AddChild(pauseMenu);
-			pauseMenu.Show(); // Show immediately after adding
+			pauseMenu.Show();
 			GetTree().Paused = true;
 		}
-		else // If menu exists but isn't visible (shouldn't happen often with this logic)
+		else
 		{
 			pauseMenu.Show();
 			GetTree().Paused = true;
@@ -232,24 +218,22 @@ public partial class World : WorldEnvironment
 
 	private void OnGameOver()
 	{
-		if (gameOverMenu is not null && IsInstanceValid(gameOverMenu))
+		if (gameOverMenu?.IsInsideTree() ?? false)
 		{
-			return; // Already showing
+			return;
 		}
 
 		if (gameOverMenuScene is null)
 		{
-			GD.PrintErr("World: Game Over Menu Scene is null!");
 			return;
 		}
 
 		if (hudLayer is null)
 		{
-			GD.PrintErr("World: HUD Layer is null, cannot add Game Over Menu!");
 			return;
 		}
 
-		StatisticsManager.Instance.UpdateScores(Score);
+		StatisticsManager.Instance?.UpdateScores(Score);
 
 		gameOverMenu = gameOverMenuScene.Instantiate<GameOverMenu>();
 		gameOverMenu.SetScore(Score);
