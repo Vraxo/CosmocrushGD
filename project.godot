@@ -23,6 +23,7 @@ SceneTransitionManager="*res://Scenes/FadeOverlay.tscn"
 ParticlePoolManager="*res://Scripts/Pools/ParticlePoolManager.cs"
 ProjectilePoolManager="*res://Scripts/Pools/ProjectilePoolManager.cs"
 DamageIndicatorPoolManager="*res://Scripts/Pools/DamageIndicatorPoolManager.cs"
+EnemyPoolManager="*res://Scripts/Enemy/EnemyPoolManager.cs"
 
 [display]
 

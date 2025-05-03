@@ -105,7 +105,7 @@ public partial class DamageIndicator : Label
 
 		var ratio = float.Clamp((float)Health / MaxHealth, 0f, 1f);
 
-		var outlineColor = Color.FromHsv(float.Lerp(0f, 0.333f, ratio), 1f, 1f);
+		var outlineColor = Color.FromHsv(Mathf.Lerp(0f, 0.333f, ratio), 1f, 1f);
 
 		AddThemeColorOverride("font_color", outlineColor);
 	}

@@ -57,28 +57,23 @@ public partial class SceneTransitionManager : CanvasLayer
             return;
         }
 
-
         isTransitioning = true;
         GD.Print($"SceneTransitionManager: Starting transition from {currentScenePath} to {scenePath}");
-
 
         activeTween?.Kill();
         fadeRect.Modulate = Colors.Transparent;
         fadeRect.Visible = true;
         activeTween = CreateTween();
         activeTween.SetParallel(false);
-        activeTween.SetProcessMode(Tween.TweenProcessMode.Idle); // Use Idle to run even if game is paused
+        activeTween.SetProcessMode(Tween.TweenProcessMode.Idle);
         activeTween.SetEase(Tween.EaseType.InOut);
         activeTween.SetTrans(Tween.TransitionType.Linear);
         activeTween.TweenProperty(fadeRect, "modulate:a", 1.0f, fadeDuration);
 
-
         await ToSignal(activeTween, Tween.SignalName.Finished);
         GD.Print("SceneTransitionManager: Fade out finished.");
 
-        // --- Clean up active objects BEFORE freeing the scene ---
         CleanUpPools();
-        // --------------------------------------------------------
 
         var loadTask = LoadSceneAsync(scenePath);
         PackedScene loadedScene = await loadTask;
@@ -86,20 +81,18 @@ public partial class SceneTransitionManager : CanvasLayer
         if (loadedScene is null)
         {
             GD.PrintErr($"SceneTransitionManager: Failed to load scene {scenePath} asynchronously.");
-            ResetFade(); // Ensure fade is reset on failure
+            ResetFade();
             isTransitioning = false;
             return;
         }
         GD.Print("SceneTransitionManager: Scene loaded asynchronously.");
 
-
         Node currentScene = GetTree().CurrentScene;
         if (currentScene is not null)
         {
-            // Prevent potential errors if scene is already being freed elsewhere
             if (IsInstanceValid(currentScene))
             {
-                GetTree().CurrentScene = null; // Dereference before freeing
+                GetTree().CurrentScene = null;
                 currentScene.QueueFree();
                 GD.Print($"SceneTransitionManager: Queued freeing of previous scene: {currentScenePath}");
             }
@@ -109,22 +102,18 @@ public partial class SceneTransitionManager : CanvasLayer
             }
         }
 
-
         Node newSceneInstance = loadedScene.Instantiate();
         GetTree().Root.AddChild(newSceneInstance);
-        GetTree().CurrentScene = newSceneInstance; // Set the new scene as current
-        currentScenePath = scenePath; // Update the current path tracker
+        GetTree().CurrentScene = newSceneInstance;
+        currentScenePath = scenePath;
         GD.Print($"SceneTransitionManager: Instantiated and set current scene to {scenePath}");
-
 
         if (GetTree().Paused)
         {
-            GetTree().Paused = false; // Ensure the new scene starts unpaused
+            GetTree().Paused = false;
             GD.Print("SceneTransitionManager: Unpaused tree for new scene.");
         }
 
-
-        // Fade In
         activeTween?.Kill();
         activeTween = CreateTween();
         activeTween.SetParallel(false);
@@ -135,7 +124,7 @@ public partial class SceneTransitionManager : CanvasLayer
         await ToSignal(activeTween, Tween.SignalName.Finished);
         GD.Print("SceneTransitionManager: Fade in finished.");
 
-        fadeRect.Visible = false; // Hide rect after fade in
+        fadeRect.Visible = false;
         isTransitioning = false;
     }
 
@@ -143,17 +132,13 @@ public partial class SceneTransitionManager : CanvasLayer
     {
         GD.Print("SceneTransitionManager: Cleaning up pools before scene change...");
 
-        // Call cleanup on each pool manager instance
         ParticlePoolManager.Instance?.CleanUpActiveObjects();
         DamageIndicatorPoolManager.Instance?.CleanUpActiveObjects();
         ProjectilePoolManager.Instance?.CleanUpActiveObjects();
-        // GlobalAudioPlayer doesn't currently have an explicit cleanup for active sounds,
-        // as they return themselves to the pool on 'Finished'. If needed, add one.
-        // GlobalAudioPlayer.Instance?.CleanUpActiveAudioPlayers();
+        EnemyPoolManager.Instance?.CleanUpActiveObjects(); // Added EnemyPoolManager cleanup
 
         GD.Print("SceneTransitionManager: Finished cleaning pools.");
     }
-
 
     private async Task<PackedScene> LoadSceneAsync(string path)
     {
@@ -165,7 +150,7 @@ public partial class SceneTransitionManager : CanvasLayer
             var status = ResourceLoader.LoadThreadedGetStatus(path);
             if (status == ResourceLoader.ThreadLoadStatus.InProgress)
             {
-                await Task.Delay(16); // Wait a short time (approx 1 frame)
+                await Task.Delay(16);
             }
             else if (status == ResourceLoader.ThreadLoadStatus.Loaded)
             {
@@ -182,17 +167,17 @@ public partial class SceneTransitionManager : CanvasLayer
 
     private void ResetFade()
     {
-        activeTween?.Kill(); // Stop any ongoing tween
+        activeTween?.Kill();
         if (fadeRect is not null)
         {
-            fadeRect.Modulate = Colors.Transparent; // Reset alpha
-            fadeRect.Visible = false; // Hide the rect
+            fadeRect.Modulate = Colors.Transparent;
+            fadeRect.Visible = false;
         }
     }
 
     public override void _ExitTree()
     {
-        activeTween?.Kill(); // Ensure tween is killed if manager is removed
+        activeTween?.Kill();
         if (Instance == this)
         {
             Instance = null;

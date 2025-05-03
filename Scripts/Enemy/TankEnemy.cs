@@ -7,7 +7,8 @@ public partial class TankEnemy : BaseEnemy
     protected override int MaxHealth => 80;
     protected override float Speed => 60f;
     protected override int Damage => 2;
-    protected override float KnockbackResistanceMultiplier => 0.1f;
+    // Corrected: Higher value means MORE resistance
+    protected override float KnockbackResistanceMultiplier => 0.85f; // Takes only 15% of knockback force
     protected override Color ParticleColor => new(185f / 255f, 122f / 255f, 87f / 255f);
 
     [Export] private float meleeKnockbackForce = 600f;

@@ -10,7 +10,7 @@ public partial class EnemySpawner : Node
 
 	[Export] private Timer spawnTimer;
 	[Export] private Timer rateIncreaseTimer;
-	[Export] private PackedScene meleeEnemyScene;
+	[Export] private PackedScene meleeEnemyScene; // Keep for checking availability
 	[Export] private PackedScene rangedEnemyScene;
 	[Export] private PackedScene explodingEnemyScene;
 	[Export] private PackedScene tankEnemyScene;
@@ -29,6 +29,7 @@ public partial class EnemySpawner : Node
 	private Area2D _spawnAreaNode;
 	private const int MaxSpawnAttempts = 10;
 	private readonly RandomNumberGenerator rng = new();
+	private readonly Godot.Collections.Array<PackedScene> _sceneSelectionCache = new(); // Cache for selection
 
 	public override void _Ready()
 	{
@@ -40,7 +41,10 @@ public partial class EnemySpawner : Node
 		}
 		if (player is null)
 		{
-			SetProcess(false); SetPhysicsProcess(false); return;
+			GD.PrintErr("EnemySpawner: Player not found. Disabling spawner.");
+			SetProcess(false);
+			SetPhysicsProcess(false);
+			return;
 		}
 
 		if (spawnAreaNodePath is not null)
@@ -49,32 +53,43 @@ public partial class EnemySpawner : Node
 			if (_spawnAreaNode is not null)
 			{
 				var collisionShape = _spawnAreaNode.GetChildren().OfType<CollisionShape2D>().FirstOrDefault();
-				if (collisionShape is not null && collisionShape.Shape is RectangleShape2D rectShape)
+				if (collisionShape?.Shape is RectangleShape2D rectShape)
 				{
 					Vector2 shapeSize = rectShape.Size * _spawnAreaNode.Scale;
 					Vector2 extents = shapeSize / 2.0f;
 					Vector2 globalCenter = _spawnAreaNode.GlobalPosition;
 					_spawnAreaRect = new Rect2(globalCenter - extents, shapeSize);
 
-
 					if (_spawnAreaRect.Size.X <= 1 || _spawnAreaRect.Size.Y <= 1)
 					{
-						SetProcess(false); SetPhysicsProcess(false); return;
+						GD.PrintErr("EnemySpawner: Spawn area size is invalid. Disabling spawner.");
+						SetProcess(false);
+						SetPhysicsProcess(false);
+						return;
 					}
 				}
 				else
 				{
-					SetProcess(false); SetPhysicsProcess(false); return;
+					GD.PrintErr("EnemySpawner: Spawn area CollisionShape2D or RectangleShape2D not found/invalid. Disabling spawner.");
+					SetProcess(false);
+					SetPhysicsProcess(false);
+					return;
 				}
 			}
 			else
 			{
-				SetProcess(false); SetPhysicsProcess(false); return;
+				GD.PrintErr("EnemySpawner: Spawn area Area2D node not found. Disabling spawner.");
+				SetProcess(false);
+				SetPhysicsProcess(false);
+				return;
 			}
 		}
 		else
 		{
-			SetProcess(false); SetPhysicsProcess(false); return;
+			GD.PrintErr("EnemySpawner: Spawn area node path not set. Disabling spawner.");
+			SetProcess(false);
+			SetPhysicsProcess(false);
+			return;
 		}
 
 		SetupTimers();
@@ -85,7 +100,10 @@ public partial class EnemySpawner : Node
 	{
 		if (spawnTimer is null || rateIncreaseTimer is null)
 		{
-			SetProcess(false); SetPhysicsProcess(false); return;
+			GD.PrintErr("EnemySpawner: One or more timers are null. Disabling spawner.");
+			SetProcess(false);
+			SetPhysicsProcess(false);
+			return;
 		}
 
 		spawnTimer.Timeout += OnSpawnTimerTimeout;
@@ -97,8 +115,9 @@ public partial class EnemySpawner : Node
 
 	private void SpawnInitialEnemies()
 	{
-		if (meleeEnemyScene is null && rangedEnemyScene is null && explodingEnemyScene is null && tankEnemyScene is null && swiftEnemyScene is null)
+		if (EnemyPoolManager.Instance is null)
 		{
+			GD.PrintErr("EnemySpawner: EnemyPoolManager not ready for initial spawn.");
 			return;
 		}
 
@@ -110,6 +129,7 @@ public partial class EnemySpawner : Node
 				spawnedCount++;
 			}
 		}
+		GD.Print($"EnemySpawner: Spawned {spawnedCount} initial enemies.");
 	}
 
 	private void RateIncrease()
@@ -121,7 +141,7 @@ public partial class EnemySpawner : Node
 	private float CalculateSpawnInterval()
 	{
 		float calculatedInterval = baseSpawnRate / Mathf.Sqrt(1 + timeElapsed * timeMultiplier);
-		return Mathf.Clamp(calculatedInterval, minSpawnInterval, baseSpawnRate);
+		return float.Clamp(calculatedInterval, minSpawnInterval, baseSpawnRate);
 	}
 
 	private void OnSpawnTimerTimeout()
@@ -131,42 +151,44 @@ public partial class EnemySpawner : Node
 
 	private bool SpawnRandomEnemy()
 	{
-		if (meleeEnemyScene is null && rangedEnemyScene is null && explodingEnemyScene is null && tankEnemyScene is null && swiftEnemyScene is null)
+		if (EnemyPoolManager.Instance is null)
 		{
+			GD.PrintErr("EnemySpawner: EnemyPoolManager not ready for spawn.");
 			return false;
 		}
 
 		PackedScene selectedScene = SelectRandomEnemyScene();
 		if (selectedScene is not null)
 		{
-			TrySpawnEnemy(selectedScene);
+			TrySpawnEnemyFromPool(selectedScene);
 			return true;
 		}
 		else
 		{
+			GD.Print("EnemySpawner: No available enemy scenes to spawn.");
 			return false;
 		}
 	}
 
 	private PackedScene SelectRandomEnemyScene()
 	{
-		var availableScenes = new Godot.Collections.Array<PackedScene>();
-		if (meleeEnemyScene is not null) availableScenes.Add(meleeEnemyScene);
-		if (rangedEnemyScene is not null) availableScenes.Add(rangedEnemyScene);
-		if (explodingEnemyScene is not null) availableScenes.Add(explodingEnemyScene);
-		if (tankEnemyScene is not null) availableScenes.Add(tankEnemyScene);
-		if (swiftEnemyScene is not null) availableScenes.Add(swiftEnemyScene);
+		_sceneSelectionCache.Clear(); // Use cached list to avoid allocations
+		if (meleeEnemyScene is not null) _sceneSelectionCache.Add(meleeEnemyScene);
+		if (rangedEnemyScene is not null) _sceneSelectionCache.Add(rangedEnemyScene);
+		if (explodingEnemyScene is not null) _sceneSelectionCache.Add(explodingEnemyScene);
+		if (tankEnemyScene is not null) _sceneSelectionCache.Add(tankEnemyScene);
+		if (swiftEnemyScene is not null) _sceneSelectionCache.Add(swiftEnemyScene);
 
-		if (availableScenes.Count == 0)
+		if (_sceneSelectionCache.Count == 0)
 		{
 			return null;
 		}
 
-		int randomIndex = rng.RandiRange(0, availableScenes.Count - 1);
-		return availableScenes[randomIndex];
+		int randomIndex = rng.RandiRange(0, _sceneSelectionCache.Count - 1);
+		return _sceneSelectionCache[randomIndex];
 	}
 
-	private void TrySpawnEnemy(PackedScene enemyScene)
+	private void TrySpawnEnemyFromPool(PackedScene enemyScene)
 	{
 		bool foundValidPosition = false;
 		int attempts = 0;
@@ -185,14 +207,25 @@ public partial class EnemySpawner : Node
 
 		if (foundValidPosition)
 		{
-			BaseEnemy enemy = enemyScene.Instantiate<BaseEnemy>();
+			BaseEnemy enemy = EnemyPoolManager.Instance.GetEnemy(enemyScene);
 
 			if (enemy is not null)
 			{
-				enemy.GlobalPosition = spawnPosition;
-				AddChild(enemy);
+				// Reparent the enemy from the pool manager to this spawner (or another container)
+				enemy.GetParent()?.RemoveChild(enemy);
+				AddChild(enemy); // Add as a child of the spawner
+
+				enemy.ResetAndActivate(spawnPosition, player); // New method to handle activation logic
 				EmitSignal(SignalName.EnemySpawned, enemy);
 			}
+			else
+			{
+				GD.PrintErr($"EnemySpawner: Failed to get enemy of type {enemyScene.ResourcePath} from pool.");
+			}
+		}
+		else
+		{
+			GD.Print($"EnemySpawner: Could not find valid spawn position for {enemyScene.ResourcePath} after {MaxSpawnAttempts} attempts.");
 		}
 	}
 
@@ -200,7 +233,7 @@ public partial class EnemySpawner : Node
 	{
 		if (player is null || !IsInstanceValid(player))
 		{
-			return false;
+			return false; // Cannot validate if player is gone
 		}
 		return position.DistanceSquaredTo(player.GlobalPosition) >= minPlayerDistance * minPlayerDistance;
 	}

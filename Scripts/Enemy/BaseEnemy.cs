@@ -6,51 +6,42 @@ namespace CosmocrushGD;
 public partial class BaseEnemy : CharacterBody2D
 {
 	[Signal]
-	public delegate void EnemyDiedEventHandler(BaseEnemy enemy); // Pass self on death
+	public delegate void EnemyDiedEventHandler(BaseEnemy enemy);
 
-	[Export] protected Sprite2D Sprite;
-	[Export] protected Timer DeathTimer; // Timer before QueueFree
-	[Export] protected Timer DamageCooldownTimer; // Timer between attacks
-	[Export] public CollisionShape2D Collider;
-	[Export] protected AnimationPlayer HitAnimationPlayer; // For hit flash
-
-	// Scene references for effects - these should be assigned in the inspector per enemy type
-	[Export] private PackedScene damageParticleEffectScene;
-	[Export] private PackedScene deathParticleEffectScene;
-	[Export] private AudioStream damageAudio; // Sound played when taking damage
+	protected static readonly Vector2 FlipThresholdVelocity = new Vector2(0.1f, 0.1f);
+	private const float DefaultMeleeKnockback = 500f;
+	// Increased recovery rate significantly for faster deceleration from knockback
+	private const float KnockbackRecovery = 5.0f;
 
 	protected int Health;
-	protected bool Dead = false; // Flag to prevent actions after death
-	protected bool CanShoot = true; // Flag to control attack rate
-	protected Vector2 Knockback = Vector2.Zero; // Current knockback velocity
-	protected Player TargetPlayer; // Reference to the player
 
-	// --- Enemy Stats (Virtual properties for easy override in derived classes) ---
-	protected virtual float KnockbackResistanceMultiplier => 0.5f; // How much knockback is resisted (0=none, 1=full resist)
+	[Export] protected Sprite2D Sprite;
+	[Export] public Timer DeathTimer { get; private set; }
+	[Export] public Timer DamageCooldownTimer { get; private set; }
+	[Export] public CollisionShape2D Collider;
+	[Export] public AnimationPlayer HitAnimationPlayer { get; private set; }
+	[Export] protected PackedScene damageParticleEffectScene;
+	[Export] protected PackedScene deathParticleEffectScene;
+	[Export] private AudioStream damageAudio;
+
+	public bool Dead { get; protected set; } = false;
+	public bool CanShoot { get; set; } = true;
+	public Vector2 Knockback { get; set; } = Vector2.Zero;
+	public Player TargetPlayer { get; set; }
+	public PackedScene SourceScene { get; set; }
+
+	protected virtual float KnockbackResistanceMultiplier => 0.5f;
 	protected virtual int MaxHealth => 20;
-	protected virtual int Damage => 1; // Damage dealt per attack
-	protected virtual float Speed => 100f; // Movement speed
-	protected virtual float DamageRadius => 50f; // Range within which melee attacks can hit
-	protected virtual float ProximityThreshold => 32f; // How close the enemy tries to get before stopping (for melee)
-	protected virtual float KnockbackRecovery => 0.1f; // How quickly knockback decays (higher = faster recovery)
-	protected virtual float AttackCooldown => 0.5f; // Time between attacks
-	protected virtual Color ParticleColor => Colors.White; // Default particle color
-	protected virtual float MeleeKnockbackForce => 500f; // Force applied to player on melee hit
-
+	protected virtual int Damage => 1;
+	protected virtual float Speed => 100f;
+	protected virtual float DamageRadius => 50f;
+	protected virtual float ProximityThreshold => 32f;
+	protected virtual float AttackCooldown => 0.5f;
+	protected virtual Color ParticleColor => Colors.White;
+	protected virtual float MeleeKnockbackForce => DefaultMeleeKnockback;
 
 	public override void _Ready()
 	{
-		// Find the player node - essential for AI behavior
-		TargetPlayer = GetNode<Player>("/root/World/Player"); // Assumes player is direct child of World root node
-		if (TargetPlayer is null)
-		{
-			GD.PrintErr($"BaseEnemy ({Name}): Could not find Player node at /root/World/Player. Disabling AI.");
-			SetProcess(false); // Disable AI logic
-			SetPhysicsProcess(false); // Disable movement/physics
-			return; // Stop initialization
-		}
-
-		// Connect timer signals using +=
 		if (DeathTimer is not null)
 		{
 			if (!DeathTimer.IsConnected(Timer.SignalName.Timeout, Callable.From(OnDeathTimerTimeout)))
@@ -58,75 +49,83 @@ public partial class BaseEnemy : CharacterBody2D
 				DeathTimer.Timeout += OnDeathTimerTimeout;
 			}
 		}
+		else
+		{
+			GD.PrintErr($"BaseEnemy ({Name}): DeathTimer node not found!");
+		}
 
 		if (DamageCooldownTimer is not null)
 		{
-			DamageCooldownTimer.WaitTime = AttackCooldown; // Set cooldown duration
+			DamageCooldownTimer.WaitTime = AttackCooldown;
 			if (!DamageCooldownTimer.IsConnected(Timer.SignalName.Timeout, Callable.From(OnDamageCooldownTimerTimeout)))
 			{
 				DamageCooldownTimer.Timeout += OnDamageCooldownTimerTimeout;
 			}
 		}
-
-		Health = MaxHealth; // Initialize health
+		else
+		{
+			GD.PrintErr($"BaseEnemy ({Name}): DamageCooldownTimer node not found!");
+		}
 	}
 
 	public override void _Process(double delta)
 	{
-		if (Dead) // Don't process AI if dead
+		if (Dead)
 		{
 			return;
 		}
 
-		UpdateSpriteDirection(); // Flip sprite based on velocity/target
-		AttemptAttack(); // Try to perform attack action
+		UpdateSpriteDirection();
+		AttemptAttack();
 	}
 
 	public override void _PhysicsProcess(double delta)
 	{
+		float fDelta = (float)delta;
+
+		// Apply knockback decay using exponential damping (framerate independent)
+		// Use the same recovery rate whether dead or alive for consistency
+		float decayFactor = 1.0f - Mathf.Exp(-KnockbackRecovery * fDelta);
+		Knockback = Knockback.Lerp(Vector2.Zero, decayFactor);
+
 		if (Dead)
 		{
-			// Apply knockback decay even when dead, then stop moving
-			if (Knockback.LengthSquared() > 0.1f)
+			// If dead, only apply remaining knockback velocity
+			if (Knockback.LengthSquared() > 0.01f) // Use a small threshold
 			{
-				// Faster decay when dead
-				Knockback = Knockback.Lerp(Vector2.Zero, KnockbackRecovery * 2.0f * (float)delta);
 				Velocity = Knockback;
-				MoveAndSlide(); // Apply remaining knockback
+				MoveAndSlide();
 			}
-			else if (Velocity != Vector2.Zero) // Stop completely once knockback is negligible
+			else if (Velocity != Vector2.Zero) // Ensure velocity stops fully
 			{
 				Velocity = Vector2.Zero;
 			}
-			return; // No other physics processing when dead
+			return; // No further movement logic when dead
 		}
 
-		// Apply knockback decay
-		Knockback = Knockback.Lerp(Vector2.Zero, KnockbackRecovery); // Regular decay
-
-		Vector2 desiredMovement = Vector2.Zero;
-
-		// Calculate movement towards player if player exists and is valid
+		// Calculate desired movement when alive
+		var desiredMovement = Vector2.Zero;
 		if (TargetPlayer is not null && IsInstanceValid(TargetPlayer))
 		{
-			Vector2 directionToPlayer = (TargetPlayer.GlobalPosition - GlobalPosition).Normalized();
-			float distanceToPlayer = GlobalPosition.DistanceTo(TargetPlayer.GlobalPosition);
+			var directionToPlayer = (TargetPlayer.GlobalPosition - GlobalPosition).Normalized();
+			float distanceToPlayerSq = GlobalPosition.DistanceSquaredTo(TargetPlayer.GlobalPosition);
 
-			// Move only if further than the proximity threshold
-			if (distanceToPlayer > ProximityThreshold)
+			// Only move if further than proximity threshold
+			if (distanceToPlayerSq > ProximityThreshold * ProximityThreshold)
 			{
 				desiredMovement = directionToPlayer * Speed;
 			}
 		}
 
-		Velocity = desiredMovement + Knockback; // Final velocity is desired movement + knockback
+		// Combine desired movement and remaining knockback
+		Velocity = desiredMovement + Knockback;
 
-		// Use MoveAndSlide for physics collision handling
-		if (Velocity.LengthSquared() > 0.01f) // Only move if velocity is significant
+		// Apply movement
+		if (Velocity.LengthSquared() > 0.01f) // Use a small threshold
 		{
 			MoveAndSlide();
 		}
-		else if (Velocity != Vector2.Zero) // Ensure velocity becomes exactly zero when stopping
+		else if (Velocity != Vector2.Zero) // Ensure velocity stops fully if very small
 		{
 			Velocity = Vector2.Zero;
 		}
@@ -134,20 +133,21 @@ public partial class BaseEnemy : CharacterBody2D
 
 	public override void _ExitTree()
 	{
-		// Stop timers and disconnect signals cleanly
 		DeathTimer?.Stop();
 		DamageCooldownTimer?.Stop();
 
 		if (DeathTimer is not null && IsInstanceValid(DeathTimer))
 		{
-			if (DeathTimer.IsConnected(Timer.SignalName.Timeout, Callable.From(OnDeathTimerTimeout)))
+			var callable = Callable.From(OnDeathTimerTimeout);
+			if (DeathTimer.IsConnected(Timer.SignalName.Timeout, callable))
 			{
 				DeathTimer.Timeout -= OnDeathTimerTimeout;
 			}
 		}
 		if (DamageCooldownTimer is not null && IsInstanceValid(DamageCooldownTimer))
 		{
-			if (DamageCooldownTimer.IsConnected(Timer.SignalName.Timeout, Callable.From(OnDamageCooldownTimerTimeout)))
+			var callable = Callable.From(OnDamageCooldownTimerTimeout);
+			if (DamageCooldownTimer.IsConnected(Timer.SignalName.Timeout, callable))
 			{
 				DamageCooldownTimer.Timeout -= OnDamageCooldownTimerTimeout;
 			}
@@ -155,40 +155,91 @@ public partial class BaseEnemy : CharacterBody2D
 		base._ExitTree();
 	}
 
+	public virtual void ResetAndActivate(Vector2 position, Player player)
+	{
+		GlobalPosition = position;
+		TargetPlayer = player;
+		Health = MaxHealth;
+		Dead = false;
+		CanShoot = true;
+		Knockback = Vector2.Zero;
+		Velocity = Vector2.Zero;
+
+		Visible = true;
+		ProcessMode = ProcessModeEnum.Pausable;
+		SetPhysicsProcess(true);
+		Collider?.SetDeferred(CollisionShape2D.PropertyName.Disabled, false);
+
+		DamageCooldownTimer?.Stop();
+		DeathTimer?.Stop();
+		HitAnimationPlayer?.Stop(true);
+		Sprite?.Set("material:shader_parameter/flash_value", 0.0);
+		Sprite.Visible = true;
+
+		// Ensure timers are connected (important after pooling)
+		if (DeathTimer is not null && !DeathTimer.IsConnected(Timer.SignalName.Timeout, Callable.From(OnDeathTimerTimeout)))
+		{
+			DeathTimer.Timeout += OnDeathTimerTimeout;
+		}
+		if (DamageCooldownTimer is not null && !DamageCooldownTimer.IsConnected(Timer.SignalName.Timeout, Callable.From(OnDamageCooldownTimerTimeout)))
+		{
+			DamageCooldownTimer.WaitTime = AttackCooldown;
+			DamageCooldownTimer.Timeout += OnDamageCooldownTimerTimeout;
+		}
+	}
+
+	public virtual void ResetForPooling()
+	{
+		Visible = false;
+		ProcessMode = ProcessModeEnum.Disabled;
+		SetPhysicsProcess(false);
+		Collider?.SetDeferred(CollisionShape2D.PropertyName.Disabled, true);
+		Velocity = Vector2.Zero;
+		Knockback = Vector2.Zero;
+		Dead = false;
+		TargetPlayer = null;
+		CanShoot = true;
+
+		DeathTimer?.Stop();
+		DamageCooldownTimer?.Stop();
+		HitAnimationPlayer?.Stop(true);
+
+		if (Sprite is not null)
+		{
+			Sprite.Visible = true;
+			Sprite.Modulate = Colors.White;
+			Sprite.FlipH = false;
+			Sprite.FlipV = false;
+			if (Sprite.Material is ShaderMaterial shaderMat)
+			{
+				shaderMat.SetShaderParameter("flash_value", 0.0);
+			}
+		}
+	}
+
 	public void TakeDamage(int damage)
 	{
-		if (Dead) // Cannot take damage if already dead
+		if (Dead)
 		{
 			return;
 		}
 
-		PlayDamageSound(); // Play sound effect
+		PlayDamageSound();
 
 		Health -= damage;
-		Health = Math.Max(Health, 0); // Clamp health to minimum 0
-		HitAnimationPlayer?.Play("HitFlash"); // Play visual hit indicator
-		ShowDamageIndicator(damage, Health, MaxHealth); // Show floating damage number
+		Health = Math.Max(Health, 0);
+		HitAnimationPlayer?.Play("HitFlash");
+		ShowDamageIndicator(damage, Health, MaxHealth);
 
-		// Add score to the world based on damage dealt
-		var worldNode = GetNode<World>("/root/World"); // Find the World node
-		worldNode?.AddScore(damage); // Call AddScore method
+		var worldNode = GetNodeOrNull<World>("/root/World");
+		worldNode?.AddScore(damage);
 
-		// Spawn damage particles using the ParticlePoolManager
-		if (damageParticleEffectScene is not null && ParticlePoolManager.Instance is not null)
+		if (damageParticleEffectScene is not null)
 		{
-			ParticlePoolManager.Instance.GetParticleEffect(damageParticleEffectScene, GlobalPosition, ParticleColor);
-		}
-		else if (damageParticleEffectScene is null)
-		{
-			// GD.Print($"BaseEnemy ({Name}): Damage particle effect scene not assigned.");
-		}
-		else
-		{
-			GD.PrintErr($"BaseEnemy ({Name}): ParticlePoolManager instance not found.");
+			ParticlePoolManager.Instance?.GetParticleEffect(damageParticleEffectScene, GlobalPosition, ParticleColor);
 		}
 
-
-		if (Health <= 0) // Check for death
+		if (Health <= 0)
 		{
 			Die();
 		}
@@ -196,11 +247,11 @@ public partial class BaseEnemy : CharacterBody2D
 
 	public void ApplyKnockback(Vector2 force)
 	{
-		if (Dead) // Cannot be knocked back if dead
+		if (Dead)
 		{
 			return;
 		}
-		Knockback += force * KnockbackResistanceMultiplier; // Apply knockback scaled by resistance
+		Knockback = force * (1.0f - float.Clamp(KnockbackResistanceMultiplier, 0f, 1f));
 	}
 
 	protected virtual void UpdateSpriteDirection()
@@ -210,12 +261,10 @@ public partial class BaseEnemy : CharacterBody2D
 			return;
 		}
 
-		// Flip based on horizontal velocity primarily
-		if (Math.Abs(Velocity.X) > 0.1f)
+		if (Mathf.Abs(Velocity.X) > FlipThresholdVelocity.X)
 		{
 			Sprite.FlipH = Velocity.X < 0;
 		}
-		// If not moving horizontally, flip based on player position
 		else if (TargetPlayer is not null && IsInstanceValid(TargetPlayer))
 		{
 			Sprite.FlipH = GlobalPosition.X > TargetPlayer.GlobalPosition.X;
@@ -224,78 +273,66 @@ public partial class BaseEnemy : CharacterBody2D
 
 	protected virtual void AttemptAttack()
 	{
-		// Conditions for attacking
 		if (!CanShoot || TargetPlayer is null || !IsInstanceValid(TargetPlayer) || Dead)
 		{
 			return;
 		}
 
-		// Check distance for melee attacks
-		float distance = GlobalPosition.DistanceTo(TargetPlayer.GlobalPosition);
-		if (distance > DamageRadius)
+		float distanceSq = GlobalPosition.DistanceSquaredTo(TargetPlayer.GlobalPosition);
+		if (distanceSq > DamageRadius * DamageRadius)
 		{
-			return; // Too far to attack
+			return;
 		}
 
-		PerformAttackAction(); // Execute the specific attack logic
-		CanShoot = false; // Prevent immediate re-attack
-		DamageCooldownTimer?.Start(); // Start cooldown timer
+		PerformAttackAction();
+		CanShoot = false;
+		DamageCooldownTimer?.Start();
 	}
 
-	// Base attack action (for melee enemies)
-	protected virtual void PerformAttackAction()
-	{
-		if (TargetPlayer is not null && IsInstanceValid(TargetPlayer))
-		{
-			TargetPlayer.TakeDamage(Damage); // Damage the player
-			Vector2 knockbackDir = (TargetPlayer.GlobalPosition - GlobalPosition).Normalized();
-			TargetPlayer.ApplyKnockback(knockbackDir * MeleeKnockbackForce); // Apply knockback
-		}
-	}
+	protected virtual void PerformAttackAction() { }
 
 	protected virtual void Die()
 	{
-		if (Dead) // Prevent dying multiple times
+		if (Dead)
 		{
 			return;
 		}
 		Dead = true;
-		EmitSignal(SignalName.EnemyDied, this); // Notify listeners (like World)
-		SetPhysicsProcess(true); // Keep physics active briefly for knockback
-		SetProcess(false); // Disable AI processing
-		Collider?.CallDeferred(CollisionShape2D.MethodName.SetDisabled, true); // Disable collisions safely
+		EmitSignal(SignalName.EnemyDied, this);
+		SetProcess(false);
+		SetPhysicsProcess(false);
+		Collider?.CallDeferred(CollisionShape2D.MethodName.SetDisabled, true);
 
-		if (Sprite is not null)
+		Sprite?.SetDeferred(Sprite2D.PropertyName.Visible, false);
+
+		if (deathParticleEffectScene is not null)
 		{
-			Sprite.Visible = false; // Hide sprite
+			ParticlePoolManager.Instance?.GetParticleEffect(deathParticleEffectScene, GlobalPosition, ParticleColor);
 		}
 
-		// Spawn death particles using the ParticlePoolManager
-		if (deathParticleEffectScene is not null && ParticlePoolManager.Instance is not null)
+		DeathTimer?.Start();
+		if (DeathTimer is null)
 		{
-			ParticlePoolManager.Instance.GetParticleEffect(deathParticleEffectScene, GlobalPosition, ParticleColor);
+			GD.PrintErr($"BaseEnemy ({Name}): DeathTimer node not found! Using temporary timer to return to pool.");
+			GetTree().CreateTimer(1.0).Timeout += ReturnEnemyToPool;
 		}
-		else if (deathParticleEffectScene is null)
+	}
+
+	public void ReturnEnemyToPool()
+	{
+		if (EnemyPoolManager.Instance is null)
 		{
-			// GD.Print($"BaseEnemy ({Name}): Death particle effect scene not assigned.");
+			GD.PrintErr($"BaseEnemy ({Name}): EnemyPoolManager instance not found. Cannot return to pool. Freeing instead.");
+			QueueFree();
 		}
 		else
 		{
-			GD.PrintErr($"BaseEnemy ({Name}): ParticlePoolManager instance not found for death particles.");
-		}
-
-
-		DeathTimer?.Start(); // Start timer for final removal
-		if (DeathTimer is null) // Fallback if timer is missing
-		{
-			GD.PrintErr($"BaseEnemy ({Name}): DeathTimer node not found! Using temporary timer.");
-			GetTree().CreateTimer(1.0).Timeout += QueueFree;
+			EnemyPoolManager.Instance.ReturnEnemy(this);
 		}
 	}
 
 	private void ShowDamageIndicator(int damage, int currentHealth, int maxHealth)
 	{
-		// Use the DamageIndicatorPoolManager
 		if (DamageIndicatorPoolManager.Instance is null)
 		{
 			GD.PrintErr($"BaseEnemy ({Name}): DamageIndicatorPoolManager instance not found.");
@@ -309,37 +346,31 @@ public partial class BaseEnemy : CharacterBody2D
 			return;
 		}
 
-		// Calculate vertical offset above the sprite
-		float verticalOffset = -20f; // Default offset
-		if (Sprite is not null && Sprite.Texture is not null)
+		float verticalOffset = -20f;
+		if (Sprite?.Texture is not null)
 		{
-			// Position above the scaled sprite texture
 			verticalOffset = -Sprite.Texture.GetHeight() / 2f * Sprite.Scale.Y - 10f;
 		}
+		var globalStartPosition = GlobalPosition + new Vector2(0, verticalOffset);
 
-		Vector2 globalStartPosition = GlobalPosition + new Vector2(0, verticalOffset);
-
-		// Setup the indicator with damage info and position
 		indicator.Setup(damage, currentHealth, maxHealth, globalStartPosition);
 	}
 
 	private void OnDamageCooldownTimerTimeout()
 	{
-		CanShoot = true; // Allow attacking again
+		CanShoot = true;
 	}
 
 	private void OnDeathTimerTimeout()
 	{
-		QueueFree(); // Remove the enemy node from the scene tree
+		ReturnEnemyToPool();
 	}
 
 	private void PlayDamageSound()
 	{
-		// Play sound using GlobalAudioPlayer
-		if (damageAudio is not null && GlobalAudioPlayer.Instance is not null)
+		if (damageAudio is not null)
 		{
-			// Play at the enemy's position
-			GlobalAudioPlayer.Instance.PlaySound2D(damageAudio, GlobalPosition);
+			GlobalAudioPlayer.Instance?.PlaySound2D(damageAudio, GlobalPosition);
 		}
 	}
 }

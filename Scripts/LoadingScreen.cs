@@ -12,7 +12,6 @@ public partial class LoadingScreen : Control
 
     public override void _Ready()
     {
-        // Ensure label is visible for at least one frame before starting load
         CallDeferred(nameof(StartLoading));
     }
 
@@ -20,11 +19,9 @@ public partial class LoadingScreen : Control
     {
         GD.Print("LoadingScreen: Starting background loading...");
 
-        // --- Tasks for Pool Initialization ---
-        List<Task> initializationTasks = new();
+        var initializationTasks = new List<Task>();
 
-        // Task 1: Initialize Global Audio Player (Minimal, already done in its _Ready essentially)
-        // No async init needed for audio pool based on current GlobalAudioPlayer structure
+        // Task 1: Initialize Global Audio Player (Minimal) - Handled in its _Ready
 
         // Task 2: Initialize Particle Pools
         if (ParticlePoolManager.Instance is not null)
@@ -33,7 +30,7 @@ public partial class LoadingScreen : Control
         }
         else
         {
-            GD.PrintErr("LoadingScreen: ParticlePoolManager instance not found during loading!");
+            GD.PrintErr("LoadingScreen: ParticlePoolManager instance not found!");
         }
 
         // Task 3: Initialize Damage Indicator Pools
@@ -43,7 +40,7 @@ public partial class LoadingScreen : Control
         }
         else
         {
-            GD.PrintErr("LoadingScreen: DamageIndicatorPoolManager instance not found during loading!");
+            GD.PrintErr("LoadingScreen: DamageIndicatorPoolManager instance not found!");
         }
 
         // Task 4: Initialize Projectile Pools
@@ -53,32 +50,38 @@ public partial class LoadingScreen : Control
         }
         else
         {
-            GD.PrintErr("LoadingScreen: ProjectilePoolManager instance not found during loading!");
+            GD.PrintErr("LoadingScreen: ProjectilePoolManager instance not found!");
         }
 
-        // Task 5: Load the Main Menu Scene Resource (can run concurrently with pool initializations)
-        Task<PackedScene> menuLoadTask = LoadSceneAsync(menuShellScenePath);
-        initializationTasks.Add(menuLoadTask); // Add scene loading to the list of tasks to await
+        // Task 5: Initialize Enemy Pools
+        if (EnemyPoolManager.Instance is not null)
+        {
+            initializationTasks.Add(EnemyPoolManager.Instance.InitializePoolsAsync());
+        }
+        else
+        {
+            GD.PrintErr("LoadingScreen: EnemyPoolManager instance not found!");
+        }
 
-        // Wait for all initialization and scene loading tasks to complete
+        // Task 6: Load the Main Menu Scene Resource
+        Task<PackedScene> menuLoadTask = LoadSceneAsync(menuShellScenePath);
+        initializationTasks.Add(menuLoadTask);
+
         GD.Print($"LoadingScreen: Awaiting {initializationTasks.Count} tasks...");
         await Task.WhenAll(initializationTasks);
         GD.Print("LoadingScreen: All loading/initialization tasks complete.");
 
-        // Retrieve the loaded scene result AFTER it has completed
-        loadedMenuShellScene = menuLoadTask.Result;
+        loadedMenuShellScene = await menuLoadTask; // Already awaited, just get result
 
         if (loadedMenuShellScene is null)
         {
             GD.PrintErr($"LoadingScreen: Failed to load MenuShell scene ({menuShellScenePath}). Cannot continue.");
-            // Handle error appropriately, maybe show an error message or quit
-            // GetTree().Quit();
+            // GetTree().Quit(); // Optional: Quit on critical load failure
             return;
         }
 
         GD.Print("LoadingScreen: Changing scene...");
 
-        // Directly change scene - no fancy transition needed from loading screen
         Error err = GetTree().ChangeSceneToPacked(loadedMenuShellScene);
         if (err != Error.Ok)
         {
@@ -97,23 +100,20 @@ public partial class LoadingScreen : Control
         ResourceLoader.LoadThreadedRequest(path);
         GD.Print($"LoadingScreen: Started threaded load for {path}");
 
-        // Check status in a loop
         while (true)
         {
             var status = ResourceLoader.LoadThreadedGetStatus(path);
             if (status == ResourceLoader.ThreadLoadStatus.InProgress)
             {
-                // Optional: Add progress reporting here if needed
-                // var progress = ResourceLoader.LoadThreadedGetProgress(path);
-                // GD.Print($"Loading {path}: {progress * 100:0.0}%");
-                await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame); // Wait a frame
+                await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
             }
             else if (status == ResourceLoader.ThreadLoadStatus.Loaded)
             {
                 GD.Print($"LoadingScreen: Threaded load finished for {path}");
-                return ResourceLoader.LoadThreadedGet(path) as PackedScene;
+                var resource = ResourceLoader.LoadThreadedGet(path);
+                return resource as PackedScene;
             }
-            else // Failed or Invalid Status
+            else
             {
                 GD.PrintErr($"LoadingScreen: Threaded load failed or invalid status for {path}. Status: {status}");
                 return null;
