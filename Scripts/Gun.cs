@@ -7,17 +7,18 @@ public partial class Gun : Sprite2D
 	[Export] private RayCast2D rayCast;
 	[Export] private Line2D bulletTrail;
 	[Export] private Timer cooldownTimer;
-	[Export] private float shakeStrength = 0.5f; // Still unused here after previous removal
-	[Export] private float shakeDuration = 0.2f; // Still unused here after previous removal
 
-	private ShakeyCamera camera;
+	[Export] private float shakeStrength = 0.5f; // This is now unused here
+	[Export] private float shakeDuration = 0.2f; // This is now unused here
+
+	private ShakeyCamera camera; // Still needed if other things cause shake
 	private Joystick firingJoystick;
-	private Vector2 direction = Vector2.Zero; // Resetting this based on aim method
+	private Vector2 direction = Vector2.Zero;
 	private AudioStream gunshotAudio;
 	private Tween bulletTrailTween;
 
 	private const int Damage = 5;
-	private const float Cooldown = 0.182f;
+	private const float Cooldown = 0.182f; // Rate: ~5.5 shots/sec. Adjust if too fast.
 	private const float BulletRange = 10000f;
 	private const float KnockbackForce = 500f;
 	private const float BulletTrailFadeDuration = 0.08f;
@@ -32,7 +33,6 @@ public partial class Gun : Sprite2D
 		}
 
 		rayCast.Position = Vector2.Zero;
-		// RayCast target is set once, aiming is done by rotating the gun via LookAt
 		rayCast.TargetPosition = Vector2.Right * BulletRange;
 
 		bulletTrail.Position = Vector2.Zero;
@@ -45,18 +45,19 @@ public partial class Gun : Sprite2D
 
 	public override void _Process(double delta)
 	{
-		Aim(); // Aim first
+		Aim();
 
-		// Fire if cooldown is ready (consistent across platforms)
 		if (cooldownTimer.IsStopped())
 		{
-			Fire();
+			if (direction != Vector2.Zero || !OS.HasFeature("mobile"))
+			{
+				Fire();
+			}
 		}
 	}
 
 	private void Aim()
 	{
-		// Aiming logic exactly as it was originally
 		if (OS.HasFeature("mobile"))
 		{
 			MobileAim();
@@ -69,11 +70,10 @@ public partial class Gun : Sprite2D
 
 	private void MobileAim()
 	{
-		// Original MobileAim logic restored
 		if (firingJoystick is null || firingJoystick.PosVector == Vector2.Zero)
 		{
-			direction = Vector2.Zero; // Set direction to zero if joystick is idle
-			return; // Don't LookAt if joystick is idle
+			direction = Vector2.Zero;
+			return;
 		}
 
 		var lookTarget = GlobalPosition + firingJoystick.PosVector;
@@ -83,7 +83,6 @@ public partial class Gun : Sprite2D
 
 	private void DesktopAim()
 	{
-		// Original DesktopAim logic restored
 		var mousePos = GetGlobalMousePosition();
 		LookAt(mousePos);
 		direction = (mousePos - GlobalPosition).Normalized();
@@ -91,8 +90,6 @@ public partial class Gun : Sprite2D
 
 	private void Fire()
 	{
-		// Original Fire logic restored (mostly)
-		// Raycast uses its rotation from LookAt(), no need to set TargetPosition here
 		rayCast.ForceRaycastUpdate();
 
 		var collider = rayCast.GetCollider();
@@ -100,16 +97,10 @@ public partial class Gun : Sprite2D
 		bool didHit = rayCast.IsColliding();
 
 		PlayGunshotSound();
-		// camera?.Shake(shakeStrength, shakeDuration); // Still removed
-		cooldownTimer.Start();
+		// camera?.Shake(shakeStrength, shakeDuration); // Removed this line
+		cooldownTimer.Start(); // Cooldown timer start is still here
 
-		// --- Knockback Direction Handling ---
-		// Use the calculated 'direction' if it's non-zero (Desktop or Mobile w/ active joystick).
-		// If 'direction' is zero (Mobile w/ idle joystick), use the gun's forward vector for knockback.
-		Vector2 knockbackDir = direction != Vector2.Zero ? direction : Transform.X.Normalized();
-		// --- End Knockback Handling ---
-
-		DamageEnemyIfHit(collider, didHit, knockbackDir); // Use knockbackDir
+		DamageEnemyIfHit(collider, didHit, direction);
 		UpdateBulletTrail(collisionPoint, didHit);
 	}
 
@@ -120,7 +111,6 @@ public partial class Gun : Sprite2D
 
 	private void DamageEnemyIfHit(GodotObject collider, bool didHit, Vector2 knockbackDirection)
 	{
-		// Original logic using the determined knockbackDirection
 		if (didHit && collider is BaseEnemy enemy)
 		{
 			enemy.TakeDamage(Damage);
@@ -130,7 +120,6 @@ public partial class Gun : Sprite2D
 
 	private void UpdateBulletTrail(Vector2 globalCollisionPoint, bool didHit)
 	{
-		// Original logic restored
 		bulletTrail.ClearPoints();
 		bulletTrail.AddPoint(Vector2.Zero);
 
@@ -141,7 +130,6 @@ public partial class Gun : Sprite2D
 		}
 		else
 		{
-			// Use the RayCast's target position relative to the gun's rotation
 			localEndPoint = rayCast.TargetPosition;
 		}
 

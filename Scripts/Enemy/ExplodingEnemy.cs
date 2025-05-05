@@ -18,10 +18,7 @@ public partial class ExplodingEnemy : BaseEnemy
 	protected override float MeleeKnockbackForce => meleeKnockbackForce;
 
 	private static readonly Color ExplosionProjectileColor = new(1.0f, 0.5f, 0.15f);
-	private const float ProjectileSpawnDelay = 0.01f;
-	// Removed _worldNodeCache field
-
-	// Removed _Ready() override as it's no longer needed for caching World node
+	private const float ProjectileSpawnDelay = 0.01f; // Small delay between spawns
 
 	protected override void PerformAttackAction()
 	{
@@ -42,20 +39,11 @@ public partial class ExplodingEnemy : BaseEnemy
 			return;
 		}
 
-		// --- Get World Node Reference Here ---
-		Node worldNode = GetNode<Node>("/root/World");
-		if (worldNode is null || !IsInstanceValid(worldNode))
-		{
-			GD.PrintErr($"ExplodingEnemy ({Name}): Could not find valid World node at '/root/World' during Die(). Aborting projectile spawn.");
-			// Proceed with base death logic without projectiles if world node not found
-		}
-		// --- End Get World Node Reference ---
-
-
+		// Standard death sequence (particles, sound, disable visuals/collision, start death timer)
 		Dead = true;
 		EmitSignal(SignalName.EnemyDied, this);
 		SetProcess(false);
-		SetPhysicsProcess(false);
+		SetPhysicsProcess(false); // Stop physics process immediately
 		Collider?.CallDeferred(CollisionShape2D.MethodName.SetDisabled, true);
 		Sprite?.SetDeferred(Sprite2D.PropertyName.Visible, false);
 
@@ -71,13 +59,12 @@ public partial class ExplodingEnemy : BaseEnemy
 			GetTree().CreateTimer(1.0).Timeout += ReturnEnemyToPool;
 		}
 
-		// Check dependencies *after* getting worldNode
-		if (projectileScene is null || projectileCount <= 0 || ProjectilePoolManager.Instance is null || worldNode is null)
+		// Staggered Projectile Spawning
+		if (projectileScene is null || projectileCount <= 0 || ProjectilePoolManager.Instance is null)
 		{
-			GD.PrintErr($"ExplodingEnemy ({Name}): Cannot spawn projectiles on death - Missing Scene, Count <= 0, Pool Manager instance, or World node.");
-			return; // Abort projectile spawn if dependencies missing
+			GD.PrintErr($"ExplodingEnemy ({Name}): Cannot spawn projectiles on death - Missing Scene, Count <= 0, or ProjectilePoolManager instance.");
+			return; // Still proceed with base death logic, just no explosion
 		}
-
 
 		GD.Print($"ExplodingEnemy ({Name}): Starting staggered projectile spawn ({projectileCount} projectiles).");
 		float angleStep = Mathf.Tau / projectileCount;
@@ -86,6 +73,7 @@ public partial class ExplodingEnemy : BaseEnemy
 
 		for (int i = 0; i < projectileCount; i++)
 		{
+			// Check if the enemy instance is still valid (might have been cleaned up)
 			if (!IsInstanceValid(this))
 			{
 				GD.Print($"ExplodingEnemy ({Name}): Instance became invalid during projectile spawn loop. Aborting.");
@@ -96,29 +84,41 @@ public partial class ExplodingEnemy : BaseEnemy
 			if (projectile is null)
 			{
 				GD.PrintErr($"ExplodingEnemy ({Name}): Failed to get projectile {i + 1}/{projectileCount} from pool. Skipping.");
-				continue;
+				continue; // Skip if projectile couldn't be retrieved
 			}
 
 			float angle = i * angleStep;
 			var direction = Vector2.Right.Rotated(angle);
 
-			Node currentParent = projectile.GetParent();
-			if (currentParent != worldNode)
+			// Get the projectile ready in the scene tree but keep it inactive
+			// Ensure it's parented to something sensible if the enemy is visually gone
+			// Reparenting to the ProjectilePoolManager itself is a safe bet
+			if (projectile.GetParent() != ProjectilePoolManager.Instance)
 			{
-				currentParent?.RemoveChild(projectile);
-				worldNode.AddChild(projectile);
+				projectile.GetParent()?.RemoveChild(projectile);
+				ProjectilePoolManager.Instance.AddChild(projectile);
 			}
 
+			// Use the consolidated method
 			projectile.SetupAndActivate(spawnPosition, direction, enemyTexture, ExplosionProjectileColor);
 			GD.Print($"ExplodingEnemy ({Name}): Spawned and activated projectile {i + 1}/{projectileCount}.");
 
+			// IMPORTANT: Wait for the next process frame to stagger the activation load
 			await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
+			// Alternatively, use a small timer delay if frame yielding isn't enough
+			// await ToSignal(GetTree().CreateTimer(ProjectileSpawnDelay), Timer.SignalName.Timeout);
 		}
 		GD.Print($"ExplodingEnemy ({Name}): Finished projectile spawn sequence.");
 	}
 
+	// Override ResetForPooling to ensure any async operations are handled if needed
+	// (In this case, Die() doesn't leave long-running state that needs explicit cleanup on pool return,
+	// as the async operation completes before the DeathTimer typically finishes)
 	public override void ResetForPooling()
 	{
 		base.ResetForPooling();
+		// Add any specific cleanup for ExplodingEnemy if needed
 	}
+
+	// ReturnEnemyToPool is inherited from BaseEnemy and called by DeathTimer timeout
 }

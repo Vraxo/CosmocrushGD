@@ -81,11 +81,11 @@ public partial class BaseEnemy : CharacterBody2D
 
 	public override void _PhysicsProcess(double delta)
 	{
-		var fDelta = (float)delta;
+		float fDelta = (float)delta;
 
 		// Apply knockback decay using exponential damping (framerate independent)
 		// Use the same recovery rate whether dead or alive for consistency
-		var decayFactor = 1.0f - float.Exp(-KnockbackRecovery * fDelta);
+		float decayFactor = 1.0f - Mathf.Exp(-KnockbackRecovery * fDelta);
 		Knockback = Knockback.Lerp(Vector2.Zero, decayFactor);
 
 		if (Dead)
@@ -105,10 +105,9 @@ public partial class BaseEnemy : CharacterBody2D
 
 		// Calculate desired movement when alive
 		var desiredMovement = Vector2.Zero;
-
 		if (TargetPlayer is not null && IsInstanceValid(TargetPlayer))
 		{
-			Vector2 directionToPlayer = (TargetPlayer.GlobalPosition - GlobalPosition).Normalized();
+			var directionToPlayer = (TargetPlayer.GlobalPosition - GlobalPosition).Normalized();
 			float distanceToPlayerSq = GlobalPosition.DistanceSquaredTo(TargetPlayer.GlobalPosition);
 
 			// Only move if further than proximity threshold
@@ -139,8 +138,7 @@ public partial class BaseEnemy : CharacterBody2D
 
 		if (DeathTimer is not null && IsInstanceValid(DeathTimer))
 		{
-			Callable callable = Callable.From(OnDeathTimerTimeout);
-			
+			var callable = Callable.From(OnDeathTimerTimeout);
 			if (DeathTimer.IsConnected(Timer.SignalName.Timeout, callable))
 			{
 				DeathTimer.Timeout -= OnDeathTimerTimeout;
