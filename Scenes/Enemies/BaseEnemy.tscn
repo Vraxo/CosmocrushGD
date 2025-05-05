@@ -69,7 +69,7 @@ Collider = NodePath("Collider")
 HitAnimationPlayer = NodePath("Sprite/AnimationPlayer")
 damageParticleEffectScene = ExtResource("4_6hgar")
 deathParticleEffectScene = ExtResource("5_ucnk6")
-_damageAudio = ExtResource("5_y7vl0")
+damageAudio = ExtResource("5_y7vl0")
 
 [node name="Collider" type="CollisionShape2D" parent="."]
 shape = SubResource("RectangleShape2D_collider")
