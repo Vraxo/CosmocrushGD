@@ -15,6 +15,7 @@ public partial class World : WorldEnvironment
 	[Export] private AnimationPlayer scoreAnimationPlayer;
 	[Export] private Label fpsLabel;
 
+	private int currentEnemyCount = 0;
 	private PauseMenu pauseMenu;
 	private GameOverMenu gameOverMenu;
 	private Player player;
@@ -24,11 +25,10 @@ public partial class World : WorldEnvironment
 	private const int EnemyKillBonus = 10;
 
 	public int Score { get; private set; } = 0;
-	public int CurrentEnemyCount { get; private set; } = 0;
 
 	public override void _Ready()
 	{
-		DisplayServer.WindowSetVsyncMode(DisplayServer.VSyncMode.Enabled);
+		DisplayServer.WindowSetVsyncMode(DisplayServer.VSyncMode.Disabled);
 
 		if (hudLayer is null)
 		{
@@ -141,7 +141,7 @@ public partial class World : WorldEnvironment
 
 	private void UpdateEnemyCountLabel()
 	{
-		enemyCountLabel.Text = $"Enemies: {CurrentEnemyCount}";
+		enemyCountLabel.Text = $"Enemies: {currentEnemyCount}";
 	}
 
 	private void OnEnemySpawned(BaseEnemy enemy)
@@ -151,7 +151,7 @@ public partial class World : WorldEnvironment
 			return;
 		}
 
-		CurrentEnemyCount++;
+		currentEnemyCount++;
 		enemy.EnemyDied += OnEnemyDied;
 		UpdateEnemyCountLabel();
 	}
@@ -170,7 +170,7 @@ public partial class World : WorldEnvironment
 			enemy.EnemyDied -= OnEnemyDied;
 		}
 
-		CurrentEnemyCount = int.Max(0, CurrentEnemyCount - 1);
+		currentEnemyCount = int.Max(0, currentEnemyCount - 1);
 		AddScore(EnemyKillBonus);
 		UpdateEnemyCountLabel();
 	}

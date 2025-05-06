@@ -30,7 +30,7 @@ linear_accel_max = 30.0
 scale_max = 2.0
 color = Color(2, 2, 2, 1)
 
-[node name="MenuShell" type="Control" node_paths=PackedStringArray("menuContainer", "starParticles", "fpsLabel")]
+[node name="MenuShell" type="Control" node_paths=PackedStringArray("menuContainer", "starParticles")]
 process_mode = 3
 layout_mode = 3
 anchors_preset = 15
@@ -44,7 +44,6 @@ starParticles = NodePath("StarParticles")
 mainMenuScene = ExtResource("2_main_menu")
 settingsMenuScene = ExtResource("3_settings_menu")
 statisticsMenuScene = ExtResource("4_stats_menu")
-fpsLabel = NodePath("UICanvasLayer/FPSLabel")
 metadata/_edit_horizontal_guides_ = [-358.0]
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="."]
@@ -80,12 +79,3 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-
-[node name="FPSLabel" type="Label" parent="UICanvasLayer"]
-offset_left = 10.0
-offset_top = 10.0
-offset_right = 150.0
-offset_bottom = 40.0
-theme_override_colors/font_color = Color(1, 1, 1, 1)
-theme_override_font_sizes/font_size = 24
-text = "FPS: 0"

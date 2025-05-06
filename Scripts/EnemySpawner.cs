@@ -8,18 +8,6 @@ public partial class EnemySpawner : Node
 	[Signal]
 	public delegate void EnemySpawnedEventHandler(BaseEnemy enemy);
 
-	private const int MaxSpawnAttempts = 10;
-	private const int MaxAllowedEnemies = 150;
-
-	private readonly RandomNumberGenerator rng = new();
-	private readonly Godot.Collections.Array<PackedScene> _sceneSelectionCache = new();
-
-	private Player player;
-	private float timeElapsed;
-	private Rect2 _spawnAreaRect;
-	private Area2D _spawnAreaNode;
-	private World world;
-
 	[Export] private Timer spawnTimer;
 	[Export] private Timer rateIncreaseTimer;
 	[Export] private PackedScene meleeEnemyScene;
@@ -35,24 +23,22 @@ public partial class EnemySpawner : Node
 	[Export] private NodePath spawnAreaNodePath;
 	[Export] private int maxInitialSpawns = 3;
 
+	private Player player;
+	private float timeElapsed;
+	private Rect2 _spawnAreaRect;
+	private Area2D _spawnAreaNode;
+	private const int MaxSpawnAttempts = 10;
+	private readonly RandomNumberGenerator rng = new();
+	private readonly Godot.Collections.Array<PackedScene> _sceneSelectionCache = new();
+
 	public override void _Ready()
 	{
 		rng.Randomize();
-
-		world = GetNode<World>("/root/World");
-		if (world is null)
-		{
-			GD.PrintErr("EnemySpawner: World node not found. Disabling spawner.");
-			SetProcess(false);
-			SetPhysicsProcess(false);
-			return;
-		}
 
 		if (playerPath is not null)
 		{
 			player = GetNode<Player>(playerPath);
 		}
-
 		if (player is null)
 		{
 			GD.PrintErr("EnemySpawner: Player not found. Disabling spawner.");
@@ -159,17 +145,6 @@ public partial class EnemySpawner : Node
 
 	private bool SpawnRandomEnemy()
 	{
-		if (world is null)
-		{
-			GD.PrintErr("EnemySpawner: World instance not available to check enemy count.");
-			return false;
-		}
-
-		if (world.CurrentEnemyCount >= MaxAllowedEnemies)
-		{
-			return false;
-		}
-
 		var selectedScene = SelectRandomEnemyScene();
 		if (selectedScene is not null)
 		{
