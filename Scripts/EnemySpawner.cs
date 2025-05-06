@@ -8,9 +8,14 @@ public partial class EnemySpawner : Node
 	[Signal]
 	public delegate void EnemySpawnedEventHandler(BaseEnemy enemy);
 
+	private const int MaxSpawnAttempts = 10;
+
+	private readonly RandomNumberGenerator rng = new();
+	private readonly Godot.Collections.Array<PackedScene> _sceneSelectionCache = new();
+
 	[Export] private Timer spawnTimer;
 	[Export] private Timer rateIncreaseTimer;
-	[Export] private PackedScene meleeEnemyScene; // Keep for checking availability
+	[Export] private PackedScene meleeEnemyScene;
 	[Export] private PackedScene rangedEnemyScene;
 	[Export] private PackedScene explodingEnemyScene;
 	[Export] private PackedScene tankEnemyScene;
@@ -27,9 +32,6 @@ public partial class EnemySpawner : Node
 	private float timeElapsed;
 	private Rect2 _spawnAreaRect;
 	private Area2D _spawnAreaNode;
-	private const int MaxSpawnAttempts = 10;
-	private readonly RandomNumberGenerator rng = new();
-	private readonly Godot.Collections.Array<PackedScene> _sceneSelectionCache = new(); // Cache for selection
 
 	public override void _Ready()
 	{
@@ -39,6 +41,7 @@ public partial class EnemySpawner : Node
 		{
 			player = GetNode<Player>(playerPath);
 		}
+
 		if (player is null)
 		{
 			GD.PrintErr("EnemySpawner: Player not found. Disabling spawner.");
@@ -172,10 +175,14 @@ public partial class EnemySpawner : Node
 
 	private PackedScene SelectRandomEnemyScene()
 	{
-		_sceneSelectionCache.Clear(); // Use cached list to avoid allocations
+		if (explodingEnemyScene is not null)
+		{
+			return explodingEnemyScene;
+		}
+
+		_sceneSelectionCache.Clear();
 		if (meleeEnemyScene is not null) _sceneSelectionCache.Add(meleeEnemyScene);
 		if (rangedEnemyScene is not null) _sceneSelectionCache.Add(rangedEnemyScene);
-		if (explodingEnemyScene is not null) _sceneSelectionCache.Add(explodingEnemyScene);
 		if (tankEnemyScene is not null) _sceneSelectionCache.Add(tankEnemyScene);
 		if (swiftEnemyScene is not null) _sceneSelectionCache.Add(swiftEnemyScene);
 
@@ -211,11 +218,10 @@ public partial class EnemySpawner : Node
 
 			if (enemy is not null)
 			{
-				// Reparent the enemy from the pool manager to this spawner (or another container)
 				enemy.GetParent()?.RemoveChild(enemy);
-				AddChild(enemy); // Add as a child of the spawner
+				AddChild(enemy);
 
-				enemy.ResetAndActivate(spawnPosition, player); // New method to handle activation logic
+				enemy.ResetAndActivate(spawnPosition, player);
 				EmitSignal(SignalName.EnemySpawned, enemy);
 			}
 			else
@@ -233,7 +239,7 @@ public partial class EnemySpawner : Node
 	{
 		if (player is null || !IsInstanceValid(player))
 		{
-			return false; // Cannot validate if player is gone
+			return false;
 		}
 		return position.DistanceSquaredTo(player.GlobalPosition) >= minPlayerDistance * minPlayerDistance;
 	}

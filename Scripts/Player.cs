@@ -24,8 +24,8 @@ public partial class Player : CharacterBody2D
 	private const int RegenerationRate = 0; // Keep const separate
 
 	// --- Properties ---
-	public int Health { get; set; } = 3; // Initialize with MaxHealth potential
-	public int MaxHealth { get; set; } = 3;
+	public int Health { get; set; } = 100; // Initialize with MaxHealth potential
+	public int MaxHealth { get; set; } = 100;
 	public Inventory Inventory { get; set; } = new();
 
 	// --- Exports ---
