@@ -7,7 +7,6 @@ public partial class DamageIndicator : Label
 {
 	public int Health { get; set; } = 0;
 	public int MaxHealth { get; set; } = 0;
-	public PackedScene SourceScene { get; set; }
 
 	[Export] private Timer destructionTimer;
 	[Export] private AnimationPlayer player;
@@ -18,7 +17,6 @@ public partial class DamageIndicator : Label
 	public float AnimatedAlpha
 	{
 		get;
-
 		set
 		{
 			field = float.Clamp(value, 0f, 1f);
@@ -43,7 +41,7 @@ public partial class DamageIndicator : Label
 			return;
 		}
 
-		var movement = Speed * (float)delta; // Use var
+		var movement = Speed * (float)delta;
 
 		GlobalPosition = new(GlobalPosition.X, GlobalPosition.Y - movement);
 	}
@@ -66,17 +64,6 @@ public partial class DamageIndicator : Label
 		player?.Play("DamageIndicator");
 
 		destructionTimer?.Start();
-	}
-
-	public void ResetForPooling()
-	{
-		destructionTimer?.Stop();
-		player?.Stop(true);
-		Text = "";
-		RemoveThemeColorOverride("font_color");
-		Modulate = Colors.White;
-		Scale = Vector2.One;
-		ProcessMode = ProcessModeEnum.Inherit;
 	}
 
 	public override void _ExitTree()
@@ -117,31 +104,21 @@ public partial class DamageIndicator : Label
 
 	private void OnTimerTimeout()
 	{
-		var poolManager = DamageIndicatorPoolManager.Instance; // Use var
-
-		if (poolManager is null) // Check if instance exists first
-		{
-			GD.PrintErr("DamageIndicator: DamageIndicatorPoolManager instance not found. Freeing.");
-			QueueFree(); // Fallback: free the node directly
-			return; // Early exit
-		}
-
-		// Instance exists, return the indicator to the pool
-		poolManager.ReturnIndicatorToPool(this);
+		QueueFree();
 	}
 
 	private static string GetDamageString(int damage)
 	{
-		if (damageStringCache.TryGetValue(damage, out string cachedString))
+		if (damageStringCache.TryGetValue(damage, out var cachedString))
 		{
 			return cachedString;
 		}
 
-		string newString = damage.ToString();
+		var newString = damage.ToString();
 
 		if (damageStringCache.Count >= 100)
 		{
-			return newString; // Don't add if cache is full
+			return newString;
 		}
 
 		damageStringCache.Add(damage, newString);

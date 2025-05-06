@@ -44,6 +44,7 @@ starParticles = NodePath("StarParticles")
 mainMenuScene = ExtResource("2_main_menu")
 settingsMenuScene = ExtResource("3_settings_menu")
 statisticsMenuScene = ExtResource("4_stats_menu")
+metadata/_edit_horizontal_guides_ = [-358.0]
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="."]
 environment = SubResource("Environment_menu_glow")

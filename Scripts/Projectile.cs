@@ -9,16 +9,17 @@ public partial class Projectile : Area2D
 	private bool active = false;
 	private Timer lifeTimer;
 	private Timer destructionTimer;
+	private Color? _currentParticleColor;
 
-	[Export] public Sprite2D Sprite;
-	[Export] public CpuParticles2D DestructionParticles;
+	[Export] public Sprite2D Sprite { get; private set; }
+	[Export] public CpuParticles2D destructionParticles { get; private set; }
 
 	public Vector2 Direction { get; private set; } = Vector2.Zero;
-	public PackedScene SourceScene { get; set; }
 
 	public override void _Ready()
 	{
 		BodyEntered += OnBodyEntered;
+		ZIndex = ProjectileZIndex;
 
 		lifeTimer = GetNodeOrNull<Timer>("LifeTimer");
 		if (lifeTimer is null)
@@ -39,9 +40,9 @@ public partial class Projectile : Area2D
 			destructionTimer = new Timer { Name = "DestructionTimer", OneShot = true };
 			AddChild(destructionTimer);
 		}
-		if (!destructionTimer.IsConnected(Timer.SignalName.Timeout, Callable.From(ReturnToPool)))
+		if (!destructionTimer.IsConnected(Timer.SignalName.Timeout, Callable.From(SelfDestruct)))
 		{
-			destructionTimer.Timeout += ReturnToPool;
+			destructionTimer.Timeout += SelfDestruct;
 		}
 	}
 
@@ -68,9 +69,9 @@ public partial class Projectile : Area2D
 			lifeTimer.Timeout -= OnLifeTimerTimeout;
 		}
 
-		if (destructionTimer?.IsConnected(Timer.SignalName.Timeout, Callable.From(ReturnToPool)) ?? false)
+		if (destructionTimer?.IsConnected(Timer.SignalName.Timeout, Callable.From(SelfDestruct)) ?? false)
 		{
-			destructionTimer.Timeout -= ReturnToPool;
+			destructionTimer.Timeout -= SelfDestruct;
 		}
 
 		base._ExitTree();
@@ -86,6 +87,7 @@ public partial class Projectile : Area2D
 
 		GlobalPosition = startPosition;
 		Direction = direction.Normalized();
+		_currentParticleColor = particleColor;
 
 		if (Sprite is not null)
 		{
@@ -93,17 +95,11 @@ public partial class Projectile : Area2D
 			{
 				Sprite.Texture = spriteTexture;
 			}
-			Sprite.Visible = true;
-		}
-
-		if (DestructionParticles is not null)
-		{
-			DestructionParticles.Emitting = false;
-			if (particleColor.HasValue)
+			if (_currentParticleColor.HasValue)
 			{
-				DestructionParticles.Color = particleColor.Value;
+				Sprite.Modulate = _currentParticleColor.Value;
 			}
-			DestructionParticles.Position = Vector2.Zero; // Relative to projectile
+			Sprite.Visible = true;
 		}
 
 		lifeTimer?.Stop();
@@ -117,32 +113,6 @@ public partial class Projectile : Area2D
 
 		lifeTimer?.Start(DefaultLifetime);
 		GD.Print($"Projectile {GetInstanceId()}: Setup and Activated.");
-	}
-
-	public void ResetForPooling()
-	{
-		GD.Print($"Projectile {GetInstanceId()}: Resetting for pooling.");
-		active = false;
-
-		lifeTimer?.Stop();
-		destructionTimer?.Stop();
-
-		Visible = false;
-		ProcessMode = ProcessModeEnum.Disabled;
-		SetDeferred(PropertyName.Monitoring, false);
-		SetDeferred(PropertyName.Monitorable, false);
-
-		if (DestructionParticles is not null)
-		{
-			DestructionParticles.Emitting = false;
-		}
-		if (Sprite is not null)
-		{
-			Sprite.Visible = false; // Ensure sprite is hidden
-		}
-
-		Direction = Vector2.Zero;
-		GlobalPosition = Vector2.Zero; // Reset position
 	}
 
 	private void StartDestructionSequence()
@@ -162,13 +132,26 @@ public partial class Projectile : Area2D
 		SetDeferred(PropertyName.Monitoring, false);
 		SetDeferred(PropertyName.Monitorable, false);
 
-		Direction = Vector2.Zero; // Stop internal movement calculation
+		Direction = Vector2.Zero;
 
-		if (DestructionParticles is not null)
+		if (destructionParticles is not null)
 		{
-			DestructionParticles.GlobalPosition = this.GlobalPosition;
-			DestructionParticles.Restart();
-			GD.Print($"Projectile {GetInstanceId()}: Started destruction particles at {DestructionParticles.GlobalPosition}.");
+			destructionParticles.GlobalPosition = GlobalPosition;
+			if (_currentParticleColor.HasValue)
+			{
+				destructionParticles.Modulate = _currentParticleColor.Value;
+			}
+			else if (Sprite?.Modulate is Color spriteModulate)
+			{
+				destructionParticles.Modulate = spriteModulate;
+			}
+			destructionParticles.Restart();
+			destructionParticles.Emitting = true;
+			GD.Print($"Projectile {GetInstanceId()}: Started destruction particles at {destructionParticles.GlobalPosition}.");
+		}
+		else
+		{
+			GD.PrintErr($"Projectile ({GetInstanceId()}): destructionParticles node not assigned.");
 		}
 
 		if (destructionTimer is not null)
@@ -179,32 +162,16 @@ public partial class Projectile : Area2D
 		else
 		{
 			GD.PrintErr($"Projectile {GetInstanceId()}: DestructionTimer node missing! Using temporary timer.");
-			GetTree().CreateTimer(DestructionDuration, false, true).Timeout += ReturnToPool;
+			GetTree().CreateTimer(DestructionDuration, false, true).Timeout += SelfDestruct;
 		}
 	}
 
-	private void ReturnToPool()
+	private void SelfDestruct()
 	{
-		GD.Print($"Projectile {GetInstanceId()}: ReturnToPool called.");
-
-		if (DestructionParticles is not null)
-		{
-			DestructionParticles.Emitting = false; // Ensure particles stop emitting if timer finishes early
-		}
-
-		destructionTimer?.Stop(); // Stop the timer if it's still running
-
-		var poolManager = ProjectilePoolManager.Instance;
-
-		if (poolManager is null)
-		{
-			GD.PrintErr($"Projectile {GetInstanceId()}: Cannot return to pool. ProjectilePoolManager instance not found. Freeing.");
-			QueueFree();
-			return;
-		}
-
-		poolManager.ReturnProjectileToPool(this);
-		GD.Print($"Projectile {GetInstanceId()}: Returned to pool via ProjectilePoolManager.");
+		GD.Print($"Projectile {GetInstanceId()}: SelfDestruct called.");
+		destructionTimer?.Stop();
+		QueueFree();
+		GD.Print($"Projectile {GetInstanceId()}: Freed.");
 	}
 
 	private void OnBodyEntered(Node2D body)
@@ -221,13 +188,10 @@ public partial class Projectile : Area2D
 			player.ApplyKnockback(Direction * KnockbackForce);
 			StartDestructionSequence();
 		}
-		else if (body is BaseEnemy enemy) // Projectiles can hit other enemies
+		else if (body is BaseEnemy)
 		{
-			// Optional: Add logic if projectiles should damage enemies
-			// enemy.TakeDamage(1); // Example
-			// StartDestructionSequence(); // Example: Destroy on enemy hit
 		}
-		else if (body.IsInGroup("Obstacles") || body is StaticBody2D) // Check for obstacles or static bodies
+		else if (body.IsInGroup("Obstacles") || body is StaticBody2D)
 		{
 			GD.Print($"Projectile {GetInstanceId()}: Hit Obstacle/StaticBody.");
 			StartDestructionSequence();
@@ -245,7 +209,6 @@ public partial class Projectile : Area2D
 		StartDestructionSequence();
 	}
 
-	// --- Constants ---
 	private const float Speed = 300f;
 	private const float KnockbackForce = 300f;
 	private const float DefaultLifetime = 10.0f;

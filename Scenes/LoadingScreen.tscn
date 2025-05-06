@@ -1,7 +1,87 @@
-[gd_scene load_steps=4 format=3 uid="uid://lpgtcj00wm7g"]
+[gd_scene load_steps=4 format=3 uid="uid://cc0frvnt3afps"]
 
-[ext_resource type="Script" path="res://Scripts/LoadingScreen.cs" id="1_loading_script"]
 [ext_resource type="FontFile" uid="uid://0q2lkim75hwr" path="res://Fonts/VeniteAdoremus-rgRBA.ttf" id="2_venite_font"]
+
+[sub_resource type="CSharpScript" id="CSharpScript_fu5xq"]
+script/source = "using Godot;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+
+namespace CosmocrushGD;
+
+public partial class LoadingScreen : Control
+{
+    [Export] private string menuShellScenePath = \"res://Scenes/Menu/MenuShell.tscn\";
+
+    private PackedScene loadedMenuShellScene;
+
+    public override void _Ready()
+    {
+        CallDeferred(nameof(StartLoading));
+    }
+
+    private async void StartLoading()
+    {
+        GD.Print(\"LoadingScreen: Starting background loading...\");
+
+        var initializationTasks = new List<Task>();
+
+        Task<PackedScene> menuLoadTask = LoadSceneAsync(menuShellScenePath);
+        initializationTasks.Add(menuLoadTask);
+
+        GD.Print($\"LoadingScreen: Awaiting {initializationTasks.Count} tasks...\");
+        await Task.WhenAll(initializationTasks);
+        GD.Print(\"LoadingScreen: All loading/initialization tasks complete.\");
+
+        loadedMenuShellScene = await menuLoadTask;
+
+        if (loadedMenuShellScene is null)
+        {
+            GD.PrintErr($\"LoadingScreen: Failed to load MenuShell scene ({menuShellScenePath}). Cannot continue.\");
+            return;
+        }
+
+        GD.Print(\"LoadingScreen: Changing scene...\");
+
+        var err = GetTree().ChangeSceneToPacked(loadedMenuShellScene);
+        if (err != Error.Ok)
+        {
+            GD.PrintErr($\"LoadingScreen: Failed to change scene to MenuShell. Error: {err}\");
+        }
+    }
+
+    private async Task<PackedScene> LoadSceneAsync(string path)
+    {
+        if (string.IsNullOrEmpty(path))
+        {
+            GD.PrintErr(\"LoadSceneAsync: Null or empty path provided.\");
+            return null;
+        }
+
+        ResourceLoader.LoadThreadedRequest(path);
+        GD.Print($\"LoadingScreen: Started threaded load for {path}\");
+
+        while (true)
+        {
+            var status = ResourceLoader.LoadThreadedGetStatus(path);
+            if (status == ResourceLoader.ThreadLoadStatus.InProgress)
+            {
+                await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
+            }
+            else if (status == ResourceLoader.ThreadLoadStatus.Loaded)
+            {
+                GD.Print($\"LoadingScreen: Threaded load finished for {path}\");
+                var resource = ResourceLoader.LoadThreadedGet(path);
+                return resource as PackedScene;
+            }
+            else
+            {
+                GD.PrintErr($\"LoadingScreen: Threaded load failed or invalid status for {path}. Status: {status}\");
+                return null;
+            }
+        }
+    }
+}"
 
 [sub_resource type="LabelSettings" id="LabelSettings_loading"]
 font = ExtResource("2_venite_font")
@@ -17,7 +97,8 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-script = ExtResource("1_loading_script")
+script = SubResource("CSharpScript_fu5xq")
+menuShellScenePath = null
 
 [node name="Background" type="ColorRect" parent="."]
 layout_mode = 1

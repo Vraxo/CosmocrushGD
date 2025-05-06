@@ -11,7 +11,7 @@ config_version=5
 [application]
 
 config/name="Bluemboom"
-run/main_scene="res://Scenes/LoadingScreen.tscn"
+run/main_scene="res://Scenes/Menu/MenuShell.tscn"
 config/features=PackedStringArray("4.3", "C#", "Forward Plus")
 boot_splash/image="res://Sprites/Splash.png"
 config/icon="res://Sprites/Icon.png"
@@ -20,10 +20,6 @@ config/icon="res://Sprites/Icon.png"
 
 GlobalAudioPlayer="*res://Scripts/GlobalAudioPlayer.cs"
 SceneTransitionManager="*res://Scenes/FadeOverlay.tscn"
-ParticlePoolManager="*res://Scripts/Pools/ParticlePoolManager.cs"
-ProjectilePoolManager="*res://Scripts/Pools/ProjectilePoolManager.cs"
-DamageIndicatorPoolManager="*res://Scripts/Pools/DamageIndicatorPoolManager.cs"
-EnemyPoolManager="*res://Scripts/Enemy/EnemyPoolManager.cs"
 
 [display]
 
