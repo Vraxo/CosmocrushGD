@@ -13,7 +13,6 @@ public partial class World : WorldEnvironment
 	[Export] private NodePath playerPath;
 	[Export] private NodePath enemySpawnerPath;
 	[Export] private AnimationPlayer scoreAnimationPlayer;
-	[Export] private Label fpsLabel;
 
 	private int currentEnemyCount = 0;
 	private PauseMenu pauseMenu;
@@ -28,8 +27,6 @@ public partial class World : WorldEnvironment
 
 	public override void _Ready()
 	{
-		DisplayServer.WindowSetVsyncMode(DisplayServer.VSyncMode.Disabled);
-
 		if (hudLayer is null)
 		{
 		}
@@ -40,9 +37,6 @@ public partial class World : WorldEnvironment
 		{
 		}
 		if (scoreAnimationPlayer is null)
-		{
-		}
-		if (fpsLabel is null)
 		{
 		}
 
@@ -81,11 +75,6 @@ public partial class World : WorldEnvironment
 
 	public override void _Process(double delta)
 	{
-		if (fpsLabel is not null)
-		{
-			fpsLabel.Text = $"FPS: {Engine.GetFramesPerSecond()}";
-		}
-
 		if (!isPlayerDead && Input.IsActionJustPressed("ui_cancel") && !GetTree().Paused)
 		{
 			Pause();
@@ -105,7 +94,6 @@ public partial class World : WorldEnvironment
 				player.PlayerDied -= OnPlayerDied;
 			}
 		}
-
 		if (enemySpawner is not null && IsInstanceValid(enemySpawner))
 		{
 			if (enemySpawner.IsConnected(EnemySpawner.SignalName.EnemySpawned, Callable.From<BaseEnemy>(OnEnemySpawned)))
@@ -113,7 +101,6 @@ public partial class World : WorldEnvironment
 				enemySpawner.EnemySpawned -= OnEnemySpawned;
 			}
 		}
-
 		if (pauseButton is not null && IsInstanceValid(pauseButton))
 		{
 			if (pauseButton.IsConnected(Button.SignalName.Pressed, Callable.From(OnPauseButtonPressed)))
@@ -174,6 +161,7 @@ public partial class World : WorldEnvironment
 		AddScore(EnemyKillBonus);
 		UpdateEnemyCountLabel();
 	}
+
 
 	private void OnPauseButtonPressed()
 	{

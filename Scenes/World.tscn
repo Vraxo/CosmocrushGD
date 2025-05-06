@@ -71,7 +71,7 @@ outlines = Array[PackedVector2Array]([PackedVector2Array(-528, -288, -528, 952, 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_1vfw6"]
 size = Vector2(2188, 1112)
 
-[node name="World" type="WorldEnvironment" node_paths=PackedStringArray("pauseButton", "hudLayer", "scoreLabel", "enemyCountLabel", "scoreAnimationPlayer", "fpsLabel")]
+[node name="World" type="WorldEnvironment" node_paths=PackedStringArray("pauseButton", "hudLayer", "scoreLabel", "enemyCountLabel", "scoreAnimationPlayer")]
 environment = SubResource("Environment_fpnmc")
 script = ExtResource("1_k2m3n")
 pauseMenuScene = ExtResource("2_oslhl")
@@ -83,7 +83,6 @@ enemyCountLabel = NodePath("HUD/EnemyCountLabel")
 playerPath = NodePath("Player")
 enemySpawnerPath = NodePath("EnemySpawner")
 scoreAnimationPlayer = NodePath("HUD/ScoreAnimationPlayer")
-fpsLabel = NodePath("HUD/FPSLabel")
 metadata/_edit_horizontal_guides_ = [-408.0]
 
 [node name="Background" type="ColorRect" parent="."]
@@ -174,14 +173,6 @@ offset_bottom = 110.0
 pivot_offset = Vector2(85, 15)
 theme = SubResource("Theme_hud_labels")
 text = "Enemies: 0"
-
-[node name="FPSLabel" type="Label" parent="HUD"]
-offset_left = 10.0
-offset_top = 10.0
-offset_right = 150.0
-offset_bottom = 40.0
-theme = SubResource("Theme_hud_labels")
-text = "FPS: 0"
 
 [node name="ScoreAnimationPlayer" type="AnimationPlayer" parent="HUD"]
 libraries = {

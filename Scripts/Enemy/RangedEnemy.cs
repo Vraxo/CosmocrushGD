@@ -6,55 +6,58 @@ public partial class RangedEnemy : BaseEnemy
 {
 	[Export] private PackedScene projectileScene;
 
-	protected override float ProximityThreshold => 280f;
+	protected override float ProximityThreshold => 320f;
 	protected override float DamageRadius => 320f;
 	protected override float AttackCooldown => 1.5f;
 	protected override Color ParticleColor => new(0.64f, 0.29f, 0.64f);
 
-	private static readonly Color BaseRangedProjectileColor = new(163f / 255f, 73f / 255f, 164f / 255f);
-	private const float ProjectileGlowIntensity = 2.5f; // Increased intensity for purple
-	private static readonly Color RangedProjectileColor = new(
-		BaseRangedProjectileColor.R * ProjectileGlowIntensity,
-		BaseRangedProjectileColor.G * ProjectileGlowIntensity,
-		BaseRangedProjectileColor.B * ProjectileGlowIntensity
-	);
-
+	// Overriding _PhysicsProcess specifically for ranged movement logic
+	// Knockback handling is now entirely done in BaseEnemy._PhysicsProcess
 	public override void _PhysicsProcess(double delta)
 	{
+		// Call base physics process FIRST to handle knockback decay and dead state
 		base._PhysicsProcess(delta);
 
+		// If dead, no further logic needed (already handled by base)
 		if (Dead)
 		{
 			return;
 		}
 
-		var desiredMovement = Vector2.Zero;
+		// Calculate desired movement based on range (only if alive)
+		Vector2 desiredMovement = Vector2.Zero;
 		if (TargetPlayer is not null && IsInstanceValid(TargetPlayer))
 		{
-			var directionToPlayer = (TargetPlayer.GlobalPosition - GlobalPosition).Normalized();
-			var distanceToPlayerSq = GlobalPosition.DistanceSquaredTo(TargetPlayer.GlobalPosition);
+			Vector2 directionToPlayer = (TargetPlayer.GlobalPosition - GlobalPosition).Normalized();
+			float distanceToPlayerSq = GlobalPosition.DistanceSquaredTo(TargetPlayer.GlobalPosition);
 
+			// If too far, move closer
 			if (distanceToPlayerSq > DamageRadius * DamageRadius)
 			{
 				desiredMovement = directionToPlayer * Speed;
 			}
+			// If too close, move away
 			else if (distanceToPlayerSq < ProximityThreshold * ProximityThreshold)
 			{
 				desiredMovement = -directionToPlayer * Speed;
 			}
+			// Otherwise, stay put (desiredMovement remains Zero)
 		}
 
+		// Combine desired movement with the current (decayed) knockback from base class
 		Velocity = desiredMovement + Knockback;
 
+		// Apply movement if velocity is significant
 		if (Velocity.LengthSquared() > 0.01f)
 		{
 			MoveAndSlide();
 		}
-		else if (Velocity != Vector2.Zero)
+		else if (Velocity != Vector2.Zero) // Ensure velocity stops fully if very small
 		{
 			Velocity = Vector2.Zero;
 		}
 	}
+
 
 	protected override void PerformAttackAction()
 	{
@@ -63,25 +66,28 @@ public partial class RangedEnemy : BaseEnemy
 
 	private void ShootProjectile()
 	{
-		if (projectileScene is null || TargetPlayer is null || !IsInstanceValid(TargetPlayer))
+		if (ProjectilePoolManager.Instance is null || projectileScene is null || TargetPlayer is null || !IsInstanceValid(TargetPlayer))
 		{
-			GD.PrintErr($"RangedEnemy ({Name}): Preconditions not met for shooting. Scene: {projectileScene}, Target: {TargetPlayer?.Name ?? "null"}");
+			GD.PrintErr($"RangedEnemy ({Name}): Preconditions not met for shooting. Pool: {ProjectilePoolManager.Instance}, Scene: {projectileScene}, Target: {TargetPlayer?.Name ?? "null"}");
 			return;
 		}
 
-		var projectile = projectileScene.Instantiate<Projectile>();
+		Projectile projectile = ProjectilePoolManager.Instance.GetProjectile(projectileScene);
 		if (projectile is null)
 		{
-			GD.PrintErr($"RangedEnemy ({Name}): Failed to instantiate projectile from scene.");
+			GD.PrintErr($"RangedEnemy ({Name}): Failed to get projectile from pool.");
 			return;
 		}
 
-		GetTree().Root.AddChild(projectile);
-
 		var direction = (TargetPlayer.GlobalPosition - GlobalPosition).Normalized();
-		var projectileTexture = Sprite?.Texture;
 
-		projectile.SetupAndActivate(GlobalPosition, direction, projectileTexture, RangedProjectileColor);
+		if (projectile.GetParent() != ProjectilePoolManager.Instance)
+		{
+			projectile.GetParent()?.RemoveChild(projectile);
+			ProjectilePoolManager.Instance.AddChild(projectile);
+		}
+
+		projectile.SetupAndActivate(GlobalPosition, direction);
 		GD.Print($"RangedEnemy ({Name}): Fired projectile.");
 	}
 }

@@ -9,26 +9,26 @@
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_oajf5"]
 size = Vector2(32, 31.5)
 
-[sub_resource type="Curve" id="PlayerDamageParticleScaleCurve"]
+[sub_resource type="Curve" id="Curve_qvt8o"]
 _data = [Vector2(0.00433911, 0.993671), 0.0, 0.0, 0, 0, Vector2(0.998999, 0.00219095), 0.0, 0.0, 0, 0]
 point_count = 2
 
-[sub_resource type="Curve" id="PlayerDeathParticleScaleCurve"]
+[sub_resource type="Curve" id="Curve_death_scale"]
 _data = [Vector2(0.00433911, 0.993671), 0.0, 0.0, 0, 0, Vector2(0.998999, 0.00219095), 0.0, 0.0, 0, 0]
 point_count = 2
 
-[node name="Player" type="CharacterBody2D" node_paths=PackedStringArray("gun", "sprite", "regenerationTimer", "deathPauseTimer", "deathAudioPlayer", "damageParticles", "deathParticles")]
+[node name="Player" type="CharacterBody2D" node_paths=PackedStringArray("gun", "sprite", "damageParticles", "deathParticles", "regenerationTimer", "deathPauseTimer", "deathAudioPlayer")]
 collision_mask = 7
 motion_mode = 1
 script = ExtResource("2_8tp0t")
 gun = NodePath("Gun")
 sprite = NodePath("Sprite")
+damageParticles = NodePath("DamageParticles")
+deathParticles = NodePath("DeathParticles")
 regenerationTimer = NodePath("RegenerationTimer")
 cameraPath = NodePath("Camera")
 deathPauseTimer = NodePath("DeathPauseTimer")
 deathAudioPlayer = NodePath("AudioPlayers/DeathAudioPlayer")
-damageParticles = NodePath("DamageParticles")
-deathParticles = NodePath("DeathParticles")
 
 [node name="ActualCollider" type="CollisionShape2D" parent="."]
 position = Vector2(0, 0.25)
@@ -57,15 +57,8 @@ script = ExtResource("7_camera")
 stream = ExtResource("6_uqcfv")
 bus = &"SFX"
 
-[node name="RegenerationTimer" type="Timer" parent="."]
-autostart = true
-
-[node name="DeathPauseTimer" type="Timer" parent="."]
-process_mode = 3
-wait_time = 1.6
-one_shot = true
-
 [node name="DamageParticles" type="CPUParticles2D" parent="."]
+position = Vector2(0, -1)
 emitting = false
 amount = 25
 lifetime = 0.5
@@ -77,15 +70,17 @@ initial_velocity_min = 50.0
 initial_velocity_max = 100.0
 scale_amount_min = 4.0
 scale_amount_max = 4.0
-scale_amount_curve = SubResource("PlayerDamageParticleScaleCurve")
+scale_amount_curve = SubResource("Curve_qvt8o")
+color = Color(0, 1, 1, 1)
 
 [node name="DeathParticles" type="CPUParticles2D" parent="."]
+process_mode = 3
+position = Vector2(0, -1)
 emitting = false
 amount = 25
-lifetime = 0.6 # Default lifetime, adjust as needed
 one_shot = true
 explosiveness = 1.0
-emission_shape = 3 # Corresponds to EMISSION_SHAPE_SPHERE or similar, adjust if box needed
+emission_shape = 3
 emission_rect_extents = Vector2(1, 1)
 spread = 180.0
 gravity = Vector2(0, 0)
@@ -93,4 +88,13 @@ initial_velocity_min = 100.0
 initial_velocity_max = 150.0
 scale_amount_min = 8.0
 scale_amount_max = 8.0
-scale_amount_curve = SubResource("PlayerDeathParticleScaleCurve")
+scale_amount_curve = SubResource("Curve_death_scale")
+color = Color(0, 1, 1, 1)
+
+[node name="RegenerationTimer" type="Timer" parent="."]
+autostart = true
+
+[node name="DeathPauseTimer" type="Timer" parent="."]
+process_mode = 3
+wait_time = 1.6
+one_shot = true

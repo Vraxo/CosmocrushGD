@@ -15,6 +15,7 @@ public partial class SceneTransitionManager : CanvasLayer
     private Tween activeTween;
     private string currentScenePath = "";
 
+
     public override void _EnterTree()
     {
         if (Instance is null)
@@ -47,7 +48,7 @@ public partial class SceneTransitionManager : CanvasLayer
     {
         if (fadeRect is null || isTransitioning || scenePath == currentScenePath)
         {
-            var reason = fadeRect is null
+            string reason = fadeRect is null
                 ? "FadeRect null"
                 : isTransitioning
                     ? "Transition in progress"
@@ -75,7 +76,7 @@ public partial class SceneTransitionManager : CanvasLayer
         CleanUpPools();
 
         var loadTask = LoadSceneAsync(scenePath);
-        var loadedScene = await loadTask;
+        PackedScene loadedScene = await loadTask;
 
         if (loadedScene is null)
         {
@@ -86,7 +87,7 @@ public partial class SceneTransitionManager : CanvasLayer
         }
         GD.Print("SceneTransitionManager: Scene loaded asynchronously.");
 
-        var currentScene = GetTree().CurrentScene;
+        Node currentScene = GetTree().CurrentScene;
         if (currentScene is not null)
         {
             if (IsInstanceValid(currentScene))
@@ -101,7 +102,7 @@ public partial class SceneTransitionManager : CanvasLayer
             }
         }
 
-        var newSceneInstance = loadedScene.Instantiate();
+        Node newSceneInstance = loadedScene.Instantiate();
         GetTree().Root.AddChild(newSceneInstance);
         GetTree().CurrentScene = newSceneInstance;
         currentScenePath = scenePath;
@@ -129,7 +130,14 @@ public partial class SceneTransitionManager : CanvasLayer
 
     private void CleanUpPools()
     {
-        GD.Print("SceneTransitionManager: Cleaning up (No pools to clean now)...");
+        GD.Print("SceneTransitionManager: Cleaning up pools before scene change...");
+
+        ParticlePoolManager.Instance?.CleanUpActiveObjects();
+        DamageIndicatorPoolManager.Instance?.CleanUpActiveObjects();
+        ProjectilePoolManager.Instance?.CleanUpActiveObjects();
+        EnemyPoolManager.Instance?.CleanUpActiveObjects(); // Added EnemyPoolManager cleanup
+
+        GD.Print("SceneTransitionManager: Finished cleaning pools.");
     }
 
     private async Task<PackedScene> LoadSceneAsync(string path)

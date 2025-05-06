@@ -5,9 +5,14 @@ namespace CosmocrushGD;
 
 public partial class Player : CharacterBody2D
 {
+	// --- Signals ---
 	[Signal] public delegate void GameOverEventHandler();
 	[Signal] public delegate void PlayerDiedEventHandler();
 
+	// --- Fields ---
+	private ShakeyCamera camera;
+	private Vector2 knockbackVelocity = Vector2.Zero;
+	private AudioStream damageAudio;
 	private const float Speed = 300.0f;
 	private const float KnockbackRecoverySpeed = 0.1f;
 	private const float DamageShakeMinStrength = 0.8f;
@@ -16,34 +21,31 @@ public partial class Player : CharacterBody2D
 	private const float DesktopDeathZoomAmount = 2.0f;
 	private const float MobileDeathZoomAmount = 3.0f;
 	private const float DeathZoomDuration = 1.5f;
-	private const int RegenerationRate = 0;
+	private const int RegenerationRate = 0; // Keep const separate
 
-	private ShakeyCamera camera;
-	private Vector2 knockbackVelocity = Vector2.Zero;
-	private AudioStream damageAudio;
+	// --- Properties ---
+	public int Health { get; set; } = 3; // Initialize with MaxHealth potential
+	public int MaxHealth { get; set; } = 3;
+	public Inventory Inventory { get; set; } = new();
 
+	// --- Exports ---
 	[Export] private Gun gun;
 	[Export] private Sprite2D sprite;
+	[Export] private CpuParticles2D damageParticles;
+	[Export] private CpuParticles2D deathParticles;
 	[Export] private Timer regenerationTimer;
 	[Export] private NodePath cameraPath;
 	[Export] private Timer deathPauseTimer;
 	[Export] private AudioStreamPlayer deathAudioPlayer;
 
-	[Export] public CpuParticles2D damageParticles { get; private set; }
-	[Export] public CpuParticles2D deathParticles { get; private set; }
 
-	public int Health { get; set; } = 100;
-	public int MaxHealth { get; set; } = 100;
-	public Inventory Inventory { get; set; } = new();
-
+	// --- Methods ---
 	public override void _Ready()
 	{
-		DisplayServer.WindowSetVsyncMode(DisplayServer.VSyncMode.Disabled);
-
 		if (cameraPath is not null)
 		{
 			camera = GetNode<ShakeyCamera>(cameraPath);
-			camera?.ResetZoom();
+			camera?.ResetZoom(); // Use null propagation
 		}
 
 		if (regenerationTimer?.IsConnected(Timer.SignalName.Timeout, Callable.From(OnRegenTimerTimeout)) is false)
@@ -61,6 +63,7 @@ public partial class Player : CharacterBody2D
 
 	public override void _PhysicsProcess(double delta)
 	{
+		// Early return if paused or death timer active
 		if (GetTree().Paused || deathPauseTimer?.IsStopped() is false)
 		{
 			return;
@@ -98,13 +101,13 @@ public partial class Player : CharacterBody2D
 		}
 
 		Health -= damage;
-		Health = Mathf.Max(Health, 0);
+		Health = Mathf.Max(Health, 0); // Use Mathf.Max
 
+		// Restart damage particles at current location (now TopLevel)
 		if (damageParticles is not null)
 		{
 			damageParticles.GlobalPosition = GlobalPosition;
-			damageParticles.Restart();
-			damageParticles.Emitting = true;
+			damageParticles.Restart(); // Use Restart() for one-shot TopLevel particles
 		}
 
 		PlayDamageSound();
@@ -118,20 +121,22 @@ public partial class Player : CharacterBody2D
 
 	public void ApplyKnockback(Vector2 knockback)
 	{
+		// Apply stronger knockback if the new one is larger, otherwise add
 		knockbackVelocity = knockbackVelocity.LengthSquared() < knockback.LengthSquared()
 			? knockback
 			: knockbackVelocity + knockback;
 	}
 
+	// --- Private Methods ---
 	private void TriggerDamageShake()
 	{
-		if (camera is null)
+		if (camera is null) // No need for IsInstanceValid check here if camera is assigned in _Ready
 		{
 			return;
 		}
 
 		var healthRatio = MaxHealth > 0
-			? float.Clamp((float)Health / MaxHealth, 0f, 1f)
+			? float.Clamp((float)Health / MaxHealth, 0f, 1f) // Use float.Clamp
 			: 0f;
 
 		var shakeStrength = Mathf.Lerp(DamageShakeMaxStrength, DamageShakeMinStrength, healthRatio);
@@ -141,7 +146,7 @@ public partial class Player : CharacterBody2D
 
 	private void PlayDamageSound()
 	{
-		GlobalAudioPlayer.Instance?.PlaySound(damageAudio);
+		GlobalAudioPlayer.Instance?.PlaySound(damageAudio); // Use null propagation
 	}
 
 	private void Die()
@@ -151,14 +156,14 @@ public partial class Player : CharacterBody2D
 		ProcessMode = ProcessModeEnum.Disabled;
 		SetPhysicsProcess(false);
 
-		sprite?.QueueFree();
-		gun?.QueueFree();
+		sprite?.QueueFree(); // Remove sprite immediately
+		gun?.QueueFree();   // Remove gun immediately
 
+		// Restart death particles at current location (now TopLevel)
 		if (deathParticles is not null)
 		{
 			deathParticles.GlobalPosition = GlobalPosition;
-			deathParticles.Restart();
-			deathParticles.Emitting = true;
+			deathParticles.Restart(); // Use Restart() for one-shot TopLevel particles
 		}
 
 		deathAudioPlayer?.Play();
@@ -174,8 +179,10 @@ public partial class Player : CharacterBody2D
 		deathPauseTimer?.Start();
 	}
 
+	// --- Event Handlers ---
 	private void OnDeathPauseTimerTimeout()
 	{
+		// Only pause if not already paused (safety check)
 		if (!GetTree().Paused)
 		{
 			GetTree().Paused = true;

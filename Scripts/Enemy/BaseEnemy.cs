@@ -10,6 +10,7 @@ public partial class BaseEnemy : CharacterBody2D
 
 	protected static readonly Vector2 FlipThresholdVelocity = new Vector2(0.1f, 0.1f);
 	private const float DefaultMeleeKnockback = 500f;
+	// Increased recovery rate significantly for faster deceleration from knockback
 	private const float KnockbackRecovery = 5.0f;
 
 	protected int Health;
@@ -19,15 +20,15 @@ public partial class BaseEnemy : CharacterBody2D
 	[Export] public Timer DamageCooldownTimer { get; private set; }
 	[Export] public CollisionShape2D Collider;
 	[Export] public AnimationPlayer HitAnimationPlayer { get; private set; }
-	[Export] protected PackedScene damageIndicatorScene;
+	[Export] protected PackedScene damageParticleEffectScene;
+	[Export] protected PackedScene deathParticleEffectScene;
 	[Export] private AudioStream damageAudio;
-	[Export] protected CpuParticles2D damageParticles { get; private set; }
-	[Export] protected CpuParticles2D deathParticles { get; private set; }
 
 	public bool Dead { get; protected set; } = false;
 	public bool CanShoot { get; set; } = true;
 	public Vector2 Knockback { get; set; } = Vector2.Zero;
 	public Player TargetPlayer { get; set; }
+	public PackedScene SourceScene { get; set; }
 
 	protected virtual float KnockbackResistanceMultiplier => 0.5f;
 	protected virtual int MaxHealth => 20;
@@ -80,44 +81,51 @@ public partial class BaseEnemy : CharacterBody2D
 
 	public override void _PhysicsProcess(double delta)
 	{
-		var fDelta = (float)delta;
+		float fDelta = (float)delta;
 
+		// Apply knockback decay using exponential damping (framerate independent)
+		// Use the same recovery rate whether dead or alive for consistency
 		float decayFactor = 1.0f - Mathf.Exp(-KnockbackRecovery * fDelta);
 		Knockback = Knockback.Lerp(Vector2.Zero, decayFactor);
 
 		if (Dead)
 		{
-			if (Knockback.LengthSquared() > 0.01f)
+			// If dead, only apply remaining knockback velocity
+			if (Knockback.LengthSquared() > 0.01f) // Use a small threshold
 			{
 				Velocity = Knockback;
 				MoveAndSlide();
 			}
-			else if (Velocity != Vector2.Zero)
+			else if (Velocity != Vector2.Zero) // Ensure velocity stops fully
 			{
 				Velocity = Vector2.Zero;
 			}
-			return;
+			return; // No further movement logic when dead
 		}
 
+		// Calculate desired movement when alive
 		var desiredMovement = Vector2.Zero;
 		if (TargetPlayer is not null && IsInstanceValid(TargetPlayer))
 		{
 			var directionToPlayer = (TargetPlayer.GlobalPosition - GlobalPosition).Normalized();
-			var distanceToPlayerSq = GlobalPosition.DistanceSquaredTo(TargetPlayer.GlobalPosition);
+			float distanceToPlayerSq = GlobalPosition.DistanceSquaredTo(TargetPlayer.GlobalPosition);
 
+			// Only move if further than proximity threshold
 			if (distanceToPlayerSq > ProximityThreshold * ProximityThreshold)
 			{
 				desiredMovement = directionToPlayer * Speed;
 			}
 		}
 
+		// Combine desired movement and remaining knockback
 		Velocity = desiredMovement + Knockback;
 
-		if (Velocity.LengthSquared() > 0.01f)
+		// Apply movement
+		if (Velocity.LengthSquared() > 0.01f) // Use a small threshold
 		{
 			MoveAndSlide();
 		}
-		else if (Velocity != Vector2.Zero)
+		else if (Velocity != Vector2.Zero) // Ensure velocity stops fully if very small
 		{
 			Velocity = Vector2.Zero;
 		}
@@ -136,7 +144,6 @@ public partial class BaseEnemy : CharacterBody2D
 				DeathTimer.Timeout -= OnDeathTimerTimeout;
 			}
 		}
-
 		if (DamageCooldownTimer is not null && IsInstanceValid(DamageCooldownTimer))
 		{
 			var callable = Callable.From(OnDamageCooldownTimerTimeout);
@@ -166,22 +173,47 @@ public partial class BaseEnemy : CharacterBody2D
 		DamageCooldownTimer?.Stop();
 		DeathTimer?.Stop();
 		HitAnimationPlayer?.Stop(true);
-
-		if (Sprite?.Material is ShaderMaterial shaderMat)
-		{
-			shaderMat.SetShaderParameter("flash_value", 0.0);
-		}
+		Sprite?.Set("material:shader_parameter/flash_value", 0.0);
 		Sprite.Visible = true;
 
+		// Ensure timers are connected (important after pooling)
 		if (DeathTimer is not null && !DeathTimer.IsConnected(Timer.SignalName.Timeout, Callable.From(OnDeathTimerTimeout)))
 		{
 			DeathTimer.Timeout += OnDeathTimerTimeout;
 		}
-
 		if (DamageCooldownTimer is not null && !DamageCooldownTimer.IsConnected(Timer.SignalName.Timeout, Callable.From(OnDamageCooldownTimerTimeout)))
 		{
 			DamageCooldownTimer.WaitTime = AttackCooldown;
 			DamageCooldownTimer.Timeout += OnDamageCooldownTimerTimeout;
+		}
+	}
+
+	public virtual void ResetForPooling()
+	{
+		Visible = false;
+		ProcessMode = ProcessModeEnum.Disabled;
+		SetPhysicsProcess(false);
+		Collider?.SetDeferred(CollisionShape2D.PropertyName.Disabled, true);
+		Velocity = Vector2.Zero;
+		Knockback = Vector2.Zero;
+		Dead = false;
+		TargetPlayer = null;
+		CanShoot = true;
+
+		DeathTimer?.Stop();
+		DamageCooldownTimer?.Stop();
+		HitAnimationPlayer?.Stop(true);
+
+		if (Sprite is not null)
+		{
+			Sprite.Visible = true;
+			Sprite.Modulate = Colors.White;
+			Sprite.FlipH = false;
+			Sprite.FlipV = false;
+			if (Sprite.Material is ShaderMaterial shaderMat)
+			{
+				shaderMat.SetShaderParameter("flash_value", 0.0);
+			}
 		}
 	}
 
@@ -202,16 +234,9 @@ public partial class BaseEnemy : CharacterBody2D
 		var worldNode = GetNodeOrNull<World>("/root/World");
 		worldNode?.AddScore(damage);
 
-		if (damageParticles is not null)
+		if (damageParticleEffectScene is not null)
 		{
-			damageParticles.GlobalPosition = GlobalPosition;
-			damageParticles.Modulate = ParticleColor;
-			damageParticles.Restart();
-			damageParticles.Emitting = true;
-		}
-		else
-		{
-			GD.PrintErr($"BaseEnemy ({Name}): damageParticles node not assigned.");
+			ParticlePoolManager.Instance?.GetParticleEffect(damageParticleEffectScene, GlobalPosition, ParticleColor);
 		}
 
 		if (Health <= 0)
@@ -253,7 +278,7 @@ public partial class BaseEnemy : CharacterBody2D
 			return;
 		}
 
-		var distanceSq = GlobalPosition.DistanceSquaredTo(TargetPlayer.GlobalPosition);
+		float distanceSq = GlobalPosition.DistanceSquaredTo(TargetPlayer.GlobalPosition);
 		if (distanceSq > DamageRadius * DamageRadius)
 		{
 			return;
@@ -275,53 +300,53 @@ public partial class BaseEnemy : CharacterBody2D
 		Dead = true;
 		EmitSignal(SignalName.EnemyDied, this);
 		SetProcess(false);
-		SetPhysicsProcess(false); // Keep physics for knockback on death
+		SetPhysicsProcess(false);
 		Collider?.CallDeferred(CollisionShape2D.MethodName.SetDisabled, true);
 
 		Sprite?.SetDeferred(Sprite2D.PropertyName.Visible, false);
 
-		if (deathParticles is not null)
+		if (deathParticleEffectScene is not null)
 		{
-			deathParticles.GlobalPosition = GlobalPosition;
-			deathParticles.Modulate = ParticleColor;
-			deathParticles.Restart();
-			deathParticles.Emitting = true;
-		}
-		else
-		{
-			GD.PrintErr($"BaseEnemy ({Name}): deathParticles node not assigned.");
+			ParticlePoolManager.Instance?.GetParticleEffect(deathParticleEffectScene, GlobalPosition, ParticleColor);
 		}
 
 		DeathTimer?.Start();
 		if (DeathTimer is null)
 		{
-			GD.PrintErr($"BaseEnemy ({Name}): DeathTimer node not found! Using temporary timer to QueueFree.");
-			GetTree().CreateTimer(1.0).Timeout += SelfDestruct;
+			GD.PrintErr($"BaseEnemy ({Name}): DeathTimer node not found! Using temporary timer to return to pool.");
+			GetTree().CreateTimer(1.0).Timeout += ReturnEnemyToPool;
 		}
 	}
 
-	public void SelfDestruct()
+	public void ReturnEnemyToPool()
 	{
-		QueueFree();
+		if (EnemyPoolManager.Instance is null)
+		{
+			GD.PrintErr($"BaseEnemy ({Name}): EnemyPoolManager instance not found. Cannot return to pool. Freeing instead.");
+			QueueFree();
+		}
+		else
+		{
+			EnemyPoolManager.Instance.ReturnEnemy(this);
+		}
 	}
 
 	private void ShowDamageIndicator(int damage, int currentHealth, int maxHealth)
 	{
-		if (damageIndicatorScene is null)
+		if (DamageIndicatorPoolManager.Instance is null)
 		{
-			GD.PrintErr($"BaseEnemy ({Name}): damageIndicatorScene is not assigned!");
+			GD.PrintErr($"BaseEnemy ({Name}): DamageIndicatorPoolManager instance not found.");
 			return;
 		}
 
-		var indicator = damageIndicatorScene.Instantiate<DamageIndicator>();
+		DamageIndicator indicator = DamageIndicatorPoolManager.Instance.GetDamageIndicator();
 		if (indicator is null)
 		{
-			GD.PrintErr($"BaseEnemy ({Name}): Failed to get DamageIndicator from scene.");
+			GD.PrintErr($"BaseEnemy ({Name}): Failed to get DamageIndicator from pool.");
 			return;
 		}
-		GetTree().Root.AddChild(indicator);
 
-		var verticalOffset = -20f;
+		float verticalOffset = -20f;
 		if (Sprite?.Texture is not null)
 		{
 			verticalOffset = -Sprite.Texture.GetHeight() / 2f * Sprite.Scale.Y - 10f;
@@ -338,7 +363,7 @@ public partial class BaseEnemy : CharacterBody2D
 
 	private void OnDeathTimerTimeout()
 	{
-		SelfDestruct();
+		ReturnEnemyToPool();
 	}
 
 	private void PlayDamageSound()

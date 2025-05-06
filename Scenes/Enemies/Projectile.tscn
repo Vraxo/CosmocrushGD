@@ -1,39 +1,42 @@
-[gd_scene load_steps=4 format=3 uid="uid://dmqcrw4acmcn4"]
+[gd_scene load_steps=5 format=3 uid="uid://dmqcrw4acmcn4"]
 
+[ext_resource type="Texture2D" uid="uid://bg1u4fcmqhu6p" path="res://Sprites/Enemies/RangedEnemy.png" id="1_aevvj"]
 [ext_resource type="Script" path="res://Scripts/Projectile.cs" id="1_jqlnh"]
-[ext_resource type="Texture2D" uid="uid://bhw4l7v110fek" path="res://Sprites/Enemies/Enemy.png" id="2_temp_sprite"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_0iyyh"]
 size = Vector2(32, 32)
 
-[node name="Projectile" type="Area2D" node_paths=PackedStringArray("Sprite", "destructionParticles")]
+[sub_resource type="Curve" id="Curve_c1awf"]
+_data = [Vector2(0.00433911, 0.993671), 0.0, 0.0, 0, 0, Vector2(0.998999, 0.00219095), 0.0, 0.0, 0, 0]
+point_count = 2
+
+[node name="Projectile" type="Area2D" node_paths=PackedStringArray("Sprite", "DestructionParticles")]
 top_level = true
 scale = Vector2(0.25, 0.25)
 script = ExtResource("1_jqlnh")
-Sprite = NodePath("VisibleSprite")
-destructionParticles = NodePath("DestructionParticles")
+Sprite = NodePath("Sprite")
+DestructionParticles = NodePath("DestructionParticles")
 
-[node name="VisibleSprite" type="Sprite2D" parent="."]
-texture = ExtResource("2_temp_sprite")
+[node name="Sprite" type="Sprite2D" parent="."]
+texture = ExtResource("1_aevvj")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
 shape = SubResource("RectangleShape2D_0iyyh")
 
 [node name="DestructionParticles" type="CPUParticles2D" parent="."]
+position = Vector2(0, -1)
 emitting = false
-amount = 15
-lifetime = 0.6
+amount = 25
+lifetime = 0.5
 one_shot = true
-explosiveness = 0.9
+explosiveness = 1.0
 spread = 180.0
 gravity = Vector2(0, 0)
-initial_velocity_min = 20.0
-initial_velocity_max = 40.0
-scale_amount_min = 2.0
+initial_velocity_min = 50.0
+initial_velocity_max = 100.0
+scale_amount_min = 4.0
 scale_amount_max = 4.0
-
-[node name="LifeTimer" type="Timer" parent="."]
-one_shot = true
+scale_amount_curve = SubResource("Curve_c1awf")
+color = Color(0.639216, 0.286275, 0.643137, 1)
 
 [node name="DestructionTimer" type="Timer" parent="."]
-one_shot = true

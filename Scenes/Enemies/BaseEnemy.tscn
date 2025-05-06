@@ -1,9 +1,10 @@
-[gd_scene load_steps=13 format=3 uid="uid://cyx6s25635vxa"]
+[gd_scene load_steps=12 format=3 uid="uid://cyx6s25635vxa"]
 
 [ext_resource type="Script" path="res://Scripts/Enemy/BaseEnemy.cs" id="1_base_script"]
 [ext_resource type="Shader" path="res://Shaders/EnemyHitFlash.gdshader" id="2_hit_flash_shader"]
-[ext_resource type="PackedScene" uid="uid://1jkhq6d44qfr" path="res://Scenes/DamageIndicator.tscn" id="5_yma6r"]
-[ext_resource type="AudioStream" uid="uid://yocd3vtwilsk" path="res://Audio/SFX/PlayerDamage.mp3" id="6_hs6fj"]
+[ext_resource type="PackedScene" uid="uid://b8wgsgjf7w88x" path="res://Scenes/DamageParticleEffect.tscn" id="4_6hgar"]
+[ext_resource type="PackedScene" uid="uid://dxa0k84mjyghm" path="res://Scenes/DeathParticleEffect.tscn" id="5_ucnk6"]
+[ext_resource type="AudioStream" uid="uid://defaptcpub3gp" path="res://Audio/SFX/EnemyDamage.mp3" id="5_y7vl0"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_root_mat"]
 shader = ExtResource("2_hit_flash_shader")
@@ -54,15 +55,7 @@ _data = {
 "RESET": SubResource("Animation_reset")
 }
 
-[sub_resource type="Curve" id="EnemyDamageParticleScaleCurve"]
-_data = [Vector2(0.00433911, 0.993671), 0.0, 0.0, 0, 0, Vector2(0.998999, 0.00219095), 0.0, 0.0, 0, 0]
-point_count = 2
-
-[sub_resource type="Curve" id="EnemyDeathParticleScaleCurve"]
-_data = [Vector2(0.00433911, 0.993671), 0.0, 0.0, 0, 0, Vector2(0.998999, 0.00219095), 0.0, 0.0, 0, 0]
-point_count = 2
-
-[node name="BaseEnemy" type="CharacterBody2D" node_paths=PackedStringArray("Sprite", "DeathTimer", "DamageCooldownTimer", "Collider", "HitAnimationPlayer", "damageParticles", "deathParticles")]
+[node name="BaseEnemy" type="CharacterBody2D" node_paths=PackedStringArray("Sprite", "DeathTimer", "DamageCooldownTimer", "Collider", "HitAnimationPlayer")]
 material = SubResource("ShaderMaterial_root_mat")
 collision_layer = 2
 collision_mask = 7
@@ -74,10 +67,9 @@ DeathTimer = NodePath("DeathTimer")
 DamageCooldownTimer = NodePath("DamageCooldownTimer")
 Collider = NodePath("Collider")
 HitAnimationPlayer = NodePath("Sprite/AnimationPlayer")
-damageIndicatorScene = ExtResource("5_yma6r")
-damageAudio = ExtResource("6_hs6fj")
-damageParticles = NodePath("DamageParticles")
-deathParticles = NodePath("DeathParticles")
+damageParticleEffectScene = ExtResource("4_6hgar")
+deathParticleEffectScene = ExtResource("5_ucnk6")
+_damageAudio = ExtResource("5_y7vl0")
 
 [node name="Collider" type="CollisionShape2D" parent="."]
 shape = SubResource("RectangleShape2D_collider")
@@ -95,33 +87,3 @@ one_shot = true
 
 [node name="DamageCooldownTimer" type="Timer" parent="."]
 one_shot = true
-
-[node name="DamageParticles" type="CPUParticles2D" parent="."]
-emitting = false
-amount = 25
-lifetime = 0.5
-one_shot = true
-explosiveness = 1.0
-spread = 180.0
-gravity = Vector2(0, 0)
-initial_velocity_min = 50.0
-initial_velocity_max = 100.0
-scale_amount_min = 4.0
-scale_amount_max = 4.0
-scale_amount_curve = SubResource("EnemyDamageParticleScaleCurve")
-
-[node name="DeathParticles" type="CPUParticles2D" parent="."]
-emitting = false
-amount = 25
-lifetime = 0.6
-one_shot = true
-explosiveness = 1.0
-emission_shape = 3
-emission_rect_extents = Vector2(1, 1)
-spread = 180.0
-gravity = Vector2(0, 0)
-initial_velocity_min = 100.0
-initial_velocity_max = 150.0
-scale_amount_min = 8.0
-scale_amount_max = 8.0
-scale_amount_curve = SubResource("EnemyDeathParticleScaleCurve")
