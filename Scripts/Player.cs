@@ -32,14 +32,11 @@ public partial class Player : CharacterBody2D
 	[Export] public CpuParticles2D damageParticles { get; private set; }
 	[Export] public CpuParticles2D deathParticles { get; private set; }
 
-	public int Health { get; set; } = 100;
-	public int MaxHealth { get; set; } = 100;
-	public Inventory Inventory { get; set; } = new();
+	public int Health { get; set; } = 10000;
+	public int MaxHealth { get; set; } = 10000;
 
 	public override void _Ready()
 	{
-		DisplayServer.WindowSetVsyncMode(DisplayServer.VSyncMode.Disabled);
-
 		if (cameraPath is not null)
 		{
 			camera = GetNode<ShakeyCamera>(cameraPath);

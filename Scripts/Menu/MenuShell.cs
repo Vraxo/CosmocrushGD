@@ -4,16 +4,17 @@ namespace CosmocrushGD;
 
 public partial class MenuShell : Control
 {
+	private const string GameScenePath = "res://Scenes/World.tscn";
+	private const float ParticleVerticalPaddingMultiplier = 2.0f;
+
 	[Export] private Node menuContainer;
 	[Export] private CpuParticles2D starParticles;
 	[Export] private PackedScene mainMenuScene;
 	[Export] private PackedScene settingsMenuScene;
 	[Export] private PackedScene statisticsMenuScene;
+	[Export] private Label fpsLabel;
 
 	private Node currentMenuInstance;
-
-	private const string GameScenePath = "res://Scenes/World.tscn";
-	private const float ParticleVerticalPaddingMultiplier = 2.0f;
 
 	public override void _Ready()
 	{
@@ -22,20 +23,29 @@ public partial class MenuShell : Control
 			GD.PrintErr("MenuShell: Menu Container node not assigned or path invalid!");
 			return;
 		}
+
 		if (starParticles is null)
 		{
 			GD.PrintErr("MenuShell: Star Particles node not assigned!");
 		}
+
+		if (fpsLabel is null)
+		{
+			GD.PrintErr("MenuShell: FPS Label node not assigned!");
+		}
+
 		if (mainMenuScene is null)
 		{
 			GD.PrintErr("MenuShell: Main Menu Scene not assigned!");
 			return;
 		}
+
 		if (settingsMenuScene is null)
 		{
 			GD.PrintErr("MenuShell: Settings Menu Scene not assigned!");
 			return;
 		}
+
 		if (statisticsMenuScene is null)
 		{
 			GD.PrintErr("MenuShell: Statistics Menu Scene not assigned!");
@@ -64,6 +74,14 @@ public partial class MenuShell : Control
 		ShowMainMenu();
 	}
 
+	public override void _Process(double delta)
+	{
+		if (fpsLabel is not null)
+		{
+			fpsLabel.Text = $"FPS: {Engine.GetFramesPerSecond()}";
+		}
+	}
+
 	public override void _ExitTree()
 	{
 		if (IsInstanceValid(this))
@@ -82,6 +100,32 @@ public partial class MenuShell : Control
 		}
 
 		base._ExitTree();
+	}
+
+	public void ShowMainMenu()
+	{
+		ShowMenu(mainMenuScene);
+	}
+
+	public void ShowSettingsMenu()
+	{
+		ShowMenu(settingsMenuScene);
+	}
+
+	public void ShowStatisticsMenu()
+	{
+		ShowMenu(statisticsMenuScene);
+	}
+
+	public void StartGame()
+	{
+		SceneTransitionManager.Instance?.ChangeScene(GameScenePath);
+	}
+
+	public void QuitGame()
+	{
+		StatisticsManager.Instance.Save();
+		GetTree().Quit();
 	}
 
 	private void UpdateParticleEmitterBounds()
@@ -109,7 +153,6 @@ public partial class MenuShell : Control
 		starParticles.EmissionShape = CpuParticles2D.EmissionShapeEnum.Rectangle;
 	}
 
-
 	private void ClearMenuContainer()
 	{
 		if (currentMenuInstance is not null && IsInstanceValid(currentMenuInstance))
@@ -135,32 +178,6 @@ public partial class MenuShell : Control
 		ClearMenuContainer();
 		currentMenuInstance = menuScene.Instantiate();
 		menuContainer.AddChild(currentMenuInstance);
-	}
-
-	public void ShowMainMenu()
-	{
-		ShowMenu(mainMenuScene);
-	}
-
-	public void ShowSettingsMenu()
-	{
-		ShowMenu(settingsMenuScene);
-	}
-
-	public void ShowStatisticsMenu()
-	{
-		ShowMenu(statisticsMenuScene);
-	}
-
-	public void StartGame()
-	{
-		SceneTransitionManager.Instance?.ChangeScene(GameScenePath);
-	}
-
-	public void QuitGame()
-	{
-		StatisticsManager.Instance.Save();
-		GetTree().Quit();
 	}
 
 	private void OnWindowCloseRequested()
