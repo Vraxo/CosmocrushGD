@@ -13,7 +13,6 @@ point_count = 2
 [node name="Projectile" type="Area2D" node_paths=PackedStringArray("Sprite", "DestructionParticles")]
 top_level = true
 scale = Vector2(0.25, 0.25)
-collision_layer = 16
 script = ExtResource("1_jqlnh")
 Sprite = NodePath("Sprite")
 DestructionParticles = NodePath("DestructionParticles")
