@@ -22,6 +22,7 @@ public partial class EnemySpawner : Node
 	[Export] private float minPlayerDistance = 500.0f;
 	[Export] private NodePath spawnAreaNodePath;
 	[Export] private int maxInitialSpawns = 3;
+	[Export] private float spawnRateMultiplier = 10.0f; // Temporary multiplier
 
 	private Player player;
 	private float timeElapsed;
@@ -94,6 +95,13 @@ public partial class EnemySpawner : Node
 
 		SetupTimers();
 		CallDeferred(nameof(SpawnInitialEnemies));
+		EnemyPoolManager.Instance?.RegisterSpawner(this);
+	}
+
+	public override void _ExitTree()
+	{
+		EnemyPoolManager.Instance?.UnregisterSpawner(this);
+		base._ExitTree();
 	}
 
 	private void SetupTimers()
@@ -140,8 +148,33 @@ public partial class EnemySpawner : Node
 
 	private float CalculateSpawnInterval()
 	{
-		float calculatedInterval = baseSpawnRate / Mathf.Sqrt(1 + timeElapsed * timeMultiplier);
-		return float.Clamp(calculatedInterval, minSpawnInterval, baseSpawnRate);
+		float effectiveMultiplier = Mathf.Max(0.001f, spawnRateMultiplier);
+
+		// Calculate the interval based on time progression and then apply the multiplier
+		float timeAdjustedBaseInterval = baseSpawnRate / Mathf.Sqrt(1 + timeElapsed * timeMultiplier);
+		float intervalToClamp = timeAdjustedBaseInterval / effectiveMultiplier;
+
+		// Determine dynamic clamping bounds based on the multiplier
+		float finalMinInterval;
+		float finalMaxInterval;
+
+		if (effectiveMultiplier > 1.0f) // Speeding up
+		{
+			finalMinInterval = Mathf.Max(0.01f, minSpawnInterval / effectiveMultiplier); // Allow faster minimum
+			finalMaxInterval = baseSpawnRate; // Cap at original base (slowest) rate, effectively it will hit finalMinInterval much sooner
+		}
+		else if (effectiveMultiplier < 1.0f) // Slowing down
+		{
+			finalMinInterval = minSpawnInterval; // Minimum is still original minimum
+			finalMaxInterval = baseSpawnRate / effectiveMultiplier; // Allow slower maximum
+		}
+		else // Normal rate (multiplier is 1.0)
+		{
+			finalMinInterval = minSpawnInterval;
+			finalMaxInterval = baseSpawnRate;
+		}
+
+		return float.Clamp(intervalToClamp, finalMinInterval, finalMaxInterval);
 	}
 
 	private void OnSpawnTimerTimeout()
