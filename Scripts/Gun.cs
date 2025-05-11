@@ -16,6 +16,7 @@ public partial class Gun : Sprite2D
 	private Vector2 direction = Vector2.Zero;
 	private AudioStream gunshotAudio;
 	private Tween bulletTrailTween;
+	private bool _shouldFire = false; // Flag to indicate if the gun should fire in the next physics frame
 
 	private const int Damage = 5;
 	private const float Cooldown = 0.182f; // Rate: ~5.5 shots/sec. Adjust if too fast.
@@ -51,8 +52,17 @@ public partial class Gun : Sprite2D
 		{
 			if (direction != Vector2.Zero || !OS.HasFeature("mobile"))
 			{
-				Fire();
+				_shouldFire = true; // Set flag to fire in physics process
 			}
+		}
+	}
+
+	public override void _PhysicsProcess(double delta)
+	{
+		if (_shouldFire)
+		{
+			Fire();
+			_shouldFire = false; // Reset flag after firing
 		}
 	}
 
@@ -90,12 +100,13 @@ public partial class Gun : Sprite2D
 
 	private void Fire()
 	{
+		// Physics-related operations
 		rayCast.ForceRaycastUpdate();
-
 		var collider = rayCast.GetCollider();
 		var collisionPoint = rayCast.GetCollisionPoint();
 		bool didHit = rayCast.IsColliding();
 
+		// Non-physics related operations
 		PlayGunshotSound();
 		// camera?.Shake(shakeStrength, shakeDuration); // Removed this line
 		cooldownTimer.Start(); // Cooldown timer start is still here

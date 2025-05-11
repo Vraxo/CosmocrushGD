@@ -3,7 +3,7 @@ using System;
 
 namespace CosmocrushGD;
 
-public partial class BaseEnemy : CharacterBody2D
+public partial class BaseEnemy : Area2D
 {
 	[Signal]
 	public delegate void EnemyDiedEventHandler(BaseEnemy enemy);
@@ -11,9 +11,12 @@ public partial class BaseEnemy : CharacterBody2D
 	protected static readonly Vector2 FlipThresholdVelocity = new Vector2(0.1f, 0.1f);
 	private const float DefaultMeleeKnockback = 500f;
 	// Increased recovery rate significantly for faster deceleration from knockback
-	private const float KnockbackRecovery = 5.0f;
+	protected const float KnockbackRecovery = 5.0f; // Changed to protected
+	private const float PushForce = 100.0f; // Force to push overlapping areas
 
 	protected int Health;
+	protected Vector2 currentVelocity = Vector2.Zero; // Changed to protected
+
 
 	[Export] protected Sprite2D Sprite;
 	[Export] public Timer DeathTimer { get; private set; }
@@ -66,15 +69,19 @@ public partial class BaseEnemy : CharacterBody2D
 		{
 			GD.PrintErr($"BaseEnemy ({Name}): DamageCooldownTimer node not found!");
 		}
+
+		// Connect AreaEntered signal for soft collisions
+		AreaEntered += OnAreaEntered;
 	}
 
 	public override void _Process(double delta)
 	{
+		float fDelta = (float)delta;
+
 		if (Dead)
 		{
 			if (Knockback.LengthSquared() > 0.01f)
 			{
-				float fDelta = (float)delta;
 				// Apply knockback decay using exponential damping (framerate independent)
 				float decayFactor = 1.0f - Mathf.Exp(-KnockbackRecovery * fDelta);
 				Knockback = Knockback.Lerp(Vector2.Zero, decayFactor);
@@ -83,21 +90,6 @@ public partial class BaseEnemy : CharacterBody2D
 			// Dead enemies should not do anything else in _Process besides their visual knockback
 			return;
 		}
-
-		UpdateSpriteDirection();
-		AttemptAttack();
-	}
-
-	public override void _PhysicsProcess(double delta)
-	{
-		// Note: If Dead is true, _PhysicsProcess won't run due to SetPhysicsProcess(false) in Die().
-		// This entire method is now only for alive enemies.
-
-		float fDelta = (float)delta;
-
-		// Apply knockback decay using exponential damping (framerate independent)
-		float decayFactor = 1.0f - Mathf.Exp(-KnockbackRecovery * fDelta);
-		Knockback = Knockback.Lerp(Vector2.Zero, decayFactor);
 
 		// Calculate desired movement when alive
 		var desiredMovement = Vector2.Zero;
@@ -114,22 +106,18 @@ public partial class BaseEnemy : CharacterBody2D
 		}
 
 		// Combine desired movement and remaining knockback
-		Velocity = desiredMovement + Knockback;
+		currentVelocity = desiredMovement + Knockback;
 
-		// Apply movement
-		if (Velocity.LengthSquared() > 0.01f) // Use a small threshold
-		{
-			MoveAndSlide();
-		}
-		else if (Velocity != Vector2.Zero) // Ensure velocity stops fully if very small
-		{
-			Velocity = Vector2.Zero;
-		}
-	}
+			// Apply movement
+			GlobalPosition += currentVelocity * fDelta;
 
-	public override void _ExitTree()
-	{
-		DeathTimer?.Stop();
+			UpdateSpriteDirection();
+			AttemptAttack();
+		}
+
+		public override void _ExitTree()
+		{
+			DeathTimer?.Stop();
 		DamageCooldownTimer?.Stop();
 
 		if (DeathTimer is not null && IsInstanceValid(DeathTimer))
@@ -148,6 +136,10 @@ public partial class BaseEnemy : CharacterBody2D
 				DamageCooldownTimer.Timeout -= OnDamageCooldownTimerTimeout;
 			}
 		}
+
+		// Disconnect AreaEntered signal
+		AreaEntered -= OnAreaEntered;
+
 		base._ExitTree();
 	}
 
@@ -159,11 +151,11 @@ public partial class BaseEnemy : CharacterBody2D
 		Dead = false;
 		CanShoot = true;
 		Knockback = Vector2.Zero;
-		Velocity = Vector2.Zero;
+		currentVelocity = Vector2.Zero; // Reset custom velocity
 
 		Visible = true;
 		ProcessMode = ProcessModeEnum.Pausable; // Make sure _Process runs
-		SetPhysicsProcess(true); // Enable physics for alive enemies
+		// SetPhysicsProcess(true); // Not needed for Area2D
 		Collider?.SetDeferred(CollisionShape2D.PropertyName.Disabled, false);
 
 		DamageCooldownTimer?.Stop();
@@ -187,9 +179,9 @@ public partial class BaseEnemy : CharacterBody2D
 	{
 		Visible = false;
 		ProcessMode = ProcessModeEnum.Disabled; // Disable _Process when pooled
-		SetPhysicsProcess(false); // Ensure physics is off when pooled
+		// SetPhysicsProcess(false); // Not needed for Area2D
 		Collider?.SetDeferred(CollisionShape2D.PropertyName.Disabled, true);
-		Velocity = Vector2.Zero;
+		currentVelocity = Vector2.Zero; // Reset custom velocity
 		Knockback = Vector2.Zero;
 		Dead = false;
 		TargetPlayer = null;
@@ -251,6 +243,12 @@ public partial class BaseEnemy : CharacterBody2D
 		Knockback += force * (1.0f - float.Clamp(KnockbackResistanceMultiplier, 0f, 1f));
 	}
 
+	// Method to apply push force from soft collisions
+	public void ApplyPush(Vector2 force)
+	{
+		currentVelocity += force;
+	}
+
 	protected virtual void UpdateSpriteDirection()
 	{
 		if (Sprite is null)
@@ -258,9 +256,9 @@ public partial class BaseEnemy : CharacterBody2D
 			return;
 		}
 
-		if (Mathf.Abs(Velocity.X) > FlipThresholdVelocity.X)
+		if (Mathf.Abs(currentVelocity.X) > FlipThresholdVelocity.X)
 		{
-			Sprite.FlipH = Velocity.X < 0;
+			Sprite.FlipH = currentVelocity.X < 0;
 		}
 		else if (TargetPlayer is not null && IsInstanceValid(TargetPlayer))
 		{
@@ -297,7 +295,7 @@ public partial class BaseEnemy : CharacterBody2D
 		Dead = true;
 		EmitSignal(SignalName.EnemyDied, this);
 
-		SetPhysicsProcess(false); // Stop physics server interactions immediately
+		// SetPhysicsProcess(false); // Not needed for Area2D
 		Collider?.CallDeferred(CollisionShape2D.MethodName.SetDisabled, true);
 		// ProcessMode is PContainerausable, so _Process will continue to run for manual knockback
 
@@ -369,6 +367,25 @@ public partial class BaseEnemy : CharacterBody2D
 		if (damageAudio is not null)
 		{
 			GlobalAudioPlayer.Instance?.PlaySound2D(damageAudio, GlobalPosition);
+		}
+	}
+
+	private void OnAreaEntered(Area2D area)
+	{
+		// Basic soft collision: push overlapping areas away
+		if (area is Player player)
+		{
+			Vector2 pushDirection = (GlobalPosition - player.GlobalPosition).Normalized();
+			// Apply force to both the enemy and the player
+			currentVelocity += pushDirection * PushForce * (float)GetProcessDeltaTime();
+			player.ApplyPush(pushDirection * PushForce * (float)GetProcessDeltaTime()); // Assuming Player has an ApplyPush method
+		}
+		else if (area is BaseEnemy otherEnemy)
+		{
+			Vector2 pushDirection = (GlobalPosition - otherEnemy.GlobalPosition).Normalized();
+			// Apply force to both enemies
+			currentVelocity += pushDirection * PushForce * (float)GetProcessDeltaTime();
+			otherEnemy.ApplyPush(pushDirection * PushForce * (float)GetProcessDeltaTime());
 		}
 	}
 }

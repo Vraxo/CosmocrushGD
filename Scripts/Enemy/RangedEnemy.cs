@@ -11,21 +11,25 @@ public partial class RangedEnemy : BaseEnemy
 	protected override float AttackCooldown => 1.5f;
 	protected override Color ParticleColor => new(0.64f, 0.29f, 0.64f);
 
-	// Overriding _PhysicsProcess specifically for ranged movement logic
-	// Knockback handling is now entirely done in BaseEnemy._PhysicsProcess
-	public override void _PhysicsProcess(double delta)
+	public override void _Process(double delta)
 	{
-		// Call base physics process FIRST to handle knockback decay and dead state
-		base._PhysicsProcess(delta);
+		float fDelta = (float)delta;
 
-		// If dead, no further logic needed (already handled by base)
 		if (Dead)
 		{
+			if (Knockback.LengthSquared() > 0.01f)
+			{
+				// Apply knockback decay using exponential damping (framerate independent)
+				float decayFactor = 1.0f - Mathf.Exp(-KnockbackRecovery * fDelta);
+				Knockback = Knockback.Lerp(Vector2.Zero, decayFactor);
+				GlobalPosition += Knockback * fDelta; // Manual position update
+			}
+			// Dead enemies should not do anything else in _Process besides their visual knockback
 			return;
 		}
 
 		// Calculate desired movement based on range (only if alive)
-		Vector2 desiredMovement = Vector2.Zero;
+		var desiredMovement = Vector2.Zero;
 		if (TargetPlayer is not null && IsInstanceValid(TargetPlayer))
 		{
 			Vector2 directionToPlayer = (TargetPlayer.GlobalPosition - GlobalPosition).Normalized();
@@ -44,18 +48,14 @@ public partial class RangedEnemy : BaseEnemy
 			// Otherwise, stay put (desiredMovement remains Zero)
 		}
 
-		// Combine desired movement with the current (decayed) knockback from base class
-		Velocity = desiredMovement + Knockback;
+		// Combine desired movement and remaining knockback
+		currentVelocity = desiredMovement + Knockback;
 
-		// Apply movement if velocity is significant
-		if (Velocity.LengthSquared() > 0.01f)
-		{
-			MoveAndSlide();
-		}
-		else if (Velocity != Vector2.Zero) // Ensure velocity stops fully if very small
-		{
-			Velocity = Vector2.Zero;
-		}
+		// Apply movement
+		GlobalPosition += currentVelocity * fDelta;
+
+		UpdateSpriteDirection();
+		AttemptAttack();
 	}
 
 
