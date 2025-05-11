@@ -3,7 +3,7 @@ using System;
 
 namespace CosmocrushGD;
 
-public partial class NewMainMenu : CenterContainer
+public partial class MainMenu : CenterContainer
 {
 	[Export] private Label titleLabel;
 	[Export] private UIButton startButton;
