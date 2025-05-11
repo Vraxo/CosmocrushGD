@@ -17,8 +17,9 @@ point_count = 2
 _data = [Vector2(0.00433911, 0.993671), 0.0, 0.0, 0, 0, Vector2(0.998999, 0.00219095), 0.0, 0.0, 0, 0]
 point_count = 2
 
-[node name="Player" type="Area2D" node_paths=PackedStringArray("gun", "sprite", "damageParticles", "deathParticles", "regenerationTimer", "deathPauseTimer", "deathAudioPlayer")]
+[node name="Player" type="CharacterBody2D" node_paths=PackedStringArray("gun", "sprite", "damageParticles", "deathParticles", "regenerationTimer", "deathPauseTimer", "deathAudioPlayer")]
 collision_mask = 7
+motion_mode = 1
 script = ExtResource("2_8tp0t")
 gun = NodePath("Gun")
 sprite = NodePath("Sprite")

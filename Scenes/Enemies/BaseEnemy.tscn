@@ -52,10 +52,12 @@ _data = {
 "RESET": SubResource("Animation_reset")
 }
 
-[node name="BaseEnemy" type="Area2D" node_paths=PackedStringArray("Sprite", "DeathTimer", "DamageCooldownTimer", "Collider", "HitAnimationPlayer")]
+[node name="BaseEnemy" type="CharacterBody2D" node_paths=PackedStringArray("Sprite", "DeathTimer", "DamageCooldownTimer", "Collider", "HitAnimationPlayer")]
 material = SubResource("ShaderMaterial_root_mat")
 collision_layer = 2
 collision_mask = 7
+input_pickable = true
+motion_mode = 1
 script = ExtResource("1_base_script")
 Sprite = NodePath("Sprite")
 DeathTimer = NodePath("DeathTimer")

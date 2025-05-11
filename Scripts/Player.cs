@@ -3,7 +3,7 @@ using System;
 
 namespace CosmocrushGD;
 
-public partial class Player : Area2D
+public partial class Player : CharacterBody2D
 {
 	// --- Signals ---
 	[Signal] public delegate void GameOverEventHandler();
@@ -11,7 +11,6 @@ public partial class Player : Area2D
 
 	// --- Fields ---
 	private ShakeyCamera camera;
-	private Vector2 currentVelocity = Vector2.Zero; // Use a custom velocity for Area2D
 	private Vector2 knockbackVelocity = Vector2.Zero;
 	private AudioStream damageAudio;
 	private const float Speed = 300.0f;
@@ -23,7 +22,6 @@ public partial class Player : Area2D
 	private const float MobileDeathZoomAmount = 3.0f;
 	private const float DeathZoomDuration = 1.5f;
 	private const int RegenerationRate = 0; // Keep const separate
-	private const float PushForce = 100.0f; // Force to push overlapping areas
 
 	// --- Properties ---
 	public int Health { get; set; } = 30000; // Initialize with MaxHealth potential
@@ -60,13 +58,10 @@ public partial class Player : Area2D
 			deathPauseTimer.Timeout += OnDeathPauseTimerTimeout;
 		}
 
-		// Connect AreaEntered signal for soft collisions
-		AreaEntered += OnAreaEntered;
-
 		damageAudio = ResourceLoader.Load<AudioStream>("res://Audio/SFX/PlayerDamage.mp3");
 	}
 
-	public override void _Process(double delta)
+	public override void _PhysicsProcess(double delta)
 	{
 		// Early return if paused or death timer active
 		if (GetTree().Paused || deathPauseTimer?.IsStopped() is false)
@@ -74,17 +69,13 @@ public partial class Player : Area2D
 			return;
 		}
 
-		float fDelta = (float)delta;
-
-		// Handle movement manually
-		var direction = Input.GetVector("left", "right", "up", "down");
-		currentVelocity = direction * Speed;
-
-		// Apply knockback
 		knockbackVelocity = knockbackVelocity.Lerp(Vector2.Zero, KnockbackRecoverySpeed);
-		currentVelocity += knockbackVelocity;
 
-		GlobalPosition += currentVelocity * fDelta;
+		var direction = Input.GetVector("left", "right", "up", "down");
+		var movement = direction * Speed + knockbackVelocity;
+
+		Velocity = movement;
+		MoveAndSlide();
 	}
 
 	public override void _ExitTree()
@@ -99,16 +90,7 @@ public partial class Player : Area2D
 			deathPauseTimer.Timeout -= OnDeathPauseTimerTimeout;
 		}
 
-		// Disconnect AreaEntered signal
-		AreaEntered -= OnAreaEntered;
-
 		base._ExitTree();
-	}
-
-	// Method to apply push force from soft collisions
-	public void ApplyPush(Vector2 force)
-	{
-		currentVelocity += force;
 	}
 
 	public void TakeDamage(int damage)
@@ -172,7 +154,7 @@ public partial class Player : Area2D
 		EmitSignal(SignalName.PlayerDied);
 		regenerationTimer?.Stop();
 		ProcessMode = ProcessModeEnum.Disabled;
-		// SetPhysicsProcess(false); // Not needed for Area2D
+		SetPhysicsProcess(false);
 
 		sprite?.QueueFree(); // Remove sprite immediately
 		gun?.QueueFree();   // Remove gun immediately
@@ -217,17 +199,5 @@ public partial class Player : Area2D
 		}
 
 		Health = Math.Min(Health + RegenerationRate, MaxHealth);
-	}
-
-	private void OnAreaEntered(Area2D area)
-	{
-		// Basic soft collision: push overlapping areas away
-		if (area is BaseEnemy enemy)
-		{
-			Vector2 pushDirection = (GlobalPosition - enemy.GlobalPosition).Normalized();
-			// Apply force to both the player and the enemy
-			currentVelocity += pushDirection * PushForce * (float)GetProcessDeltaTime();
-			enemy.ApplyPush(pushDirection * PushForce * (float)GetProcessDeltaTime()); // Assuming BaseEnemy has an ApplyPush method
-		}
 	}
 }
