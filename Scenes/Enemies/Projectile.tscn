@@ -10,12 +10,11 @@ size = Vector2(32, 32)
 _data = [Vector2(0.00433911, 0.993671), 0.0, 0.0, 0, 0, Vector2(0.998999, 0.00219095), 0.0, 0.0, 0, 0]
 point_count = 2
 
-[node name="Projectile" type="Area2D" node_paths=PackedStringArray("Sprite", "DestructionParticles")]
+[node name="Projectile" type="Area2D" node_paths=PackedStringArray("Sprite")]
 top_level = true
 scale = Vector2(0.25, 0.25)
 script = ExtResource("1_jqlnh")
 Sprite = NodePath("Sprite")
-DestructionParticles = NodePath("DestructionParticles")
 
 [node name="Sprite" type="Sprite2D" parent="."]
 texture = ExtResource("1_aevvj")

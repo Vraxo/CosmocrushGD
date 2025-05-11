@@ -4,15 +4,7 @@ namespace CosmocrushGD;
 
 public partial class World : WorldEnvironment
 {
-	[Export] private PackedScene pauseMenuScene;
-	[Export] private PackedScene gameOverMenuScene;
-	[Export] private Button pauseButton;
-	[Export] private CanvasLayer hudLayer;
-	[Export] private Label scoreLabel;
-	[Export] private Label enemyCountLabel;
-	[Export] private NodePath playerPath;
-	[Export] private NodePath enemySpawnerPath;
-	[Export] private AnimationPlayer scoreAnimationPlayer;
+	private const int EnemyKillBonus = 10;
 
 	private int currentEnemyCount = 0;
 	private PauseMenu pauseMenu;
@@ -21,32 +13,31 @@ public partial class World : WorldEnvironment
 	private EnemySpawner enemySpawner;
 	private bool isPlayerDead = false;
 
-	private const int EnemyKillBonus = 10;
+	[Export] private PackedScene pauseMenuScene;
+	[Export] private PackedScene gameOverMenuScene;
+	[Export] private Button pauseButton;
+	[Export] private CanvasLayer hudLayer;
+	[Export] private Label scoreLabel;
+	[Export] private Label enemyCountLabel;
+	[Export] private Label fpsLabel;
+	[Export] private NodePath playerPath;
+	[Export] private NodePath enemySpawnerPath;
+	[Export] private AnimationPlayer scoreAnimationPlayer;
 
 	public int Score { get; private set; } = 0;
 
 	public override void _Ready()
 	{
-		if (hudLayer is null)
+		DisplayServer.WindowSetVsyncMode(DisplayServer.VSyncMode.Disabled);
+
+		if (fpsLabel is not null)
 		{
-		}
-		if (scoreLabel is null)
-		{
-		}
-		if (enemyCountLabel is null)
-		{
-		}
-		if (scoreAnimationPlayer is null)
-		{
+			fpsLabel.Text = "FPS: 0";
 		}
 
 		if (pauseButton is not null)
 		{
 			pauseButton.Pressed += OnPauseButtonPressed;
-		}
-
-		if (gameOverMenuScene is null)
-		{
 		}
 
 		player = GetNode<Player>(playerPath);
@@ -55,17 +46,11 @@ public partial class World : WorldEnvironment
 			player.GameOver += OnGameOver;
 			player.PlayerDied += OnPlayerDied;
 		}
-		else
-		{
-		}
 
 		enemySpawner = GetNode<EnemySpawner>(enemySpawnerPath);
 		if (enemySpawner is not null)
 		{
 			enemySpawner.EnemySpawned += OnEnemySpawned;
-		}
-		else
-		{
 		}
 
 		StatisticsManager.Instance?.IncrementGamesPlayed();
@@ -79,6 +64,8 @@ public partial class World : WorldEnvironment
 		{
 			Pause();
 		}
+
+		fpsLabel.Text = $"FPS: {Engine.GetFramesPerSecond()}";
 	}
 
 	public override void _ExitTree()
@@ -94,6 +81,7 @@ public partial class World : WorldEnvironment
 				player.PlayerDied -= OnPlayerDied;
 			}
 		}
+
 		if (enemySpawner is not null && IsInstanceValid(enemySpawner))
 		{
 			if (enemySpawner.IsConnected(EnemySpawner.SignalName.EnemySpawned, Callable.From<BaseEnemy>(OnEnemySpawned)))
@@ -101,6 +89,7 @@ public partial class World : WorldEnvironment
 				enemySpawner.EnemySpawned -= OnEnemySpawned;
 			}
 		}
+
 		if (pauseButton is not null && IsInstanceValid(pauseButton))
 		{
 			if (pauseButton.IsConnected(Button.SignalName.Pressed, Callable.From(OnPauseButtonPressed)))
@@ -161,7 +150,6 @@ public partial class World : WorldEnvironment
 		AddScore(EnemyKillBonus);
 		UpdateEnemyCountLabel();
 	}
-
 
 	private void OnPauseButtonPressed()
 	{

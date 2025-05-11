@@ -1,4 +1,4 @@
-[gd_scene load_steps=4 format=3 uid="uid://lpgtcj00wm7g"]
+[gd_scene load_steps=4 format=3 uid="uid://cc0frvnt3afps"]
 
 [ext_resource type="Script" path="res://Scripts/LoadingScreen.cs" id="1_loading_script"]
 [ext_resource type="FontFile" uid="uid://0q2lkim75hwr" path="res://Fonts/VeniteAdoremus-rgRBA.ttf" id="2_venite_font"]
@@ -41,7 +41,7 @@ offset_right = 378.0
 offset_bottom = 57.0
 grow_horizontal = 2
 grow_vertical = 2
-text = "COSMOCRUSH"
+text = "BLUEMBOOM"
 label_settings = SubResource("LabelSettings_loading")
 horizontal_alignment = 1
 vertical_alignment = 1

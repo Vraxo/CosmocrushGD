@@ -1,6 +1,6 @@
 [gd_scene load_steps=10 format=3 uid="uid://b7q8x6y5f4g3h"]
 
-[ext_resource type="Script" path="res://Scripts/Menu/NewMainMenu.cs" id="1_newmenu_script"]
+[ext_resource type="Script" path="res://Scripts/Menu/MainMenu.cs" id="1_newmenu_script"]
 [ext_resource type="Script" path="res://Scripts/UIButton.cs" id="2_button_script"]
 [ext_resource type="FontFile" uid="uid://0q2lkim75hwr" path="res://Fonts/VeniteAdoremus-rgRBA.ttf" id="4_venite_font"]
 
@@ -52,7 +52,7 @@ layout_mode = 2
 theme_override_colors/font_color = Color(0, 1, 1, 1)
 theme_override_fonts/font = ExtResource("4_venite_font")
 theme_override_font_sizes/font_size = 48
-text = "COSMOCRUSH"
+text = "BLUEMBOOM"
 horizontal_alignment = 1
 
 [node name="StartButton" type="Button" parent="VBoxContainer"]
