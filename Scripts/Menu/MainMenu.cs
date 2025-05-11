@@ -3,7 +3,7 @@ using System;
 
 namespace CosmocrushGD;
 
-public partial class MainMenu : CenterContainer
+public partial class NewMainMenu : CenterContainer
 {
 	[Export] private Label titleLabel;
 	[Export] private UIButton startButton;
@@ -187,7 +187,6 @@ public partial class MainMenu : CenterContainer
 	private void OnStartButtonPressed()
 	{
 		SceneTransitionManager.Instance?.ChangeScene(GameScenePath);
-		GD.Print("holy fuck");
 	}
 
 	private void OnSettingsButtonPressed()

@@ -19,7 +19,6 @@ public partial class EnemySpawner : Node
 	[Export] private float baseSpawnRate = 2.0f;
 	[Export] private float minSpawnInterval = 0.5f;
 	[Export] private float timeMultiplier = 0.1f;
-	[Export] private float debugSpawnRateMultiplier = 5.0f; // New debug multiplier
 	[Export] private float minPlayerDistance = 500.0f;
 	[Export] private NodePath spawnAreaNodePath;
 	[Export] private int maxInitialSpawns = 3;
@@ -31,8 +30,6 @@ public partial class EnemySpawner : Node
 	private const int MaxSpawnAttempts = 10;
 	private readonly RandomNumberGenerator rng = new();
 	private readonly Godot.Collections.Array<PackedScene> _sceneSelectionCache = new(); // Cache for selection
-
-	private const float DebugMinSpawnIntervalFloor = 0.001f; // Minimum interval when debug multiplier is high
 
 	public override void _Ready()
 	{
@@ -144,25 +141,7 @@ public partial class EnemySpawner : Node
 	private float CalculateSpawnInterval()
 	{
 		float calculatedInterval = baseSpawnRate / Mathf.Sqrt(1 + timeElapsed * timeMultiplier);
-
-		if (debugSpawnRateMultiplier > 0.0f)
-		{
-			calculatedInterval /= debugSpawnRateMultiplier;
-		}
-
-		float currentMinClampValue = minSpawnInterval;
-		// If the debug multiplier is intended to speed up spawns (value > 1),
-		// we should allow the spawn interval to go below the normal minSpawnInterval.
-		if (debugSpawnRateMultiplier > 1.0f)
-		{
-			currentMinClampValue = DebugMinSpawnIntervalFloor;
-		}
-
-		// Clamp the interval.
-		// The minimum is either the normal minSpawnInterval or a much smaller debug floor.
-		// The maximum is baseSpawnRate, meaning the spawner won't get slower than its initial rate 
-		// even if debugSpawnRateMultiplier is very small (e.g., 0.1 to slow down).
-		return float.Clamp(calculatedInterval, currentMinClampValue, baseSpawnRate);
+		return float.Clamp(calculatedInterval, minSpawnInterval, baseSpawnRate);
 	}
 
 	private void OnSpawnTimerTimeout()
