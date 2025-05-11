@@ -11,14 +11,12 @@ public partial class BaseEnemy : CharacterBody2D
 	protected static readonly Vector2 FlipThresholdVelocity = new Vector2(0.1f, 0.1f);
 	private const float DefaultMeleeKnockback = 500f;
 	private const float KnockbackRecovery = 5.0f;
+	private const float AiPerceptionUpdateInterval = 0.05f; // e.g., 20 times per second
+	private const float InactiveSpeed = 50f; // Slower speed for inactive enemies' direct movement
 
-	private const float ActiveAiUpdateInterval = 0.05f;
-	private const float InactiveAiUpdateInterval = 0.25f;
-	private const float InactiveMovementFraction = 0.02f;
-
-	// Reduced distances to decrease active enemy count
-	private const float ActivationDistance = 700f;
-	private const float DeactivationDistance = 850f;
+	// Distance-based physics activation/deactivation
+	private const float ActivationDistance = 1200f;
+	private const float DeactivationDistance = 1500f;
 	private const float ActivationDistanceSq = ActivationDistance * ActivationDistance;
 	private const float DeactivationDistanceSq = DeactivationDistance * DeactivationDistance;
 
@@ -84,7 +82,7 @@ public partial class BaseEnemy : CharacterBody2D
 
 		if (aiUpdateTimer is not null)
 		{
-			aiUpdateTimer.WaitTime = _isPhysicsActive ? ActiveAiUpdateInterval : InactiveAiUpdateInterval;
+			aiUpdateTimer.WaitTime = AiPerceptionUpdateInterval;
 			aiUpdateTimer.OneShot = false;
 			if (!aiUpdateTimer.IsConnected(Timer.SignalName.Timeout, Callable.From(UpdateAiPerceptionAndActivity)))
 			{
@@ -101,6 +99,7 @@ public partial class BaseEnemy : CharacterBody2D
 
 	public override void _Process(double delta)
 	{
+		// _Process logic (like attacking and sprite flipping) should only run if fully active
 		if (Dead || !_isPhysicsActive)
 		{
 			return;
@@ -112,10 +111,9 @@ public partial class BaseEnemy : CharacterBody2D
 
 	protected virtual void UpdateAiPerceptionAndActivity()
 	{
-		if (Dead)
+		if (Dead) // Don't do anything if dead
 		{
-			if (_isPhysicsActive) SetPhysicsActive(false);
-			aiUpdateTimer?.Stop();
+			if (_isPhysicsActive) SetPhysicsActive(false); // Ensure physics is off if somehow still on
 			return;
 		}
 
@@ -124,43 +122,32 @@ public partial class BaseEnemy : CharacterBody2D
 			Vector2 toPlayerVector = TargetPlayer.GlobalPosition - GlobalPosition;
 			_currentDistanceToPlayerSq = toPlayerVector.LengthSquared();
 
+			if (_currentDistanceToPlayerSq > 0.0001f)
+			{
+				_currentDirectionToPlayer = toPlayerVector.Normalized();
+			}
+			else
+			{
+				_currentDirectionToPlayer = Vector2.Zero;
+			}
+
 			if (_isPhysicsActive)
 			{
-				if (_currentDistanceToPlayerSq > 0.0001f)
-				{
-					_currentDirectionToPlayer = toPlayerVector.Normalized();
-				}
-				else
-				{
-					_currentDirectionToPlayer = Vector2.Zero;
-				}
-
 				if (_currentDistanceToPlayerSq > DeactivationDistanceSq)
 				{
 					SetPhysicsActive(false);
 				}
 			}
-			else
+			else // Not physics active
 			{
 				if (_currentDistanceToPlayerSq < ActivationDistanceSq)
 				{
 					SetPhysicsActive(true);
-					if (_currentDistanceToPlayerSq > 0.0001f)
-					{
-						_currentDirectionToPlayer = toPlayerVector.Normalized();
-					}
-					else
-					{
-						_currentDirectionToPlayer = Vector2.Zero;
-					}
 				}
-				else if (_currentDistanceToPlayerSq > ActivationDistanceSq)
+				else if (_currentDistanceToPlayerSq > ProximityThreshold * ProximityThreshold) // Still move if far, even if inactive
 				{
-					GlobalPosition += toPlayerVector * InactiveMovementFraction;
-				}
-				else if (_currentDistanceToPlayerSq > ProximityThreshold * ProximityThreshold)
-				{
-					GlobalPosition += toPlayerVector * InactiveMovementFraction;
+					// Simplified direct movement for inactive enemies
+					GlobalPosition += _currentDirectionToPlayer * InactiveSpeed * (float)aiUpdateTimer.WaitTime;
 				}
 			}
 		}
@@ -177,35 +164,27 @@ public partial class BaseEnemy : CharacterBody2D
 
 	private void SetPhysicsActive(bool active)
 	{
-		bool currentPhysicsProcessState = GetPhysicsProcessDeltaTime() > 0;
-		if (_isPhysicsActive == active && currentPhysicsProcessState == active) return;
+		if (_isPhysicsActive == active && GetPhysicsProcessDeltaTime() > 0 == active) return;
 
 		_isPhysicsActive = active;
 		SetPhysicsProcess(active);
-		ProcessMode = active ? ProcessModeEnum.Pausable : ProcessModeEnum.Disabled;
-
-		if (aiUpdateTimer != null)
-		{
-			aiUpdateTimer.WaitTime = active ? ActiveAiUpdateInterval : InactiveAiUpdateInterval;
-			if (!Dead && aiUpdateTimer.IsStopped())
-			{
-				aiUpdateTimer.Start();
-			}
-		}
+		ProcessMode = active ? ProcessModeEnum.Pausable : ProcessModeEnum.Disabled; // Also control _Process
 
 		if (!active)
 		{
-			Velocity = Vector2.Zero;
+			Velocity = Vector2.Zero; // Stop sliding if deactivating
 		}
 	}
 
+
 	public override void _PhysicsProcess(double delta)
 	{
+		// This method will only be called if SetPhysicsProcess(true)
 		float fDelta = (float)delta;
 		float decayFactor = 1.0f - Mathf.Exp(-KnockbackRecovery * fDelta);
 		Knockback = Knockback.Lerp(Vector2.Zero, decayFactor);
 
-		if (Dead)
+		if (Dead) // If dead, only apply knockback, then stop.
 		{
 			Velocity = Knockback;
 			if (Velocity.LengthSquared() > 0.01f)
@@ -215,7 +194,7 @@ public partial class BaseEnemy : CharacterBody2D
 			else if (Velocity != Vector2.Zero)
 			{
 				Velocity = Vector2.Zero;
-				SetPhysicsProcess(false);
+				SetPhysicsProcess(false); // Stop physics process completely once knockback is done
 			}
 			return;
 		}
@@ -284,15 +263,13 @@ public partial class BaseEnemy : CharacterBody2D
 		Knockback = Vector2.Zero;
 		Velocity = Vector2.Zero;
 
+		// Set initial state assuming active, then let UpdateAiPerceptionAndActivity correct it.
+		// This ensures _Process and _PhysicsProcess are enabled if needed for the first frame.
 		_isPhysicsActive = true;
 		SetPhysicsProcess(true);
 		ProcessMode = ProcessModeEnum.Pausable;
-		if (aiUpdateTimer != null)
-		{
-			aiUpdateTimer.WaitTime = ActiveAiUpdateInterval;
-		}
 
-		UpdateAiPerceptionAndActivity();
+		UpdateAiPerceptionAndActivity(); // Perform initial perception and activity update
 		aiUpdateTimer?.Start();
 
 		Visible = true;
@@ -304,6 +281,7 @@ public partial class BaseEnemy : CharacterBody2D
 		Sprite?.Set("material:shader_parameter/flash_value", 0.0);
 		Sprite.Visible = true;
 
+		// Ensure Timers are connected
 		if (DeathTimer is not null && !DeathTimer.IsConnected(Timer.SignalName.Timeout, Callable.From(OnDeathTimerTimeout)))
 		{
 			DeathTimer.Timeout += OnDeathTimerTimeout;
@@ -315,6 +293,7 @@ public partial class BaseEnemy : CharacterBody2D
 		}
 		if (aiUpdateTimer is not null && !aiUpdateTimer.IsConnected(Timer.SignalName.Timeout, Callable.From(UpdateAiPerceptionAndActivity)))
 		{
+			aiUpdateTimer.WaitTime = AiPerceptionUpdateInterval;
 			aiUpdateTimer.Timeout += UpdateAiPerceptionAndActivity;
 		}
 	}
@@ -322,13 +301,7 @@ public partial class BaseEnemy : CharacterBody2D
 	public virtual void ResetForPooling()
 	{
 		Visible = false;
-		SetPhysicsActive(false);
-		aiUpdateTimer?.Stop();
-		if (aiUpdateTimer != null)
-		{
-			aiUpdateTimer.WaitTime = ActiveAiUpdateInterval;
-		}
-
+		SetPhysicsActive(false); // Ensures SetPhysicsProcess(false) and ProcessMode = Disabled
 		Collider?.SetDeferred(CollisionShape2D.PropertyName.Disabled, true);
 		Velocity = Vector2.Zero;
 		Knockback = Vector2.Zero;
@@ -337,6 +310,8 @@ public partial class BaseEnemy : CharacterBody2D
 		CanShoot = true;
 		_currentDirectionToPlayer = Vector2.Zero;
 		_currentDistanceToPlayerSq = float.MaxValue;
+
+		aiUpdateTimer?.Stop();
 
 		DeathTimer?.Stop();
 		DamageCooldownTimer?.Stop();
@@ -362,17 +337,17 @@ public partial class BaseEnemy : CharacterBody2D
 			return;
 		}
 
-		bool wasInactive = !_isPhysicsActive;
-		if (wasInactive)
+		if (!_isPhysicsActive) // If taking damage while inactive
 		{
-			SetPhysicsActive(true);
+			SetPhysicsActive(true); // Wake up to process damage/knockback fully
+									// Potentially update perception immediately if needed for knockback direction relative to player
+									// UpdateAiPerceptionAndActivity(); // This is already called by timer, but for immediate reaction:
 			if (TargetPlayer != null && IsInstanceValid(TargetPlayer))
 			{
-				Vector2 toPlayer = TargetPlayer.GlobalPosition - GlobalPosition;
-				_currentDistanceToPlayerSq = toPlayer.LengthSquared();
-				_currentDirectionToPlayer = _currentDistanceToPlayerSq > 0.0001f ? toPlayer.Normalized() : Vector2.Zero;
+				_currentDirectionToPlayer = (TargetPlayer.GlobalPosition - GlobalPosition).Normalized();
 			}
 		}
+
 
 		PlayDamageSound();
 
@@ -401,6 +376,8 @@ public partial class BaseEnemy : CharacterBody2D
 		{
 			return;
 		}
+		// If taking knockback while inactive, ensure physics is active to process it.
+		// TakeDamage usually calls SetPhysicsActive(true) first.
 		if (!_isPhysicsActive)
 		{
 			SetPhysicsActive(true);
@@ -410,7 +387,7 @@ public partial class BaseEnemy : CharacterBody2D
 
 	protected virtual void UpdateSpriteDirection()
 	{
-		if (Sprite is null || !_isPhysicsActive)
+		if (Sprite is null || !_isPhysicsActive) // Only update sprite if fully active
 		{
 			return;
 		}
@@ -427,7 +404,7 @@ public partial class BaseEnemy : CharacterBody2D
 
 	protected virtual void AttemptAttack()
 	{
-		if (!CanShoot || TargetPlayer is null || !IsInstanceValid(TargetPlayer) || Dead || !_isPhysicsActive)
+		if (!CanShoot || TargetPlayer is null || !IsInstanceValid(TargetPlayer) || Dead || !_isPhysicsActive) // Only attack if fully active
 		{
 			return;
 		}
@@ -452,24 +429,22 @@ public partial class BaseEnemy : CharacterBody2D
 		Dead = true;
 		EmitSignal(SignalName.EnemyDied, this);
 
+		// If the enemy was inactive, we might want to briefly enable physics
+		// for one last tick to apply any residual knockback from the killing blow.
 		bool wasPreviouslyInactive = !_isPhysicsActive;
-		if (wasPreviouslyInactive && Knockback.LengthSquared() > 0.01f)
+		if (wasPreviouslyInactive)
 		{
-			SetPhysicsActive(true);
-		}
-		else if (wasPreviouslyInactive)
-		{
-			SetPhysicsProcess(false);
+			SetPhysicsActive(true); // Enable physics briefly
 		}
 
+		// Disable regular processing immediately
 		ProcessMode = ProcessModeEnum.Disabled;
-		aiUpdateTimer?.Stop();
-		if (aiUpdateTimer != null)
-		{
-			aiUpdateTimer.WaitTime = ActiveAiUpdateInterval;
-		}
+		// SetPhysicsProcess will be set to false by the Dead flag logic in _PhysicsProcess after knockback
+		// or if it was already inactive.
 
 		Collider?.CallDeferred(CollisionShape2D.MethodName.SetDisabled, true);
+		aiUpdateTimer?.Stop();
+
 		Sprite?.SetDeferred(Sprite2D.PropertyName.Visible, false);
 
 		if (deathParticleEffectScene is not null)
@@ -482,6 +457,12 @@ public partial class BaseEnemy : CharacterBody2D
 		{
 			GD.PrintErr($"BaseEnemy ({Name}): DeathTimer node not found! Using temporary timer to return to pool.");
 			GetTree().CreateTimer(1.0).Timeout += ReturnEnemyToPool;
+		}
+
+		// If we briefly activated physics, ensure it's fully off now if it wasn't handled by _PhysicsProcess logic for Dead
+		if (wasPreviouslyInactive && GetPhysicsProcessDeltaTime() > 0)
+		{
+			SetPhysicsProcess(false);
 		}
 	}
 
