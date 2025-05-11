@@ -52,7 +52,7 @@ _data = {
 "RESET": SubResource("Animation_reset")
 }
 
-[node name="BaseEnemy" type="CharacterBody2D" node_paths=PackedStringArray("Sprite", "DeathTimer", "DamageCooldownTimer", "Collider", "HitAnimationPlayer")]
+[node name="BaseEnemy" type="CharacterBody2D" node_paths=PackedStringArray("Sprite", "DeathTimer", "DamageCooldownTimer", "Collider", "HitAnimationPlayer", "aiUpdateTimer")]
 material = SubResource("ShaderMaterial_root_mat")
 collision_layer = 2
 collision_mask = 7
@@ -64,6 +64,7 @@ DeathTimer = NodePath("DeathTimer")
 DamageCooldownTimer = NodePath("DamageCooldownTimer")
 Collider = NodePath("Collider")
 HitAnimationPlayer = NodePath("Sprite/AnimationPlayer")
+aiUpdateTimer = NodePath("AiUpdateTimer")
 
 [node name="Collider" type="CollisionShape2D" parent="."]
 shape = SubResource("RectangleShape2D_collider")
@@ -80,4 +81,9 @@ libraries = {
 one_shot = true
 
 [node name="DamageCooldownTimer" type="Timer" parent="."]
+one_shot = true
+
+[node name="AiUpdateTimer" type="Timer" parent="."]
+process_callback = 0
+wait_time = 0.05
 one_shot = true
