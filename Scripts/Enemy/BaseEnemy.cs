@@ -72,15 +72,6 @@ public partial class BaseEnemy : CharacterBody2D
 	{
 		if (Dead)
 		{
-			if (Knockback.LengthSquared() > 0.01f)
-			{
-				float fDelta = (float)delta;
-				// Apply knockback decay using exponential damping (framerate independent)
-				float decayFactor = 1.0f - Mathf.Exp(-KnockbackRecovery * fDelta);
-				Knockback = Knockback.Lerp(Vector2.Zero, decayFactor);
-				GlobalPosition += Knockback * fDelta; // Manual position update
-			}
-			// Dead enemies should not do anything else in _Process besides their visual knockback
 			return;
 		}
 
@@ -90,14 +81,27 @@ public partial class BaseEnemy : CharacterBody2D
 
 	public override void _PhysicsProcess(double delta)
 	{
-		// Note: If Dead is true, _PhysicsProcess won't run due to SetPhysicsProcess(false) in Die().
-		// This entire method is now only for alive enemies.
-
 		float fDelta = (float)delta;
 
 		// Apply knockback decay using exponential damping (framerate independent)
+		// Use the same recovery rate whether dead or alive for consistency
 		float decayFactor = 1.0f - Mathf.Exp(-KnockbackRecovery * fDelta);
 		Knockback = Knockback.Lerp(Vector2.Zero, decayFactor);
+
+		if (Dead)
+		{
+			// If dead, only apply remaining knockback velocity
+			if (Knockback.LengthSquared() > 0.01f) // Use a small threshold
+			{
+				Velocity = Knockback;
+				MoveAndSlide();
+			}
+			else if (Velocity != Vector2.Zero) // Ensure velocity stops fully
+			{
+				Velocity = Vector2.Zero;
+			}
+			return; // No further movement logic when dead
+		}
 
 		// Calculate desired movement when alive
 		var desiredMovement = Vector2.Zero;
@@ -162,8 +166,8 @@ public partial class BaseEnemy : CharacterBody2D
 		Velocity = Vector2.Zero;
 
 		Visible = true;
-		ProcessMode = ProcessModeEnum.Pausable; // Make sure _Process runs
-		SetPhysicsProcess(true); // Enable physics for alive enemies
+		ProcessMode = ProcessModeEnum.Pausable;
+		SetPhysicsProcess(true);
 		Collider?.SetDeferred(CollisionShape2D.PropertyName.Disabled, false);
 
 		DamageCooldownTimer?.Stop();
@@ -172,6 +176,7 @@ public partial class BaseEnemy : CharacterBody2D
 		Sprite?.Set("material:shader_parameter/flash_value", 0.0);
 		Sprite.Visible = true;
 
+		// Ensure timers are connected (important after pooling)
 		if (DeathTimer is not null && !DeathTimer.IsConnected(Timer.SignalName.Timeout, Callable.From(OnDeathTimerTimeout)))
 		{
 			DeathTimer.Timeout += OnDeathTimerTimeout;
@@ -186,8 +191,8 @@ public partial class BaseEnemy : CharacterBody2D
 	public virtual void ResetForPooling()
 	{
 		Visible = false;
-		ProcessMode = ProcessModeEnum.Disabled; // Disable _Process when pooled
-		SetPhysicsProcess(false); // Ensure physics is off when pooled
+		ProcessMode = ProcessModeEnum.Disabled;
+		SetPhysicsProcess(false);
 		Collider?.SetDeferred(CollisionShape2D.PropertyName.Disabled, true);
 		Velocity = Vector2.Zero;
 		Knockback = Vector2.Zero;
@@ -244,11 +249,9 @@ public partial class BaseEnemy : CharacterBody2D
 	{
 		if (Dead)
 		{
-			// Even if dead, if knockback is applied (e.g. by an explosion after death),
-			// we might want to accumulate it for the visual effect.
-			// The current KnockbackResistanceMultiplier will apply.
+			return;
 		}
-		Knockback += force * (1.0f - float.Clamp(KnockbackResistanceMultiplier, 0f, 1f));
+		Knockback = force * (1.0f - float.Clamp(KnockbackResistanceMultiplier, 0f, 1f));
 	}
 
 	protected virtual void UpdateSpriteDirection()
@@ -296,10 +299,9 @@ public partial class BaseEnemy : CharacterBody2D
 		}
 		Dead = true;
 		EmitSignal(SignalName.EnemyDied, this);
-
-		SetPhysicsProcess(false); // Stop physics server interactions immediately
+		SetProcess(false);
+		SetPhysicsProcess(false);
 		Collider?.CallDeferred(CollisionShape2D.MethodName.SetDisabled, true);
-		// ProcessMode is PContainerausable, so _Process will continue to run for manual knockback
 
 		Sprite?.SetDeferred(Sprite2D.PropertyName.Visible, false);
 
