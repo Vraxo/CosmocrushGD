@@ -78,37 +78,39 @@ public partial class ExplodingEnemy : BaseEnemy
 		// Add any specific cleanup for ExplodingEnemy if needed
 	}
 
+	// ReturnEnemyToPool is inherited from BaseEnemy and called by DeathTimer timeout
 
 	private async void ShootProjectiles()
 	{
-        var angleStep = float.Tau / projectileCount;
-        Vector2 spawnPosition = GlobalPosition;
-        Texture2D enemyTexture = Sprite?.Texture;
+		var angleStep = float.Tau / projectileCount;
+		Vector2 spawnPosition = GlobalPosition;
+		Texture2D enemyTexture = Sprite?.Texture;
 
-        for (int i = 0; i < projectileCount; i++)
-        {
-            // Check if the enemy instance is still valid (might have been cleaned up)
-            if (!IsInstanceValid(this))
-            {
-                GD.Print($"ExplodingEnemy ({Name}): Instance became invalid during projectile spawn loop. Aborting.");
-                return;
-            }
+		for (int i = 0; i < projectileCount; i++)
+		{
+			// Check if the enemy instance is still valid (might have been cleaned up)
+			if (!IsInstanceValid(this))
+			{
+				GD.Print($"ExplodingEnemy ({Name}): Instance became invalid during projectile spawn loop. Aborting.");
+				return;
+			}
 
-            Projectile projectile = ProjectilePoolManager.Instance.GetProjectile(projectileScene);
+			Projectile projectile = ProjectilePoolManager.Instance.GetProjectile(projectileScene);
 
-            float angle = i * angleStep;
-            var direction = Vector2.Right.Rotated(angle);
+			float angle = i * angleStep;
+			var direction = Vector2.Right.Rotated(angle);
 
-            if (projectile.GetParent() != ProjectilePoolManager.Instance)
-            {
-                projectile.GetParent()?.RemoveChild(projectile);
-                ProjectilePoolManager.Instance.AddChild(projectile);
-            }
+			if (projectile.GetParent() != ProjectilePoolManager.Instance)
+			{
+				projectile.GetParent()?.RemoveChild(projectile);
+				ProjectilePoolManager.Instance.AddChild(projectile);
+			}
 
-            projectile.SetupAndActivate(spawnPosition, direction, enemyTexture, ExplosionProjectileColor);
-            GD.Print($"ExplodingEnemy ({Name}): Spawned and activated projectile {i + 1}/{projectileCount}.");
+			projectile.SetupAndActivate(spawnPosition, direction, enemyTexture, ExplosionProjectileColor);
+			GD.Print($"ExplodingEnemy ({Name}): Spawned and activated projectile {i + 1}/{projectileCount}.");
 
-            await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
-        }
-    }
+			await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
+		}
+	}
+
 }

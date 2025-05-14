@@ -116,7 +116,7 @@ public partial class Player : CharacterBody2D
 			? float.Clamp((float)Health / MaxHealth, 0f, 1f)
 			: 0f;
 
-		var shakeStrength = float.Lerp(
+		var shakeStrength = Mathf.Lerp( // Corrected: float.Lerp to Mathf.Lerp
 			DamageShakeMaxStrength,
 			DamageShakeMinStrength,
 			healthRatio);

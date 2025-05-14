@@ -22,7 +22,7 @@ public partial class EnemySpawner : Node
 	[Export] private float minPlayerDistance = 500.0f;
 	[Export] private NodePath spawnAreaNodePath;
 	[Export] private int maxInitialSpawns = 3;
-	[Export] private float spawnRateMultiplier = 10.0f; // Temporary multiplier
+	[Export] private float spawnRateMultiplier = 1.0f; // Temporary multiplier
 
 	private Player player;
 	private float timeElapsed;
