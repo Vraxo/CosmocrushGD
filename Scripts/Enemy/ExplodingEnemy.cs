@@ -66,49 +66,7 @@ public partial class ExplodingEnemy : BaseEnemy
 			return; // Still proceed with base death logic, just no explosion
 		}
 
-		GD.Print($"ExplodingEnemy ({Name}): Starting staggered projectile spawn ({projectileCount} projectiles).");
-		float angleStep = Mathf.Tau / projectileCount;
-		Vector2 spawnPosition = GlobalPosition;
-		Texture2D enemyTexture = Sprite?.Texture;
-
-		for (int i = 0; i < projectileCount; i++)
-		{
-			// Check if the enemy instance is still valid (might have been cleaned up)
-			if (!IsInstanceValid(this))
-			{
-				GD.Print($"ExplodingEnemy ({Name}): Instance became invalid during projectile spawn loop. Aborting.");
-				return;
-			}
-
-			Projectile projectile = ProjectilePoolManager.Instance.GetProjectile(projectileScene);
-			if (projectile is null)
-			{
-				GD.PrintErr($"ExplodingEnemy ({Name}): Failed to get projectile {i + 1}/{projectileCount} from pool. Skipping.");
-				continue; // Skip if projectile couldn't be retrieved
-			}
-
-			float angle = i * angleStep;
-			var direction = Vector2.Right.Rotated(angle);
-
-			// Get the projectile ready in the scene tree but keep it inactive
-			// Ensure it's parented to something sensible if the enemy is visually gone
-			// Reparenting to the ProjectilePoolManager itself is a safe bet
-			if (projectile.GetParent() != ProjectilePoolManager.Instance)
-			{
-				projectile.GetParent()?.RemoveChild(projectile);
-				ProjectilePoolManager.Instance.AddChild(projectile);
-			}
-
-			// Use the consolidated method
-			projectile.SetupAndActivate(spawnPosition, direction, enemyTexture, ExplosionProjectileColor);
-			GD.Print($"ExplodingEnemy ({Name}): Spawned and activated projectile {i + 1}/{projectileCount}.");
-
-			// IMPORTANT: Wait for the next process frame to stagger the activation load
-			await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
-			// Alternatively, use a small timer delay if frame yielding isn't enough
-			// await ToSignal(GetTree().CreateTimer(ProjectileSpawnDelay), Timer.SignalName.Timeout);
-		}
-		GD.Print($"ExplodingEnemy ({Name}): Finished projectile spawn sequence.");
+		ShootProjectiles();
 	}
 
 	// Override ResetForPooling to ensure any async operations are handled if needed
@@ -120,5 +78,37 @@ public partial class ExplodingEnemy : BaseEnemy
 		// Add any specific cleanup for ExplodingEnemy if needed
 	}
 
-	// ReturnEnemyToPool is inherited from BaseEnemy and called by DeathTimer timeout
+
+	private async void ShootProjectiles()
+	{
+        var angleStep = float.Tau / projectileCount;
+        Vector2 spawnPosition = GlobalPosition;
+        Texture2D enemyTexture = Sprite?.Texture;
+
+        for (int i = 0; i < projectileCount; i++)
+        {
+            // Check if the enemy instance is still valid (might have been cleaned up)
+            if (!IsInstanceValid(this))
+            {
+                GD.Print($"ExplodingEnemy ({Name}): Instance became invalid during projectile spawn loop. Aborting.");
+                return;
+            }
+
+            Projectile projectile = ProjectilePoolManager.Instance.GetProjectile(projectileScene);
+
+            float angle = i * angleStep;
+            var direction = Vector2.Right.Rotated(angle);
+
+            if (projectile.GetParent() != ProjectilePoolManager.Instance)
+            {
+                projectile.GetParent()?.RemoveChild(projectile);
+                ProjectilePoolManager.Instance.AddChild(projectile);
+            }
+
+            projectile.SetupAndActivate(spawnPosition, direction, enemyTexture, ExplosionProjectileColor);
+            GD.Print($"ExplodingEnemy ({Name}): Spawned and activated projectile {i + 1}/{projectileCount}.");
+
+            await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
+        }
+    }
 }

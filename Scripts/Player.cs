@@ -1,18 +1,9 @@
 using Godot;
-using System;
 
 namespace CosmocrushGD;
 
 public partial class Player : CharacterBody2D
 {
-	// --- Signals ---
-	[Signal] public delegate void GameOverEventHandler();
-	[Signal] public delegate void PlayerDiedEventHandler();
-
-	// --- Fields ---
-	private ShakeyCamera camera;
-	private Vector2 knockbackVelocity = Vector2.Zero;
-	private AudioStream damageAudio;
 	private const float Speed = 300.0f;
 	private const float KnockbackRecoverySpeed = 0.1f;
 	private const float DamageShakeMinStrength = 0.8f;
@@ -21,14 +12,12 @@ public partial class Player : CharacterBody2D
 	private const float DesktopDeathZoomAmount = 2.0f;
 	private const float MobileDeathZoomAmount = 3.0f;
 	private const float DeathZoomDuration = 1.5f;
-	private const int RegenerationRate = 0; // Keep const separate
+	private const int RegenerationRate = 1;
 
-	// --- Properties ---
-	public int Health { get; set; } = 30000; // Initialize with MaxHealth potential
-	public int MaxHealth { get; set; } = 30000;
-	public Inventory Inventory { get; set; } = new();
+	private ShakeyCamera camera;
+	private Vector2 knockbackVelocity = Vector2.Zero;
+	private AudioStream damageAudio;
 
-	// --- Exports ---
 	[Export] private Gun gun;
 	[Export] private Sprite2D sprite;
 	[Export] private CpuParticles2D damageParticles;
@@ -38,32 +27,29 @@ public partial class Player : CharacterBody2D
 	[Export] private Timer deathPauseTimer;
 	[Export] private AudioStreamPlayer deathAudioPlayer;
 
+	public int Health { get; set; } = 100;
+	public int MaxHealth { get; set; } = 100;
+	public Inventory Inventory { get; set; } = new();
 
-	// --- Methods ---
+	[Signal] public delegate void GameOverEventHandler();
+	[Signal] public delegate void PlayerDiedEventHandler();
+
 	public override void _Ready()
 	{
 		if (cameraPath is not null)
 		{
 			camera = GetNode<ShakeyCamera>(cameraPath);
-			camera?.ResetZoom(); // Use null propagation
+			camera?.ResetZoom();
 		}
 
-		if (regenerationTimer?.IsConnected(Timer.SignalName.Timeout, Callable.From(OnRegenTimerTimeout)) is false)
-		{
-			regenerationTimer.Timeout += OnRegenTimerTimeout;
-		}
-
-		if (deathPauseTimer?.IsConnected(Timer.SignalName.Timeout, Callable.From(OnDeathPauseTimerTimeout)) is false)
-		{
-			deathPauseTimer.Timeout += OnDeathPauseTimerTimeout;
-		}
+		regenerationTimer.Timeout += OnRegenTimerTimeout;
+		deathPauseTimer.Timeout += OnDeathPauseTimerTimeout;
 
 		damageAudio = ResourceLoader.Load<AudioStream>("res://Audio/SFX/PlayerDamage.mp3");
 	}
 
 	public override void _PhysicsProcess(double delta)
 	{
-		// Early return if paused or death timer active
 		if (GetTree().Paused || deathPauseTimer?.IsStopped() is false)
 		{
 			return;
@@ -75,20 +61,14 @@ public partial class Player : CharacterBody2D
 		var movement = direction * Speed + knockbackVelocity;
 
 		Velocity = movement;
+
 		MoveAndSlide();
 	}
 
 	public override void _ExitTree()
 	{
-		if (regenerationTimer?.IsConnected(Timer.SignalName.Timeout, Callable.From(OnRegenTimerTimeout)) ?? false)
-		{
-			regenerationTimer.Timeout -= OnRegenTimerTimeout;
-		}
-
-		if (deathPauseTimer?.IsConnected(Timer.SignalName.Timeout, Callable.From(OnDeathPauseTimerTimeout)) ?? false)
-		{
-			deathPauseTimer.Timeout -= OnDeathPauseTimerTimeout;
-		}
+		regenerationTimer.Timeout -= OnRegenTimerTimeout;
+		deathPauseTimer.Timeout -= OnDeathPauseTimerTimeout;
 
 		base._ExitTree();
 	}
@@ -101,13 +81,12 @@ public partial class Player : CharacterBody2D
 		}
 
 		Health -= damage;
-		Health = Mathf.Max(Health, 0); // Use Mathf.Max
+		Health = Mathf.Max(Health, 0);
 
-		// Restart damage particles at current location (now TopLevel)
 		if (damageParticles is not null)
 		{
 			damageParticles.GlobalPosition = GlobalPosition;
-			damageParticles.Restart(); // Use Restart() for one-shot TopLevel particles
+			damageParticles.Restart();
 		}
 
 		PlayDamageSound();
@@ -121,32 +100,33 @@ public partial class Player : CharacterBody2D
 
 	public void ApplyKnockback(Vector2 knockback)
 	{
-		// Apply stronger knockback if the new one is larger, otherwise add
 		knockbackVelocity = knockbackVelocity.LengthSquared() < knockback.LengthSquared()
 			? knockback
 			: knockbackVelocity + knockback;
 	}
 
-	// --- Private Methods ---
 	private void TriggerDamageShake()
 	{
-		if (camera is null) // No need for IsInstanceValid check here if camera is assigned in _Ready
+		if (camera is null)
 		{
 			return;
 		}
 
 		var healthRatio = MaxHealth > 0
-			? float.Clamp((float)Health / MaxHealth, 0f, 1f) // Use float.Clamp
+			? float.Clamp((float)Health / MaxHealth, 0f, 1f)
 			: 0f;
 
-		var shakeStrength = Mathf.Lerp(DamageShakeMaxStrength, DamageShakeMinStrength, healthRatio);
+		var shakeStrength = float.Lerp(
+			DamageShakeMaxStrength,
+			DamageShakeMinStrength,
+			healthRatio);
 
 		camera.Shake(shakeStrength, DamageShakeDuration);
 	}
 
 	private void PlayDamageSound()
 	{
-		GlobalAudioPlayer.Instance?.PlaySound(damageAudio); // Use null propagation
+		GlobalAudioPlayer.Instance?.PlaySound(damageAudio);
 	}
 
 	private void Die()
@@ -156,14 +136,13 @@ public partial class Player : CharacterBody2D
 		ProcessMode = ProcessModeEnum.Disabled;
 		SetPhysicsProcess(false);
 
-		sprite?.QueueFree(); // Remove sprite immediately
-		gun?.QueueFree();   // Remove gun immediately
+		sprite?.QueueFree();
+		gun?.QueueFree();
 
-		// Restart death particles at current location (now TopLevel)
 		if (deathParticles is not null)
 		{
 			deathParticles.GlobalPosition = GlobalPosition;
-			deathParticles.Restart(); // Use Restart() for one-shot TopLevel particles
+			deathParticles.Restart();
 		}
 
 		deathAudioPlayer?.Play();
@@ -179,10 +158,8 @@ public partial class Player : CharacterBody2D
 		deathPauseTimer?.Start();
 	}
 
-	// --- Event Handlers ---
 	private void OnDeathPauseTimerTimeout()
 	{
-		// Only pause if not already paused (safety check)
 		if (!GetTree().Paused)
 		{
 			GetTree().Paused = true;
@@ -198,6 +175,6 @@ public partial class Player : CharacterBody2D
 			return;
 		}
 
-		Health = Math.Min(Health + RegenerationRate, MaxHealth);
+		Health = int.Min(Health + RegenerationRate, MaxHealth);
 	}
 }
